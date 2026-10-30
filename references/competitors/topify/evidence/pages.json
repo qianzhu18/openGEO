@@ -1,0 +1,144 @@
+[
+  {
+    "name": "agent",
+    "route": "/agent",
+    "headers": [],
+    "scriptCount": 42,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "overview",
+    "route": "/analyze/overview?range=7",
+    "headers": [
+      "Topic",
+      "AI Volume",
+      "Visibility",
+      "Sentiment",
+      "Position",
+      "SOV"
+    ],
+    "scriptCount": 52,
+    "status": "observed",
+    "title": "Brand Overview & Analytics | TopifyAI Platform"
+  },
+  {
+    "name": "prompts",
+    "route": "/analyze/tracking/prompts?range=7",
+    "headers": [
+      "Topic",
+      "AI Volume",
+      "Visibility",
+      "Sentiment",
+      "Position",
+      "SOV",
+      "Mentions",
+      "Intent",
+      "CVR",
+      "Location"
+    ],
+    "scriptCount": 54,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "recording",
+    "route": "/analyze/tracking/recording",
+    "headers": [
+      "URL",
+      "Title",
+      "Added"
+    ],
+    "scriptCount": 39,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "sources",
+    "route": "/analyze/tracking/sources?range=7",
+    "headers": [
+      "Rank",
+      "Domain",
+      "Domain Type",
+      "Used",
+      "Avg Citations",
+      "Citation Share",
+      "Mentioned",
+      "Brands Appear"
+    ],
+    "scriptCount": 0,
+    "status": "observed",
+    "title": "Sources & Content Strategy | TopifyAI Platform",
+    "retried": true
+  },
+  {
+    "name": "fanouts",
+    "route": "/analyze/tracking/fanouts?range=7",
+    "headers": [
+      "Query",
+      "Provider",
+      "Occurrences",
+      "Prompts",
+      "Brands",
+      "Last used"
+    ],
+    "scriptCount": 41,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "actions",
+    "route": "/optimization/actions",
+    "headers": [],
+    "scriptCount": 47,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "competitors",
+    "route": "/preferences/competitors",
+    "headers": [
+      "Rank",
+      "Brand",
+      "Visibility",
+      "Sentiment",
+      "Position",
+      "Actions"
+    ],
+    "scriptCount": 43,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "members",
+    "route": "/management/members",
+    "headers": [
+      "Name",
+      "Role",
+      "Email",
+      "Created",
+      "Projects"
+    ],
+    "scriptCount": 40,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform",
+    "retried": true
+  },
+  {
+    "name": "project",
+    "route": "/management/project",
+    "headers": [],
+    "scriptCount": 44,
+    "status": "observed",
+    "title": "Brand Analytics Dashboard | TopifyAI Platform"
+  },
+  {
+    "name": "billing",
+    "route": "/management/subscription",
+    "headers": [],
+    "scriptCount": 43,
+    "status": "observed",
+    "title": "Brand Subscription | TopifyAI Platform",
+    "retried": true
+  }
+]

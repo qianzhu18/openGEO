@@ -1,0 +1,1847 @@
+[
+  {
+    "path": "/api/v2/og?url={param}",
+    "method": "unresolved",
+    "functionName": 53495,
+    "file": "1522-3dd05f2665a3638c.js",
+    "offset": 4788,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{param}/execute",
+    "method": "POST",
+    "functionName": 55061,
+    "file": "1522-3dd05f2665a3638c.js",
+    "offset": 20146,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{param}/execute/resume",
+    "method": "POST",
+    "functionName": 55061,
+    "file": "1522-3dd05f2665a3638c.js",
+    "offset": 21194,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/broadcast",
+    "method": "unresolved",
+    "functionName": 77519,
+    "file": "1840-9dd47c1d4798a52d.js",
+    "offset": 38003,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "{pathname}/api/broadcast",
+    "method": "unresolved",
+    "functionName": 77519,
+    "file": "1840-9dd47c1d4798a52d.js",
+    "offset": 38042,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "/api/v2/agent/oauth/google/authorize?projectId={param}",
+    "method": "unresolved",
+    "functionName": 26487,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 1347,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/action-items/{param}",
+    "method": "unresolved",
+    "functionName": 26487,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 9314,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/action-items/{param}",
+    "method": "unresolved",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 67642,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/action-items",
+    "method": "POST",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 69144,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/action-items/{param}",
+    "method": "PATCH",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 69699,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}/mode",
+    "method": "unresolved",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 70058,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}/mode",
+    "method": "PUT",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 70415,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/sessions{param}",
+    "method": "unresolved",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 70867,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/sessions/{param}/messages",
+    "method": "unresolved",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 71251,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/sessions/{param}",
+    "method": "POST",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 71860,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/sessions/{param}",
+    "method": "DELETE",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 72202,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/sessions/{param}",
+    "method": "PATCH",
+    "functionName": 51397,
+    "file": "2740-b9436574761a8b70.js",
+    "offset": 72483,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/helper/chat",
+    "method": "unresolved",
+    "functionName": 89259,
+    "file": "4362-504f1dc5ecce2f35.js",
+    "offset": 17984,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/stripe/validate-promo-code",
+    "method": "POST",
+    "functionName": 4678,
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 22612,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-portal-session",
+    "method": "POST",
+    "functionName": "handleSelectPlan",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 27625,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/update-subscription",
+    "method": "POST",
+    "functionName": "handleSelectPlan",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 29097,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-checkout-session",
+    "method": "POST",
+    "functionName": "handleConfirmPayment",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 30412,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-portal-session",
+    "method": "POST",
+    "functionName": "handleManageBilling",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 31381,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-setup-intent",
+    "method": "POST",
+    "functionName": "handleAlipayCheckout",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 32422,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/cancel-incomplete-subscription",
+    "method": "POST",
+    "functionName": "handleCancelIncompleteAndRetry",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 33423,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/membership/cancel-scheduled-change",
+    "method": "POST",
+    "functionName": "handleCancelScheduledChange",
+    "file": "4678-c86dc4c889eb72ae.js",
+    "offset": 34187,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/user/referral-summary",
+    "method": "unresolved",
+    "functionName": 27564,
+    "file": "4734-9f6185b23467495d.js",
+    "offset": 24746,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/heatmap{param}",
+    "method": "unresolved",
+    "functionName": 9934,
+    "file": "6791-7ad027a2b345565b.js",
+    "offset": 66774,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/overview/visibility",
+    "method": "POST",
+    "functionName": "getVisibility",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 610,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/overview/sources",
+    "method": "POST",
+    "functionName": "getSources",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 1047,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/overview/chats",
+    "method": "POST",
+    "functionName": "getChats",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 1469,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/overview/settings",
+    "method": "POST",
+    "functionName": "getSettings",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 1887,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/competitors{value}",
+    "method": "GET",
+    "functionName": "getCompetitors",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 2503,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/competitors",
+    "method": "POST",
+    "functionName": "createCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 2949,
+    "evidence": "static-literal",
+    "call": "fetchWithTimeout"
+  },
+  {
+    "path": "/api/v1/competitors/{param}/{param}",
+    "method": "PATCH",
+    "functionName": "updateCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 3360,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/competitors/{param}/{param}",
+    "method": "DELETE",
+    "functionName": "deleteCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 3759,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/providers{value}",
+    "method": "GET",
+    "functionName": "getProviders",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 4152,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/bootstrap/initialize",
+    "method": "POST",
+    "functionName": "initializeProject",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 4664,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/v1/bootstrap/prompt",
+    "method": "POST",
+    "functionName": "processPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 4947,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/v1/bootstrap/complete",
+    "method": "POST",
+    "functionName": "completeProject",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 5180,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/v1/prompt?{value}",
+    "method": "GET",
+    "functionName": "getPromptList",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 5847,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/prompt?{value}",
+    "method": "GET",
+    "functionName": "getEnrichedPromptList",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 6725,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/prompt",
+    "method": "POST",
+    "functionName": "createPromptV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 7168,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/prompt/{param}",
+    "method": "PATCH",
+    "functionName": "updatePromptV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 7578,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/prompt/{param}",
+    "method": "DELETE",
+    "functionName": "deletePromptV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 8060,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/tags",
+    "method": "POST",
+    "functionName": "createTags",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 8611,
+    "evidence": "static-literal",
+    "call": "fetchWithTimeout"
+  },
+  {
+    "path": "/api/v1/tags{value}",
+    "method": "GET",
+    "functionName": "getTagsV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 9120,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/tags/{param}",
+    "method": "PATCH",
+    "functionName": "updateTagV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 9509,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/tags/{param}",
+    "method": "DELETE",
+    "functionName": "deleteTagV1",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 9846,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/tags/{param}",
+    "method": "POST",
+    "functionName": "updateTags",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 10162,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/research",
+    "method": "POST",
+    "functionName": "searchResearch",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 10492,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/research?page=0&page_size=10{value}",
+    "method": "GET",
+    "functionName": "getSearchSuggestions",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 10920,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/research/{param}/topics",
+    "method": "GET",
+    "functionName": "getResearchTopics",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 11714,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/research/{param}",
+    "method": "GET",
+    "functionName": "getResearchDetail",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 12101,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/topics/{param}/prompts?limit={param}",
+    "method": "GET",
+    "functionName": "getTopicPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 12529,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v1/topics/searched-topic/{param}?prompts_limit={param}",
+    "method": "GET",
+    "functionName": "getSearchedTopic",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 12998,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "{param}/api/v1/prompts/add-to-tracking",
+    "method": "POST",
+    "functionName": "addPromptsToTracking",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 13537,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/supabase/users",
+    "method": "GET",
+    "functionName": "getUserProfile",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 13860,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/supabase/users",
+    "method": "PATCH",
+    "functionName": "updateUserProfile",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 14067,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/v2/projects{param}",
+    "method": "GET",
+    "functionName": "getProjects",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 14342,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects",
+    "method": "POST",
+    "functionName": "createProject",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 14547,
+    "evidence": "static-literal",
+    "call": "c"
+  },
+  {
+    "path": "/api/v2/projects/{param}",
+    "method": "GET",
+    "functionName": "getProjectById",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 14763,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}",
+    "method": "PUT",
+    "functionName": "updateProject",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 14972,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}",
+    "method": "DELETE",
+    "functionName": "deleteProject",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 15197,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/overview",
+    "method": "unresolved",
+    "functionName": "getOverview",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 15759,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/gsc/performance{value}",
+    "method": "unresolved",
+    "functionName": "getGSCPerformance",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 15842,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/gsc/queries{value}",
+    "method": "unresolved",
+    "functionName": "getGSCQueries",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 15952,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/gsc/pages{value}",
+    "method": "unresolved",
+    "functionName": "getGSCPages",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16066,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/gsc/devices{value}",
+    "method": "unresolved",
+    "functionName": "getGSCDevices",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16176,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/gsc/countries{value}",
+    "method": "unresolved",
+    "functionName": "getGSCCountries",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16280,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/keywords",
+    "method": "unresolved",
+    "functionName": "getKeywords",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16382,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/competitors",
+    "method": "unresolved",
+    "functionName": "getCompetitors",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16464,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/seo/{param}/site-info",
+    "method": "unresolved",
+    "functionName": "getSiteInfo",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 16544,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/sources/list?{value}",
+    "method": "GET",
+    "functionName": "getSourcesV2",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 23309,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/sources/table?{value}",
+    "method": "GET",
+    "functionName": "getSourcesTablesV2",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 25028,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/sources/detail",
+    "method": "POST",
+    "functionName": "getSourceDetail",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 25376,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/sources/chats",
+    "method": "POST",
+    "functionName": "getSourceChats",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 25798,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/sources/detail/summary",
+    "method": "unresolved",
+    "functionName": "getSourceDetailSummary",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 26213,
+    "evidence": "static-literal",
+    "call": "o"
+  },
+  {
+    "path": "/api/v2/sources/detail/urls",
+    "method": "unresolved",
+    "functionName": "getSourceDetailUrls",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 26296,
+    "evidence": "static-literal",
+    "call": "o"
+  },
+  {
+    "path": "/api/v2/sources/top-prompts",
+    "method": "unresolved",
+    "functionName": "getSourceTopPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 26376,
+    "evidence": "static-literal",
+    "call": "o"
+  },
+  {
+    "path": "/api/v2/sources/provider-breakdown",
+    "method": "unresolved",
+    "functionName": "getSourceProviderBreakdown",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 26461,
+    "evidence": "static-literal",
+    "call": "o"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/aliases?user_id={param}",
+    "method": "GET",
+    "functionName": "getAliases",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 26560,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/aliases",
+    "method": "POST",
+    "functionName": "addAlias",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 27021,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/aliases",
+    "method": "PATCH",
+    "functionName": "updateAlias",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 27458,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/aliases",
+    "method": "DELETE",
+    "functionName": "deleteAlias",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 27902,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/answers/export-batch",
+    "method": "POST",
+    "functionName": "getPromptAnswerExportBatch",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 28973,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompt/outputs/{param}?{value}",
+    "method": "GET",
+    "functionName": "getOutputDetail",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 29589,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/outputs/{param}/fanouts?{value}",
+    "method": "GET",
+    "functionName": "getOutputFanouts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 29948,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/fanouts?{value}",
+    "method": "GET",
+    "functionName": "getFanoutQueries",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 30621,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/fanouts/insights?{value}",
+    "method": "GET",
+    "functionName": "getFanoutInsights",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 30915,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/fanouts/prompts?{value}",
+    "method": "GET",
+    "functionName": "getFanoutPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 31427,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/overview/analysis/prompt",
+    "method": "POST",
+    "functionName": "getPromptAnalysis",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 31939,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/analytics?{value}",
+    "method": "GET",
+    "functionName": "getPromptAnalytics",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 33748,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/competitor-overview/aggregate",
+    "method": "POST",
+    "functionName": "getPromptCompetitorOverview",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 34239,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "/api/v2/prompt/competitor-overview",
+    "method": "POST",
+    "functionName": "getPromptCompetitorOverview",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 34286,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/chats?{value}",
+    "method": "GET",
+    "functionName": "getPromptChats",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 36303,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/domains?{value}",
+    "method": "GET",
+    "functionName": "getPromptDomains",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 38361,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/domains/{param}/citations?{value}",
+    "method": "GET",
+    "functionName": "getDomainCitations",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 39157,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/urls?{value}",
+    "method": "GET",
+    "functionName": "getPromptUrls",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 40393,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/domains/{param}/urls?{value}",
+    "method": "GET",
+    "functionName": "getDomainUrls",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 41178,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompt/{param}/domains/{param}/chats?{value}",
+    "method": "GET",
+    "functionName": "getDomainChats",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 41955,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/{param}/convert-to-active",
+    "method": "POST",
+    "functionName": "convertPromptToActive",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 42439,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/{param}/convert-to-inactive",
+    "method": "POST",
+    "functionName": "convertPromptToInactive",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 42893,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts/suggested",
+    "method": "POST",
+    "functionName": "generateSuggestedPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 43354,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompts/suggested/cleanup",
+    "method": "POST",
+    "functionName": "cleanupFailedSuggestedPrompts",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 43819,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompts/batch/assign-topic",
+    "method": "POST",
+    "functionName": "batchAssignTopic",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 44277,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/team-status",
+    "method": "POST",
+    "functionName": "getTeamStatus",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 44730,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/teams/me?user_id={param}",
+    "method": "GET",
+    "functionName": "getMyTeam",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 45124,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/with-projects",
+    "method": "GET",
+    "functionName": "getTeamsWithProjects",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 45695,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/members",
+    "method": "GET",
+    "functionName": "getMembers",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 46103,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/teams/{param}/members?user_id={param}",
+    "method": "GET",
+    "functionName": "getTeamMembers",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 46477,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/api-keys{value}",
+    "method": "GET",
+    "functionName": "getApiKeys",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 46956,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/api-keys",
+    "method": "POST",
+    "functionName": "createApiKey",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 47532,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/api-keys/{param}{value}",
+    "method": "PATCH",
+    "functionName": "updateApiKey",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 48187,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/api-keys/{param}/credits?{value}",
+    "method": "POST",
+    "functionName": "addApiKeyCredits",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 48701,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}/members",
+    "method": "POST",
+    "functionName": "addTeamMember",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 49162,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}/members/{param}",
+    "method": "PATCH",
+    "functionName": "updateTeamMember",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 49651,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/members/{param}",
+    "method": "DELETE",
+    "functionName": "removeMember",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 50167,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}/members/{param}?user_id={param}",
+    "method": "DELETE",
+    "functionName": "removeTeamMember",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 50585,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}/members/{param}/send-invite",
+    "method": "POST",
+    "functionName": "sendTeamInvite",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 51107,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/recording",
+    "method": "POST",
+    "functionName": "addRecording",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 51644,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/recording",
+    "method": "DELETE",
+    "functionName": "deleteRecording",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 52061,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/recording/list",
+    "method": "POST",
+    "functionName": "listRecording",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 52484,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompts/url-recommendations",
+    "method": "POST",
+    "functionName": "generateUrlRecommendations",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 52921,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompts/url-recommendations/status",
+    "method": "POST",
+    "functionName": "getUrlRecommendationStatus",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 53397,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions?{value}",
+    "method": "GET",
+    "functionName": "getActions",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 53992,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{param}/{param}",
+    "method": "PATCH",
+    "functionName": "transitionAction",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 54468,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/batch-ignore",
+    "method": "POST",
+    "functionName": "batchIgnore",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 55015,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions/batch-transition",
+    "method": "POST",
+    "functionName": "batchTransition",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 55518,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}?key=user_notes",
+    "method": "unresolved",
+    "functionName": "getUserNotes",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 56014,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}",
+    "method": "PUT",
+    "functionName": "saveUserNotes",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 56327,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/site-profile",
+    "method": "GET",
+    "functionName": "hasKnowledgeBase",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 56819,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/tasks/{param}",
+    "method": "GET",
+    "functionName": "getRecommendTaskStatus",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 57212,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/recommend",
+    "method": "POST",
+    "functionName": "recommendActions",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 57731,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions",
+    "method": "POST",
+    "functionName": "createAction",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 58234,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions/tasks/{param}",
+    "method": "GET",
+    "functionName": "getActionTaskStatus",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 58724,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/enrich",
+    "method": "POST",
+    "functionName": "enrichAction",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 59157,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions/{param}/discard-edit",
+    "method": "POST",
+    "functionName": "saveDiscardedEdit",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 59646,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{param}/discarded-edits",
+    "method": "unresolved",
+    "functionName": "listDiscardedEdits",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 60135,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}?key={param}",
+    "method": "GET",
+    "functionName": "getAgentSetting",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 60542,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}",
+    "method": "PUT",
+    "functionName": "saveAgentSetting",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 60964,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}/mode",
+    "method": "GET",
+    "functionName": "getApprovalMode",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 61405,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/{param}/mode",
+    "method": "PUT",
+    "functionName": "setApprovalMode",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 61794,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/test-{param}",
+    "method": "POST",
+    "functionName": "testCmsConnection",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 62256,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/settings/test-gsc",
+    "method": "POST",
+    "functionName": "testGscConnection",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 62749,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/site-profile",
+    "method": "GET",
+    "functionName": "getAgentSiteProfile",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 63170,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/site-profile",
+    "method": "PUT",
+    "functionName": "saveAgentSiteProfile",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 63580,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/site-profile/refresh",
+    "method": "POST",
+    "functionName": "refreshAgentSiteProfile",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 64048,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/keywords",
+    "method": "GET",
+    "functionName": "getAgentKeywords",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 64534,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/keywords",
+    "method": "PUT",
+    "functionName": "saveAgentKeywords",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 64929,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/competitors",
+    "method": "GET",
+    "functionName": "getAgentCompetitors",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 65379,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/project-data/{param}/competitors",
+    "method": "PUT",
+    "functionName": "saveAgentCompetitors",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 65822,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/default-brands",
+    "method": "GET",
+    "functionName": "getDefaultBrands",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 66574,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/default-brands",
+    "method": "PUT",
+    "functionName": "updateDefaultBrands",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 66906,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/table-settings",
+    "method": "unresolved",
+    "functionName": "getTableSettings",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 67419,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/settings/table-settings",
+    "method": "PUT",
+    "functionName": "updateTableSettings",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 67644,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/competitors/detail/{param}",
+    "method": "POST",
+    "functionName": 45404,
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 72268,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/competitors",
+    "method": "POST",
+    "functionName": "createCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 72896,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/competitors?{value}",
+    "method": "GET",
+    "functionName": "getCompetitorsV2",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 73553,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/competitors/track",
+    "method": "POST",
+    "functionName": "trackCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 73915,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/competitors/reject",
+    "method": "POST",
+    "functionName": "rejectCompetitor",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 74341,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/competitors/metrics/history",
+    "method": "POST",
+    "functionName": "populateCompetitorHistory",
+    "file": "6976-f79b9449050663d5.js",
+    "offset": 74688,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/growth/events",
+    "method": "POST",
+    "functionName": 88411,
+    "file": "7387-c9e45833b2f9f22c.js",
+    "offset": 26804,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/actions/{param}/enrich-content",
+    "method": "POST",
+    "functionName": 80810,
+    "file": "810-67ce4530b0994538.js",
+    "offset": 35960,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/growth/events",
+    "method": "POST",
+    "functionName": 88411,
+    "file": "8411-48bf2bcfc2ad4c6f.js",
+    "offset": 2083,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/teams/{param}/join-via-invite",
+    "method": "POST",
+    "functionName": 50648,
+    "file": "8543-84e6a7ead0799c95.js",
+    "offset": 1625,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/membership/overview?{value}",
+    "method": "unresolved",
+    "functionName": 64929,
+    "file": "8543-84e6a7ead0799c95.js",
+    "offset": 6265,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/chat",
+    "method": "unresolved",
+    "functionName": 42482,
+    "file": "9533-89ec4e2ed0c34bdd.js",
+    "offset": 118444,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "/api/early_access_features/?token={token}{param}",
+    "method": "GET",
+    "functionName": "getEarlyAccessFeatures",
+    "file": "f059c9b4-40a1fc470433946c.js",
+    "offset": 85284,
+    "evidence": "static-literal",
+    "call": "endpointFor"
+  },
+  {
+    "path": "/api/product_tours/?token={token}",
+    "method": "GET",
+    "functionName": "getProductTours",
+    "file": "f059c9b4-40a1fc470433946c.js",
+    "offset": 91876,
+    "evidence": "static-literal",
+    "call": "endpointFor"
+  },
+  {
+    "path": "/api/surveys/?token={token}",
+    "method": "GET",
+    "functionName": "getSurveys",
+    "file": "f059c9b4-40a1fc470433946c.js",
+    "offset": 104340,
+    "evidence": "static-literal",
+    "call": "endpointFor"
+  },
+  {
+    "path": "/api/web_experiments/?token={token}",
+    "method": "GET",
+    "functionName": "getWebExperiments",
+    "file": "f059c9b4-40a1fc470433946c.js",
+    "offset": 129417,
+    "evidence": "static-literal",
+    "call": "endpointFor"
+  },
+  {
+    "path": "/api/v2/teams/with-projects",
+    "method": "GET",
+    "functionName": 80738,
+    "file": "layout-5f99a845b1e2ea31.js",
+    "offset": 2987,
+    "evidence": "static-literal",
+    "call": "a"
+  },
+  {
+    "path": "/api/v2/team-status",
+    "method": "POST",
+    "functionName": 80738,
+    "file": "layout-5f99a845b1e2ea31.js",
+    "offset": 3286,
+    "evidence": "static-literal",
+    "call": "a"
+  },
+  {
+    "path": "/api/supabase/users",
+    "method": "PATCH",
+    "functionName": 80738,
+    "file": "layout-5f99a845b1e2ea31.js",
+    "offset": 5498,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/supabase/users",
+    "method": "GET",
+    "functionName": 80738,
+    "file": "layout-5f99a845b1e2ea31.js",
+    "offset": 5714,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/",
+    "method": "unresolved",
+    "functionName": 35310,
+    "file": "layout-87567244faa615b5.js",
+    "offset": 10429,
+    "evidence": "static-literal",
+    "call": "startsWith"
+  },
+  {
+    "path": "/api/auth/",
+    "method": "unresolved",
+    "functionName": 35310,
+    "file": "layout-87567244faa615b5.js",
+    "offset": 10453,
+    "evidence": "static-literal",
+    "call": "startsWith"
+  },
+  {
+    "path": "/api/v2/teams/{param}/join-via-invite",
+    "method": "POST",
+    "functionName": 50648,
+    "file": "layout-87567244faa615b5.js",
+    "offset": 13382,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}",
+    "method": "PATCH",
+    "functionName": 78232,
+    "file": "page-154cde610ff3e2ec.js",
+    "offset": 20623,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/public/teams/{param}/invite-status",
+    "method": "PATCH",
+    "functionName": 78232,
+    "file": "page-154cde610ff3e2ec.js",
+    "offset": 25853,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/teams/{param}/invite-settings",
+    "method": "PATCH",
+    "functionName": 78232,
+    "file": "page-154cde610ff3e2ec.js",
+    "offset": 26075,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/stripe/validate-promo-code",
+    "method": "POST",
+    "functionName": 65930,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 2566,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/cancel-incomplete-subscription",
+    "method": "POST",
+    "functionName": 65930,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 5790,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-portal-session",
+    "method": "POST",
+    "functionName": 65930,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 10720,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/stripe/create-credit-checkout",
+    "method": "POST",
+    "functionName": 65930,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 15341,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v1/membership/cancel-scheduled-change",
+    "method": "POST",
+    "functionName": 65930,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 23552,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/user/referral-summary",
+    "method": "unresolved",
+    "functionName": 27564,
+    "file": "page-29fab08604f6bf5f.js",
+    "offset": 43919,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/projects/{param}/report/share",
+    "method": "POST",
+    "functionName": 49465,
+    "file": "page-62c3a4ddabcdf725.js",
+    "offset": 49872,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/projects/{param}/report?{value}",
+    "method": "unresolved",
+    "functionName": 49465,
+    "file": "page-62c3a4ddabcdf725.js",
+    "offset": 50320,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{id}/enrich-forum",
+    "method": "POST",
+    "functionName": 73751,
+    "file": "page-71fbb00313532a40.js",
+    "offset": 163451,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/actions/{id}/enrich-content",
+    "method": "POST",
+    "functionName": 73751,
+    "file": "page-71fbb00313532a40.js",
+    "offset": 186573,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/projects/{id}/logo",
+    "method": "POST",
+    "functionName": 60237,
+    "file": "page-7b6972ae85684375.js",
+    "offset": 20646,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/growth/events",
+    "method": "POST",
+    "functionName": 88411,
+    "file": "page-acc021911c701ade.js",
+    "offset": 83473,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/topics?{param}",
+    "method": "POST",
+    "functionName": 94048,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 11192,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/topics",
+    "method": "POST",
+    "functionName": 94048,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 143455,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/heatmap/{param}/import-active",
+    "method": "POST",
+    "functionName": 94048,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 63756,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/prompts",
+    "method": "POST",
+    "functionName": 94048,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 143909,
+    "evidence": "static-literal",
+    "call": "fetch"
+  },
+  {
+    "path": "/api/v2/prompts/events?project_id={param}",
+    "method": "POST",
+    "functionName": 94048,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 226516,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/heatmap",
+    "method": "unresolved",
+    "functionName": 40818,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 242705,
+    "evidence": "static-literal",
+    "call": "push"
+  },
+  {
+    "path": "/api/heatmap/agent{param}",
+    "method": "unresolved",
+    "functionName": 40818,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 243366,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "{\"enabled\":true,\"fixturesEnabled\":true,\"pageSize\":50,\"serverMaxRows\":200000,\"serverMaxBytes\":250000000,\"serverPromptConcurrency\":8,\"bulkBackendBaseUrl\":\"http://127.0.0.1:8001/api/v2\"}",
+    "method": "unresolved",
+    "functionName": 19100,
+    "file": "page-da38d264c560c82d.js",
+    "offset": 260402,
+    "evidence": "static-literal",
+    "call": "parse"
+  },
+  {
+    "path": "/api/v2/competitors/events?project_id={param}",
+    "method": "unresolved",
+    "functionName": 19997,
+    "file": "page-e76649069b41e8a2.js",
+    "offset": 34138,
+    "evidence": "static-literal",
+    "call": "concat"
+  },
+  {
+    "path": "/api/v2/agent/chat",
+    "method": "POST",
+    "functionName": 61394,
+    "file": "page-fbcc3cd1317e130a.js",
+    "offset": 164887,
+    "evidence": "static-literal",
+    "call": ""
+  },
+  {
+    "path": "/api/v2/agent/sessions/{param}",
+    "method": "POST",
+    "functionName": 61394,
+    "file": "page-fbcc3cd1317e130a.js",
+    "offset": 174428,
+    "evidence": "static-literal",
+    "call": "concat"
+  }
+]

@@ -1,0 +1,575 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/growth/events",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/heatmap/{id}",
+    "queryKeys": [
+      "metric"
+    ],
+    "statuses": [
+      404
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "queryKeys": [
+      "team_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/supabase/users",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/competitors",
+    "queryKeys": [
+      "project_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/overview/visibility",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/actions",
+    "queryKeys": [
+      "projectId",
+      "status"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "overview",
+      "sources",
+      "actions"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/actions/recommend",
+    "queryKeys": [],
+    "statuses": [
+      202
+    ],
+    "pages": [
+      "overview",
+      "actions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/actions/tasks/{id}",
+    "queryKeys": [],
+    "statuses": [],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/action-items/{id}",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/project-data/{id}/site-profile",
+    "queryKeys": [],
+    "statuses": [
+      404
+    ],
+    "pages": [
+      "agent",
+      "actions",
+      "project"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/sessions",
+    "queryKeys": [
+      "projectId"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/settings/{id}",
+    "queryKeys": [
+      "key"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "actions"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/settings/{id}/mode",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/api-keys",
+    "queryKeys": [
+      "team_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "members"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors",
+    "queryKeys": [
+      "duration_days",
+      "project_id",
+      "state"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "overview",
+      "competitors",
+      "project"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors/events",
+    "queryKeys": [
+      "project_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "competitors"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/membership/overview",
+    "queryKeys": [
+      "project_id",
+      "team_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/overview/analysis/prompt",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "overview",
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "queryKeys": [
+      "team_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/aliases",
+    "queryKeys": [
+      "user_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "project"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/default-brands",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/table-settings",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/prompt/competitor-overview/aggregate",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/prompts/events",
+    "queryKeys": [
+      "project_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/prompts/fanouts",
+    "queryKeys": [
+      "duration_days",
+      "page",
+      "page_size",
+      "project_id",
+      "sort_by",
+      "sort_order"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "fanouts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/prompts/fanouts/insights",
+    "queryKeys": [
+      "duration_days",
+      "project_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "fanouts"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v2/recording/list",
+    "queryKeys": [],
+    "statuses": [],
+    "pages": [
+      "recording"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/seo/{id}/overview",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "overview"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "queryKeys": [
+      "duration_days",
+      "page",
+      "page_size",
+      "project_id",
+      "table_scope"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/{id}/members",
+    "queryKeys": [
+      "user_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "members",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/me",
+    "queryKeys": [
+      "user_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/with-projects",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/topics",
+    "queryKeys": [
+      "page",
+      "page_size",
+      "project_id"
+    ],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "prompts"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "queryKeys": [],
+    "statuses": [
+      200
+    ],
+    "pages": [
+      "agent",
+      "overview",
+      "prompts",
+      "recording",
+      "sources",
+      "fanouts",
+      "actions",
+      "competitors",
+      "members",
+      "project",
+      "billing"
+    ]
+  }
+]

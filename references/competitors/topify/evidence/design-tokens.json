@@ -1,0 +1,26 @@
+{
+  "viewport": {
+    "width": 1864,
+    "height": 977,
+    "dpr": 2
+  },
+  "tokens": {
+    "--sidebar-width": "",
+    "--sidebar-width-icon": "",
+    "--background": "#fff",
+    "--foreground": "#0a0a0a",
+    "--muted": "#f5f5f5",
+    "--border": "#e5e5e5",
+    "--primary": "#171717",
+    "--radius": "8px",
+    "--sidebar-background": ""
+  },
+  "font": "Geist, Inter, \"PingFang SC\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", system-ui, sans-serif",
+  "sidebar": [],
+  "header": [
+    {
+      "height": 68,
+      "padding": "0px"
+    }
+  ]
+}

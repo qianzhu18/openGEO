@@ -1,0 +1,30 @@
+services:
+  niubistar-geo:
+    image: ghcr.io/albert-weasker/niubigeo:v0.3.2
+    build: .
+    ports:
+      - "127.0.0.1:${PORT:-8787}:8787"
+    environment:
+      PORT: "8787"
+      PRODUCT_DATA_DIR: /app/data/product-v2
+      MONITORING_DATA_DIR: /app/data
+      NIUBIGEO_VIDEO_ADVISOR_ENABLED: "${NIUBIGEO_VIDEO_ADVISOR_ENABLED:-true}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      OPENROUTER_KEY: "${OPENROUTER_KEY:-}"
+    volumes:
+      - ./data:/app/data
+
+  niubigeo-worker:
+    image: ghcr.io/albert-weasker/niubigeo:v0.3.2
+    build: .
+    profiles: [monitoring]
+    command: ["node", "dist/src/product/scheduling/schedule-worker.js", "60"]
+    healthcheck:
+      disable: true
+    environment:
+      PRODUCT_DATA_DIR: /app/data/product-v2
+      MONITORING_DATA_DIR: /app/data
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      OPENROUTER_KEY: "${OPENROUTER_KEY:-}"
+    volumes:
+      - ./data:/app/data

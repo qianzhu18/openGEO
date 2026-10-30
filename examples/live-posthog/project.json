@@ -1,0 +1,144 @@
+{
+  "id": "project-81fcdda5-07f4-471b-9020-747032033a63",
+  "name": "PostHog · 新 API 案例",
+  "brand": "PostHog",
+  "aliases": [
+    "Posthog"
+  ],
+  "industry": "产品分析与用户行为分析",
+  "domain": "posthog.com",
+  "description": "2026-10-29 经 OpenRouter/Qwen 取得的未联网 API 回答；可直接回放，也可重新配置模型实测。",
+  "origin": "manual",
+  "goal": "回放已保存的实际 API 观察，检查策略与内容的依据；与历史归档分别解释。",
+  "sources": [
+    {
+      "id": "user-brief",
+      "title": "PostHog 官网核对资料（2026-10-29）",
+      "text": "产品能力：产品分析、会话回放、功能开关和实验。\n产品数据：官网说明支持采集、存储和查询产品与公司数据。\n公开资料来源：https://posthog.com/，于 2026-10-29 核对。",
+      "url": "https://posthog.com/"
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-1",
+      "label": "产品能力",
+      "value": "产品分析、会话回放、功能开关和实验。",
+      "status": "confirmed",
+      "sourceIds": [
+        "user-brief"
+      ],
+      "confirmation": {
+        "sourceId": "user-brief",
+        "at": "2026-10-29T12:07:31.464Z"
+      }
+    },
+    {
+      "id": "claim-2",
+      "label": "产品数据",
+      "value": "官网说明支持采集、存储和查询产品与公司数据。",
+      "status": "confirmed",
+      "sourceIds": [
+        "user-brief"
+      ],
+      "confirmation": {
+        "sourceId": "user-brief",
+        "at": "2026-10-29T12:07:31.467Z"
+      }
+    },
+    {
+      "id": "claim-3",
+      "label": "公开资料来源",
+      "value": "https：//posthog.com/，于 2026-10-29 核对。",
+      "status": "confirmed",
+      "sourceIds": [
+        "user-brief"
+      ],
+      "confirmation": {
+        "sourceId": "user-brief",
+        "at": "2026-10-29T12:07:31.469Z"
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "live-q1",
+      "text": "小型软件团队可以考虑哪些开源的产品分析工具？用中文简要说明适用场景和局限。",
+      "intent": "用户确认的 API 采样问题",
+      "branded": false,
+      "origin": "本轮确认"
+    },
+    {
+      "id": "live-q2",
+      "text": "PostHog 有哪些产品能力，适合哪些使用场景？请用中文简要说明限制，并列出已知的公开来源。",
+      "intent": "用户确认的 API 采样问题",
+      "branded": true,
+      "origin": "本轮确认"
+    }
+  ],
+  "queryVersion": 2,
+  "samples": [
+    {
+      "id": "99bf17a0-499a-4718-bb97-151741a602f7",
+      "queryId": "live-q1",
+      "question": "小型软件团队可以考虑哪些开源的产品分析工具？用中文简要说明适用场景和局限。",
+      "intent": "用户确认的 API 采样问题",
+      "branded": false,
+      "origin": "api",
+      "model": "openrouter/qwen/qwen3.5-flash-02-23",
+      "observedAt": "2026-10-29T12:16:55.099Z",
+      "runGroup": "c0a06464-f98b-4fdc-9ed8-fd3b9bc5f82a",
+      "protocolId": "api-question/v1;search=false",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "对于小型软件团队而言，选择产品分析工具的核心原则是：**部署成本低、上手快、数据隐私可控**，同时避免过度复杂的配置。以下是几款适合小型团队的开源产品分析工具及其适用场景与局限：\n\n### 1. PostHog\nPostHog 是目前最流行的全功能开源产品分析平台之一，集成了事件追踪、用户行为分析、A/B 测试和特征开关等功能。\n\n*   **适用场景**：\n    *   需要“一站式”解决方案的团队（不仅看数据，还做实验）。\n    *   希望快速搭建内部仪表盘，且对数据隐私有较高要求（可私有化部署）。\n    *   技术栈较新，愿意使用现代前端框架（如 React/Vue）进行集成。\n*   **局限**：\n    *   **资源消耗较大**：相比轻量级工具，其后端架构较重，对服务器内存和 CPU 有一定要求。\n    *   **学习曲线**：功能丰富导致配置项较多，初期需要一定时间熟悉其逻辑。\n\n### 2. Matomo (原 Piwik)\nMatomo 是 Google Analytics 最著名的开源替代品，专注于网页流量分析和用户行为追踪。\n\n*   **适用场景**：\n    *   主要关注网站/博客流量、页面访问路径和 SEO 数据的团队。\n    *   需要完全符合 GDPR 等严格数据合规要求的业务。\n    *   团队缺乏开发能力，更倾向于通过插件市场扩展功能。\n*   **局限**：\n    *   **移动端支持较弱**：虽然支持 App 分析，但原生体验不如专门针对移动端的工具，配置相对繁琐。\n    *   **性能瓶颈**：在数据量极大时，数据库查询可能变慢，需要较好的硬件优化或分库策略。\n\n### 3. Redash / Metabase\n这两款工具本身不是直接采集数据的“埋点工具”，而是**数据可视化与 BI 工具**。它们通常配合数据库（如 PostgreSQL, MySQL）使用，将业务数据转化为图表。\n\n*   **适用场景**：\n    *   已有自建数据库，只需将业务数据（如订单、注册数）可视化的团队。\n    *   不需要实时行为追踪，更关注宏观业务指标（KPI）和报表生成的团队。\n    *   团队成员具备 SQL 基础，希望通过自定义查询灵活分析数据。\n*   **局限**：\n    *   **无自动埋点**：无法自动记录用户点击、滚动等行为，必须依赖开发人员手动将数据写入数据库。\n    *   **实时性差**：通常基于定时同步的数据，难以做到秒级的用户行为回放。\n\n### 4. Countly\nCountly 是一款专注于移动应用和 Web 应用的开源分析平台，提供实时数据流和用户分群功能。\n\n*   **适用场景**：\n    *   拥有独立 iOS/Android 移动应用，且需要深度分析用户留存、崩溃率和会话时长的团队。\n    *   需要免费版本即可满足基本需求，且能接受社区版功能限制的小型创业公司。\n*   **局限**：\n    *   **社区版功能受限**：高级功能（如 A/B 测试、高级归因）通常需要付费升级企业版。\n    *   **部署复杂度**：相比纯静态工具，Countly 依赖多个微服务组件，运维部署难度略高于简单脚本。\n\n### 💡 选型建议\n*   如果团队**有开发能力**且追求**功能全面**（含 A/B 测试），首选 **PostHog**。\n*   如果主要关注**Web 流量**且重视**合规**，选择 **Matomo**。\n*   如果数据已存在**数据库中**，只需**看报表**，选择 **Metabase**。\n*   如果是**移动应用为主**且预算有限，尝试 **Countly**。\n\n**注意**：使用开源工具意味着团队需要自行负责服务器的维护、备份和安全更新，这可能会占用部分研发资源。",
+      "citations": [],
+      "costUsd": 0.000225355,
+      "latencyMs": 6383
+    },
+    {
+      "id": "a789e2eb-e36e-4448-8d5e-fa06f38c36af",
+      "queryId": "live-q2",
+      "question": "PostHog 有哪些产品能力，适合哪些使用场景？请用中文简要说明限制，并列出已知的公开来源。",
+      "intent": "用户确认的 API 采样问题",
+      "branded": true,
+      "origin": "api",
+      "model": "openrouter/qwen/qwen3.5-flash-02-23",
+      "observedAt": "2026-10-29T12:17:00.789Z",
+      "runGroup": "c0a06464-f98b-4fdc-9ed8-fd3b9bc5f82a",
+      "protocolId": "api-question/v1;search=false",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "PostHog 是一个全栈产品分析平台，旨在替代多个独立工具（如 Mixpanel、Amplitude、Segment、Hotjar 等），提供从数据收集到用户行为分析的完整闭环。以下是其核心产品能力及适用场景的简要说明：\n\n### 核心产品能力与适用场景\n\n1.  **产品分析 (Product Analytics)**\n    *   **能力**：提供事件追踪、漏斗分析、留存分析、路径分析和 Cohort（细分群体）分析。支持无代码查询构建器。\n    *   **适用场景**：产品经理和增长团队需要深入理解用户如何使用产品，识别流失点，优化转化漏斗，以及验证新功能对业务指标的影响。\n\n2.  **功能发布与实验 (Feature Flags & A/B Testing)**\n    *   **能力**：允许通过代码或 UI 动态控制功能的可见性，支持多变量测试（A/B/n 测试）和灰度发布。\n    *   **适用场景**：开发团队需要在不重新部署代码的情况下快速上线/下线功能；产品团队需要科学地对比不同设计方案的效果以降低风险。\n\n3.  **会话回放 (Session Replay)**\n    *   **能力**：录制用户在网站或应用上的操作过程（点击、滚动、输入等），并支持按事件过滤回放。\n    *   **适用场景**：客服和 UX 设计师用于复现用户遇到的 Bug，直观了解用户在使用过程中的困惑点或摩擦点。\n\n4.  **自动标注 (Autocapture) 与数据管道**\n    *   **能力**：自动捕获前端交互事件，无需手动埋点；支持将数据同步到外部仓库（如 Snowflake, BigQuery）。\n    *   **适用场景**：希望快速启动分析且缺乏工程资源进行复杂埋点的初创团队；或者需要将原始数据导出进行自定义深度挖掘的数据工程师。\n\n5.  **开源与自托管 (Open Source & Self-hosting)**\n    *   **能力**：提供完整的 Docker 镜像，支持私有化部署，数据完全由用户掌控。\n    *   **适用场景**：对数据隐私合规（如 GDPR、HIPAA）有严格要求的企业，或希望避免供应商锁定（Vendor Lock-in）的组织。\n\n---\n\n### 限制说明\n\n尽管 PostHog 功能强大，但在以下方面存在一定限制：\n\n*   **性能与规模**：虽然支持大规模数据，但相比专门针对超大规模企业设计的商业 BI 工具（如 Tableau 或专门的云原生数仓方案），在极海量数据下的实时查询延迟可能略高，且自托管版本需要自行维护基础设施的扩展性。\n*   **生态集成深度**：虽然支持主流 SDK 和 Webhooks，但在某些垂直行业特定的第三方营销自动化或 CRM 系统的原生深度集成上，可能不如 Segment 或 Salesforce 生态丰富。\n*   **学习曲线**：由于集成了过多功能（分析 + 实验 + 回放 + 特征开关），对于仅需单一功能（如仅做 A/B 测试）的团队来说，界面和配置逻辑可能显得过于复杂。\n*   **高级可视化**：内置的图表功能足够日常使用，但在高度定制化报表和复杂的交互式仪表盘方面，不如专业 BI 工具灵活。\n\n---\n\n### 已知公开来源\n\n以下信息基于 PostHog 官方文档及社区公开资料整理：\n\n1.  **PostHog 官方网站**：[https://posthog.com](https://posthog.com)\n    *   包含最新的产品功能介绍、定价页面及案例研究。\n2.  **PostHog 官方文档**：[https://posthog.com/docs](https://posthog.com/docs)\n    *   详细的技术实现指南、API 参考及自托管部署教程。\n3.  **GitHub 仓库**：[https://github.com/PostHog/posthog](https://posthog.com/docs)\n    *   开源代码库，包含架构设计、贡献指南及 Issue 讨论，是了解其技术边界的重要来源。\n4.  **PostHog Blog**：[https://posthog.com/blog](https://posthog.com/blog)\n    *   发布关于产品更新、数据分析方法论及行业趋势的文章。",
+      "citations": [
+        {
+          "url": "https://posthog.com/",
+          "kind": "answer_url",
+          "source": "answer_text_url",
+          "integrity": "unverified"
+        },
+        {
+          "url": "https://posthog.com/docs",
+          "kind": "answer_url",
+          "source": "answer_text_url",
+          "integrity": "unverified"
+        },
+        {
+          "url": "https://github.com/PostHog/posthog",
+          "kind": "answer_url",
+          "source": "answer_text_url",
+          "integrity": "unverified"
+        },
+        {
+          "url": "https://posthog.com/blog",
+          "kind": "answer_url",
+          "source": "answer_text_url",
+          "integrity": "unverified"
+        }
+      ],
+      "costUsd": 0.00023569,
+      "latencyMs": 5684
+    }
+  ],
+  "createdAt": "2026-10-29T12:07:31.459Z",
+  "updatedAt": "2026-10-29T12:07:31.469Z"
+}

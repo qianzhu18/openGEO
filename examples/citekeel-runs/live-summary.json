@@ -1,0 +1,156 @@
+{
+  "executedAt": "2026-10-29T12:18:51.413Z",
+  "mode": "real-api-offline-baseline",
+  "provider": "openrouter",
+  "model": "qwen/qwen3.5-flash-02-23",
+  "webSearch": false,
+  "finalRun": {
+    "id": "c0a06464-f98b-4fdc-9ed8-fd3b9bc5f82a",
+    "samples": 2,
+    "collected": 2,
+    "analyzed": 2,
+    "actions": 3,
+    "draftGenerator": "llm",
+    "providerCitations": 0,
+    "answerUrls": 4,
+    "calls": 4,
+    "knownCostUsd": 0.000913965
+  },
+  "attempts": [
+    {
+      "id": "47c28a71-6a9e-470f-a71a-156cd8152545",
+      "model": "openai/gpt-4.1-mini",
+      "status": "needs_review",
+      "calls": 1,
+      "knownCostUsd": 0,
+      "unknownCostCalls": 1,
+      "callStates": [
+        {
+          "purpose": "measurement",
+          "status": "failed",
+          "error": "This model is not available in your region. (HTTP 403)"
+        }
+      ],
+      "limitations": [
+        "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+        "引用项存在不证明来源正确，也不证明导致了推荐。",
+        "模型策略未采用：上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用",
+        "模型内容不可用，使用带事实引用的本地草稿：上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用",
+        "API 回答不等价于消费级网页客户端结果。"
+      ]
+    },
+    {
+      "id": "83d605eb-8eff-4970-b372-ba175f97abc9",
+      "model": "qwen/qwen3.5-flash-02-23",
+      "status": "needs_review",
+      "calls": 4,
+      "knownCostUsd": 0.00152009,
+      "unknownCostCalls": 0,
+      "callStates": [
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "length"
+        },
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "length"
+        },
+        {
+          "purpose": "strategy",
+          "status": "completed",
+          "finishReason": "length"
+        },
+        {
+          "purpose": "content",
+          "status": "completed",
+          "finishReason": "length"
+        }
+      ],
+      "limitations": [
+        "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+        "引用项存在不证明来源正确，也不证明导致了推荐。",
+        "模型策略未采用：Unexpected token 'T', \"Thinking P\"... is not valid JSON",
+        "API 回答不等价于消费级网页客户端结果。",
+        "此轮存在截断输出，已追加派生分析修订；不将其作为有效基线。"
+      ]
+    },
+    {
+      "id": "a2599808-e5db-4e3c-ac88-507fe113f440",
+      "model": "qwen/qwen3.5-flash-02-23",
+      "status": "completed",
+      "calls": 4,
+      "knownCostUsd": 0.00099073,
+      "unknownCostCalls": 0,
+      "callStates": [
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "strategy",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "content",
+          "status": "completed",
+          "finishReason": "stop"
+        }
+      ],
+      "limitations": [
+        "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+        "引用项存在不证明来源正确，也不证明导致了推荐。",
+        "模型内容不可用，使用带事实引用的本地草稿：草稿含有未确认或不存在的事实引用",
+        "API 回答不等价于消费级网页客户端结果。"
+      ]
+    },
+    {
+      "id": "c0a06464-f98b-4fdc-9ed8-fd3b9bc5f82a",
+      "model": "qwen/qwen3.5-flash-02-23",
+      "status": "completed",
+      "calls": 4,
+      "knownCostUsd": 0.000913965,
+      "unknownCostCalls": 0,
+      "callStates": [
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "measurement",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "strategy",
+          "status": "completed",
+          "finishReason": "stop"
+        },
+        {
+          "purpose": "content",
+          "status": "completed",
+          "finishReason": "stop"
+        }
+      ],
+      "limitations": [
+        "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+        "引用项存在不证明来源正确，也不证明导致了推荐。",
+        "API 回答不等价于消费级网页客户端结果。"
+      ]
+    }
+  ],
+  "limitations": [
+    "Two questions only; no online search or optimization intervention.",
+    "OpenAI route returned region HTTP 403.",
+    "Truncated output and invalid fact references were preserved and rejected; repaired behavior was verified in the final run."
+  ]
+}

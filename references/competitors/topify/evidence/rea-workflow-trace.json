@@ -1,0 +1,31 @@
+{
+  "evidenceId": "ev_c8e6de92b261eb9b07ef8a86fe37f1f5c00be8e253d56075e2d6524953fe94b4",
+  "sourceEvidenceId": "ev_e3f599f75412f49e883ea42143d489bd3c511b77ca925cd72a265bda3d4e3cf8",
+  "sourceGraphId": "jag_9c52d43c6766d4241aba16caf23e7c9d8c32ff094b53ca0766dea6a05a1657db",
+  "seed": {
+    "kind": "module",
+    "value": "1522-3dd05f2665a3638c.js",
+    "match": "contains",
+    "case_sensitive": false
+  },
+  "direction": "both",
+  "summary": {
+    "matched_seeds": 6,
+    "traced_nodes": 311,
+    "traced_edges": 363,
+    "terminal_paths": 94,
+    "native_handoffs": 0,
+    "observed_facts": 327,
+    "inferred_facts": 302,
+    "unknown_facts": 0,
+    "unavailable_facts": 80
+  },
+  "limitations": [
+    "Artifact identity is unavailable for this observation.",
+    "A trace reports graph relationships, not proof that code executed or that a feature is reachable in every state.",
+    "Native handoffs never open a binary or invoke a provider automatically; snapshot reuse remains provider/profile/target exact.",
+    "Static, native, passive-runtime, inferred, and unknown facts retain their original authority in the returned graph.",
+    "The source application graph is incomplete; unmatched seeds and frontiers remain unknown."
+  ],
+  "outputSha256": "0de3333cb644628154975dcdcea1868bed2e2c148c1c77be76d85fae63a6e2e0"
+}

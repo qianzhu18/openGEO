@@ -1,0 +1,38 @@
+{
+  "name": "opengeo-engine",
+  "version": "0.2.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "opengeo": "tsx src/opengeo/cli.ts",
+    "dev": "tsx src/citekeel/server.ts",
+    "start": "tsx src/citekeel/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test test/*.test.ts",
+    "check": "npm run build && npm test",
+    "demo": "tsx src/citekeel/cli.ts demo",
+    "case": "tsx src/citekeel/cli.ts",
+    "upstream": "cd vendor/niubigeo && tsx src/product/product-server.ts",
+    "check:upstream": "npm --prefix vendor/niubigeo ci --no-audit --no-fund && npm --prefix vendor/niubigeo run self-check",
+    "test:browser": "playwright test --config playwright.config.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "cron-parser": "^5.10.0",
+    "linkify-it": "^6.1.0",
+    "marked": "^18.0.11",
+    "nodemailer": "^10.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.3.0",
+    "@types/nodemailer": "^8.0.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "description": "Traceable GEO delivery workflows, evidence, and reproducible self-improvement cycles"
+}

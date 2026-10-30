@@ -1,0 +1,52 @@
+{
+  "run": "rea-prompts-slice",
+  "date": "2026-10-30",
+  "tool": "rea@6.8.0",
+  "status": "completed",
+  "evidenceId": "ev_f7e9985ba3df0902754167130683bfb1d19e1311cb3cce59381157271fcc4829",
+  "command": "rea analyze-javascript-application /private/tmp/topify-prompts-slice --format json",
+  "target": {
+    "name": "topify-prompts-slice",
+    "sha256": "cfdb7f49c151c40f9b8094a317f29e67cfdf465a4dedae0cea1cf94345918f56",
+    "files": [
+      { "path": "chunk-30.js", "sha256": "b815a506b45ed06b98b01cb33bf1a8b4744bfc85facdc0b83b610e39ac74e911" },
+      { "path": "chunk-35.js", "sha256": "36cdb14e13b4f5772ac12afbb9c09503a695874a8f5a847adc85bfba628945b3" }
+    ],
+    "note": "两段公开分发的 Topify 客户端脚本，选中依据是它们包含 Prompts 表格常量与客户端请求方法。"
+  },
+  "statistics": {
+    "relevant_files": 2,
+    "text_bytes_read": 180858,
+    "parsed_javascript_files": 2,
+    "parse_failures": 0,
+    "visited_ast_nodes": 44680,
+    "modules": 22,
+    "findings": 224,
+    "semantic_nodes": 26822,
+    "semantic_relations": 38393
+  },
+  "confirmed": [
+    {
+      "value": "tracking_prompts",
+      "kind": "string literal",
+      "module": "chunk-35.js",
+      "line": 1,
+      "column": 96143,
+      "meaning": "Prompts 表格设置的表 id，与 /api/v2/projects/{id}/settings/table-settings 的 tables 键一致。"
+    }
+  ],
+  "limitations": [
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ],
+  "hostFix": {
+    "problem": "macOS CommandLineTools 的 SwiftBridging module 在 module.modulemap 与 bridging.modulemap 中重复定义，REA 的 Darwin 进程所有权辅助程序编译失败。",
+    "method": "VFS overlay 把重复的旧 modulemap 在本次编译视图中指向临时空文件；通过 REA_DARWIN_SWIFTC_PATH 传入包装后的 swiftc，并设置 SDKROOT=MacOSX15.5.sdk。",
+    "files": ["/tmp/opengeo-empty-modulemap", "/tmp/opengeo-swift-overlay.json", "/tmp/rea-swiftc"],
+    "note": "未删除或修改系统文件，也未关闭 REA 的进程所有权检查。"
+  }
+}

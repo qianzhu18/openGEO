@@ -1,0 +1,2247 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "actions",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/actions",
+    "status": 200,
+    "page": "actions",
+    "bodyShape": {
+      "data": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/settings/{id}",
+    "status": 200,
+    "page": "actions",
+    "bodyShape": {
+      "projectId": "string",
+      "key": "string",
+      "value": "null"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "actions",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "actions",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/sessions",
+    "status": 200,
+    "page": "agent",
+    "bodyShape": {
+      "sessions": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/action-items/{id}",
+    "status": 200,
+    "page": "agent",
+    "bodyShape": {
+      "items": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/agent/settings/{id}",
+    "status": 200,
+    "page": "agent",
+    "bodyShape": {
+      "projectId": "string",
+      "key": "string",
+      "value": "null"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "agent",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "agent",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/membership/overview",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "team_id": "string",
+        "membership_status": "string",
+        "plan_label": "string",
+        "trial_start_time": "string",
+        "trial_end_time": "string",
+        "plan_start_time": "null",
+        "plan_end_time": "null",
+        "stripe_customer_id": "string",
+        "stripe_subscription_id": "string",
+        "stripe_subscription_status": "string",
+        "stripe_current_period_end": "string",
+        "stripe_price_id": "string",
+        "plan_key": "string",
+        "cancel_at_period_end": "boolean",
+        "stripe_trial_end": "string",
+        "membership_updated_at": "string",
+        "scheduled_plan_key": "null",
+        "scheduled_price_id": "null",
+        "scheduled_effective_at": "null",
+        "grace_days_left": "null",
+        "limits": {
+          "prompt_total": "number",
+          "seat": "null",
+          "research_credit_monthly": "number",
+          "generation_monthly": "number",
+          "credit_monthly": "number"
+        },
+        "usage": {
+          "prompt_total": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "null",
+            "period_end": "null"
+          },
+          "research_credit_monthly": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "string",
+            "period_end": "string"
+          },
+          "generation_monthly": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "string",
+            "period_end": "string"
+          },
+          "seats_used": "number"
+        },
+        "credit_balance": {
+          "balance": "number",
+          "available": "number",
+          "lifetime_spent": "number"
+        },
+        "role": "string",
+        "allowed_project_ids": "null"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/supabase/users",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "id": "string",
+      "email": "string",
+      "name": "string",
+      "company": "null",
+      "theme": "string",
+      "team_id": "string",
+      "has_completed_tour": "boolean",
+      "referred_by_user_id": "null",
+      "first_paid_at": "null"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/me",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "team_id": "string",
+        "name": "string",
+        "created_by": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "teams": {
+          "type": "array",
+          "items": {
+            "team_id": "string",
+            "name": "string",
+            "created_by": "string",
+            "created_at": "string",
+            "updated_at": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "code": "string",
+        "share_link": "string",
+        "balance_cents": "number",
+        "pending_cents": "number",
+        "lifetime_earned_cents": "number",
+        "lifetime_applied_cents": "number",
+        "history": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/default-brands",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "default_brand_ids": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "max_default_brands": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "code": "string",
+        "share_link": "string",
+        "balance_cents": "number",
+        "pending_cents": "number",
+        "lifetime_earned_cents": "number",
+        "lifetime_applied_cents": "number",
+        "history": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/{id}/members",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "email": "string",
+          "name": "string",
+          "user_id": "string",
+          "joined_at": "string",
+          "role": "string",
+          "allowed_project_ids": "null"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "billing",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors",
+    "status": 200,
+    "page": "competitors",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "recommendation_rank_enabled": "boolean",
+        "active_competitors": {
+          "type": "array",
+          "items": {
+            "competitor_id": "string",
+            "project_id": "string",
+            "name": "string",
+            "website": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            },
+            "state": "string",
+            "is_our_own_brand": "boolean",
+            "metrics": {
+              "visibility": "number",
+              "sentiment": "number",
+              "position": "number",
+              "sov": "number",
+              "mention_count": "null",
+              "days_with_data": "number",
+              "period": "string",
+              "visibility_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sentiment_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "position_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sov_delta": {
+                "value": "null",
+                "direction": "string"
+              }
+            }
+          }
+        },
+        "pending_competitors": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "total_active": "number",
+        "limit": "number",
+        "pipeline_status": "string"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors",
+    "status": 200,
+    "page": "competitors",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "recommendation_rank_enabled": "boolean",
+        "active_competitors": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "pending_competitors": {
+          "type": "array",
+          "items": {
+            "competitor_id": "string",
+            "project_id": "string",
+            "name": "string",
+            "website": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            },
+            "state": "string",
+            "metrics": {
+              "mention_count": "number"
+            }
+          }
+        },
+        "total_active": "number",
+        "limit": "number",
+        "pipeline_status": "string"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "competitors",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "competitors",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "fanouts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/prompts/fanouts",
+    "status": 200,
+    "page": "fanouts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "items": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "distinct_query_count": "number",
+        "total_occurrences": "number",
+        "total_items": "number",
+        "page": "number",
+        "page_size": "number",
+        "total_pages": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/prompts/fanouts/insights",
+    "status": 200,
+    "page": "fanouts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "brand_mentions": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "common_phrases": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "fanouts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "fanouts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/{id}/members",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "email": "string",
+          "name": "string",
+          "user_id": "string",
+          "joined_at": "string",
+          "role": "string",
+          "allowed_project_ids": "null"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/api-keys",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/default-brands",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "default_brand_ids": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "max_default_brands": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "code": "string",
+        "share_link": "string",
+        "balance_cents": "number",
+        "pending_cents": "number",
+        "lifetime_earned_cents": "number",
+        "lifetime_applied_cents": "number",
+        "history": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/me",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "team_id": "string",
+        "name": "string",
+        "created_by": "string",
+        "created_at": "string",
+        "updated_at": "string",
+        "teams": {
+          "type": "array",
+          "items": {
+            "team_id": "string",
+            "name": "string",
+            "created_by": "string",
+            "created_at": "string",
+            "updated_at": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/with-projects",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "teams": {
+          "type": "array",
+          "items": {
+            "team_id": "string",
+            "name": "string",
+            "created_by": "string",
+            "created_at": "string",
+            "updated_at": "string",
+            "role": "string",
+            "projects": {
+              "type": "array",
+              "items": {
+                "id": "string",
+                "name": "string",
+                "brandName": "string",
+                "websiteUrl": "string",
+                "ownerId": "string",
+                "status": "string",
+                "lifecycleStatus": "string",
+                "updatedAt": "number",
+                "createdAt": "number",
+                "location": "string",
+                "ownerEmail": "string",
+                "bootstrapData": {
+                  "status": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "id": "string",
+        "name": "string",
+        "brandName": "string",
+        "websiteUrl": "string",
+        "ownerId": "string",
+        "status": "string",
+        "lifecycleStatus": "string",
+        "updatedAt": "number",
+        "createdAt": "number",
+        "location": "string",
+        "ownerEmail": "string",
+        "bootstrapData": {
+          "completed_at": "string",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/membership/overview",
+    "status": 200,
+    "page": "members",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "team_id": "string",
+        "membership_status": "string",
+        "plan_label": "string",
+        "trial_start_time": "string",
+        "trial_end_time": "string",
+        "plan_start_time": "null",
+        "plan_end_time": "null",
+        "stripe_customer_id": "string",
+        "stripe_subscription_id": "string",
+        "stripe_subscription_status": "string",
+        "stripe_current_period_end": "string",
+        "stripe_price_id": "string",
+        "plan_key": "string",
+        "cancel_at_period_end": "boolean",
+        "stripe_trial_end": "string",
+        "membership_updated_at": "string",
+        "scheduled_plan_key": "null",
+        "scheduled_price_id": "null",
+        "scheduled_effective_at": "null",
+        "grace_days_left": "null",
+        "limits": {
+          "prompt_total": "number",
+          "seat": "null",
+          "research_credit_monthly": "number",
+          "generation_monthly": "number",
+          "credit_monthly": "number"
+        },
+        "usage": {
+          "prompt_total": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "null",
+            "period_end": "null"
+          },
+          "research_credit_monthly": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "string",
+            "period_end": "string"
+          },
+          "generation_monthly": {
+            "used": "number",
+            "reserved": "number",
+            "period_start": "string",
+            "period_end": "string"
+          },
+          "seats_used": "number"
+        },
+        "credit_balance": {
+          "balance": "number",
+          "available": "number",
+          "lifetime_spent": "number"
+        },
+        "role": "string",
+        "allowed_project_ids": "null"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "overview",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "overview",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/actions",
+    "status": 200,
+    "page": "overview",
+    "bodyShape": {
+      "data": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors",
+    "status": 200,
+    "page": "overview",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "recommendation_rank_enabled": "boolean",
+        "active_competitors": {
+          "type": "array",
+          "items": {
+            "competitor_id": "string",
+            "project_id": "string",
+            "name": "string",
+            "website": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            },
+            "state": "string",
+            "is_our_own_brand": "boolean",
+            "metrics": {
+              "visibility": "number",
+              "sentiment": "number",
+              "position": "number",
+              "sov": "number",
+              "mention_count": "null",
+              "days_with_data": "number",
+              "period": "string",
+              "visibility_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sentiment_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "position_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sov_delta": {
+                "value": "null",
+                "direction": "string"
+              }
+            }
+          }
+        },
+        "pending_competitors": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "total_active": "number",
+        "limit": "number",
+        "pipeline_status": "string"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/seo/{id}/overview",
+    "status": 200,
+    "page": "overview",
+    "bodyShape": {
+      "projectId": "string",
+      "gscConnected": "boolean",
+      "gscOverview": "null",
+      "siteSummary": "null",
+      "keywordCount": "number",
+      "competitorCount": "number",
+      "lastUpdated": "null"
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/aliases",
+    "status": 200,
+    "page": "project",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "brand_name": "string",
+        "aliases": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "max_aliases": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/competitors",
+    "status": 200,
+    "page": "project",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "recommendation_rank_enabled": "boolean",
+        "active_competitors": {
+          "type": "array",
+          "items": {
+            "competitor_id": "string",
+            "project_id": "string",
+            "name": "string",
+            "website": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            },
+            "state": "string",
+            "is_our_own_brand": "boolean",
+            "metrics": {
+              "visibility": "number",
+              "sentiment": "number",
+              "position": "number",
+              "sov": "number",
+              "mention_count": "null",
+              "days_with_data": "number",
+              "period": "string",
+              "visibility_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sentiment_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "position_delta": {
+                "value": "null",
+                "direction": "string"
+              },
+              "sov_delta": {
+                "value": "null",
+                "direction": "string"
+              }
+            }
+          }
+        },
+        "pending_competitors": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "total_active": "number",
+        "limit": "number",
+        "pipeline_status": "string"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/default-brands",
+    "status": 200,
+    "page": "project",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "default_brand_ids": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "max_default_brands": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "project",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "project",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/table-settings",
+    "status": 200,
+    "page": "prompts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "table_settings": {
+          "version": "number",
+          "tables": {
+            "tracking_prompts": {
+              "hidden_columns": {
+                "type": "array",
+                "items": "unobserved"
+              },
+              "delta_display": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/topics",
+    "status": 200,
+    "page": "prompts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "topics": {
+          "type": "array",
+          "items": {
+            "topic_id": "string",
+            "project_id": "string",
+            "name": "string",
+            "description": "null",
+            "created_at": "string",
+            "preserve_when_empty": "boolean"
+          }
+        },
+        "total": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/competitors",
+    "status": 200,
+    "page": "prompts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "competitor_id": "string",
+          "project_id": "string",
+          "name": "string",
+          "website": "string",
+          "icon_url": "string",
+          "icon_urls": {
+            "type": "array",
+            "items": "string"
+          },
+          "state": "string",
+          "total_mentions": "number",
+          "created_at": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "prompts",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/teams/with-projects",
+    "status": 200,
+    "page": "recording",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "teams": {
+          "type": "array",
+          "items": {
+            "team_id": "string",
+            "name": "string",
+            "created_by": "string",
+            "created_at": "string",
+            "updated_at": "string",
+            "role": "string",
+            "projects": {
+              "type": "array",
+              "items": {
+                "id": "string",
+                "name": "string",
+                "brandName": "string",
+                "websiteUrl": "string",
+                "ownerId": "string",
+                "status": "string",
+                "lifecycleStatus": "string",
+                "updatedAt": "number",
+                "createdAt": "number",
+                "location": "string",
+                "ownerEmail": "string",
+                "bootstrapData": {
+                  "status": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}/settings/default-brands",
+    "status": 200,
+    "page": "recording",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "project_id": "string",
+        "default_brand_ids": {
+          "type": "array",
+          "items": "unobserved"
+        },
+        "max_default_brands": "number"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}",
+    "status": 200,
+    "page": "recording",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "id": "string",
+        "name": "string",
+        "brandName": "string",
+        "websiteUrl": "string",
+        "ownerId": "string",
+        "status": "string",
+        "lifecycleStatus": "string",
+        "updatedAt": "number",
+        "createdAt": "number",
+        "location": "string",
+        "ownerEmail": "string",
+        "bootstrapData": {
+          "completed_at": "string",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "status": 200,
+    "page": "recording",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "code": "string",
+        "share_link": "string",
+        "balance_cents": "number",
+        "pending_cents": "number",
+        "lifetime_earned_cents": "number",
+        "lifetime_applied_cents": "number",
+        "history": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "recording",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects/{id}",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "id": "string",
+        "name": "string",
+        "brandName": "string",
+        "websiteUrl": "string",
+        "ownerId": "string",
+        "status": "string",
+        "lifecycleStatus": "string",
+        "updatedAt": "number",
+        "createdAt": "number",
+        "location": "string",
+        "ownerEmail": "string",
+        "bootstrapData": {
+          "completed_at": "string",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/user/referral-summary",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "code": "string",
+        "share_link": "string",
+        "balance_cents": "number",
+        "pending_cents": "number",
+        "lifetime_earned_cents": "number",
+        "lifetime_applied_cents": "number",
+        "history": {
+          "type": "array",
+          "items": "unobserved"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/projects",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "type": "array",
+        "items": {
+          "id": "string",
+          "name": "string",
+          "brandName": "string",
+          "websiteUrl": "string",
+          "ownerId": "string",
+          "location": "string",
+          "ownerEmail": "string",
+          "bootstrapData": {
+            "completed_at": "string",
+            "status": "string"
+          },
+          "createdAt": "number",
+          "updatedAt": "number",
+          "status": "string"
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/actions",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "data": {
+        "type": "array",
+        "items": "unobserved"
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/v2/sources/list",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "analysis_status": {
+          "is_complete": "boolean"
+        },
+        "stats": {
+          "total_sources": "number",
+          "total_citations": "number",
+          "date_range": {
+            "start": "null",
+            "end": "null",
+            "duration_days": "number"
+          }
+        },
+        "chart_data": {
+          "dates": {
+            "type": "array",
+            "items": "string"
+          },
+          "series": {
+            "{entry}": {
+              "type": "array",
+              "items": "number"
+            }
+          }
+        },
+        "category_breakdown": {
+          "corporate": "number",
+          "editorial": "number",
+          "institutional": "number",
+          "reference": "number",
+          "ugc": "number",
+          "other": "number"
+        },
+        "domain_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": {
+              "rank": "number",
+              "domain": "string",
+              "domain_type": "number",
+              "citation_count": "number",
+              "citation_share_pct": "number",
+              "avg_citations": "number",
+              "used_percentage": "number",
+              "mentioned": "boolean",
+              "brands_appeared": {
+                "type": "array",
+                "items": {
+                  "name": "string",
+                  "icon_url": "string",
+                  "icon_urls": {
+                    "type": "array",
+                    "items": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "url_table": {
+          "total": "number",
+          "items": {
+            "type": "array",
+            "items": "unobserved"
+          }
+        },
+        "opportunities": {
+          "type": "array",
+          "items": {
+            "source_domain": "string",
+            "source_icon": "null",
+            "reason": "string",
+            "priority": "number",
+            "opportunity_type": "string"
+          }
+        }
+      }
+    }
+  },
+  {
+    "method": "GET",
+    "path": "/api/providers",
+    "status": 200,
+    "page": "sources",
+    "bodyShape": {
+      "code": "number",
+      "message": "string",
+      "data": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "provider_id": "string",
+            "name": "string",
+            "icon_url": "string",
+            "icon_urls": {
+              "type": "array",
+              "items": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+]
