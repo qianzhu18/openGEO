@@ -1,0 +1,228 @@
+{
+  "date": "2026-10-31",
+  "route": "/create-workspace",
+  "files": [
+    {
+      "file": "00-webpack-9a6cca01ab4694ba.js",
+      "url": "https://app.topify.ai/_next/static/chunks/webpack-9a6cca01ab4694ba.js",
+      "bytes": 4490,
+      "sha256": "aab076ac0b89b0b4f5e8808509ed6704e311f2d047ddba40ad916a7aabecf6d2"
+    },
+    {
+      "file": "01-5936-3a85947ccc93cbc2.js",
+      "url": "https://app.topify.ai/_next/static/chunks/5936-3a85947ccc93cbc2.js",
+      "bytes": 112047,
+      "sha256": "c86ceb044a44a4c0e2dbc9f969608755192a9e013eb2402d0245c3a7f01f6847"
+    },
+    {
+      "file": "02-514f7925-fea58e7f1f315d62.js",
+      "url": "https://app.topify.ai/_next/static/chunks/514f7925-fea58e7f1f315d62.js",
+      "bytes": 172166,
+      "sha256": "ab6ca139d39e69a52bdabb2eb1b30eab140d4666c124f4ff9ba77cd1035216db"
+    },
+    {
+      "file": "03-main-app-f50990e7fbd89799.js",
+      "url": "https://app.topify.ai/_next/static/chunks/main-app-f50990e7fbd89799.js",
+      "bytes": 474,
+      "sha256": "a254b5af261be15ea07acd17d5908af8e0feefb64603bb8e205bb62e1aa6a12a"
+    },
+    {
+      "file": "04-d303032e-db2c3a2166e3f076.js",
+      "url": "https://app.topify.ai/_next/static/chunks/d303032e-db2c3a2166e3f076.js",
+      "bytes": 130,
+      "sha256": "f39fa38ac1fe400f739bfa6e602188f43d6dc9983b3597e8522325d9b5167486"
+    },
+    {
+      "file": "05-f059c9b4-40a1fc470433946c.js",
+      "url": "https://app.topify.ai/_next/static/chunks/f059c9b4-40a1fc470433946c.js",
+      "bytes": 176647,
+      "sha256": "bba3c18e58c463e74886557edb609f02c20b1aa011e0d1774131408fb5d95af0"
+    },
+    {
+      "file": "06-2816-fd3ae63a5722f7a2.js",
+      "url": "https://app.topify.ai/_next/static/chunks/2816-fd3ae63a5722f7a2.js",
+      "bytes": 21601,
+      "sha256": "529f6409e35cb6b59b8527d76aa4adce20e2ff0554452c414d9cabaa47b86b2a"
+    },
+    {
+      "file": "07-9408-25d70c1758af87b7.js",
+      "url": "https://app.topify.ai/_next/static/chunks/9408-25d70c1758af87b7.js",
+      "bytes": 41343,
+      "sha256": "9e3580a8779ccca31325f53a2602072381128804b0029fa7d6bf3c3325748c9c"
+    },
+    {
+      "file": "08-2762-00f077241776f106.js",
+      "url": "https://app.topify.ai/_next/static/chunks/2762-00f077241776f106.js",
+      "bytes": 27952,
+      "sha256": "fc2db56a6473c9d37645a73a8de68aad59857df13c40b6deb02ee86d0cf38837"
+    },
+    {
+      "file": "09-5534-a3d4607e61bd9bda.js",
+      "url": "https://app.topify.ai/_next/static/chunks/5534-a3d4607e61bd9bda.js",
+      "bytes": 20572,
+      "sha256": "8782829e2f658e7b90dd721f580e204d12964647bb809e7e30db03050c82519e"
+    },
+    {
+      "file": "10-4471-3601b9a765787fd1.js",
+      "url": "https://app.topify.ai/_next/static/chunks/4471-3601b9a765787fd1.js",
+      "bytes": 15772,
+      "sha256": "030a22a759012c0030467ccebf78ef722cf1d6975cac5b553d9f173c57cdb3df"
+    },
+    {
+      "file": "11-1936-766dc406c50be2db.js",
+      "url": "https://app.topify.ai/_next/static/chunks/1936-766dc406c50be2db.js",
+      "bytes": 9925,
+      "sha256": "3569f2a8c7455c08cdd5c4b4efaedae1e5373762f07d570c5920a4acf37f3699"
+    },
+    {
+      "file": "12-8526-7b12cec9ffe5e66c.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8526-7b12cec9ffe5e66c.js",
+      "bytes": 39863,
+      "sha256": "a8c9d84e4b2479b1f0830e24384c92996ef80f0569a290fb97f550465d1c6f1e"
+    },
+    {
+      "file": "13-1400-28e900c63a1a8fdf.js",
+      "url": "https://app.topify.ai/_next/static/chunks/1400-28e900c63a1a8fdf.js",
+      "bytes": 158975,
+      "sha256": "7baa5be69dff6ef25d9fe3a86c06681dde46d4515dfb32c7f51a6b1c33d66430"
+    },
+    {
+      "file": "14-8169-5952313762339452.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8169-5952313762339452.js",
+      "bytes": 34094,
+      "sha256": "07893cb9af78b30066b9fa5e7d4194af5ef396c9d8bda2efcfdea4dbdb794237"
+    },
+    {
+      "file": "15-8624-f2f756f3923f0f42.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8624-f2f756f3923f0f42.js",
+      "bytes": 12250,
+      "sha256": "c1b9bd259f95deca1a81de616d7dd2f41237587fa6497f82cf8a5fb06cead97f"
+    },
+    {
+      "file": "16-835-6796553906b16152.js",
+      "url": "https://app.topify.ai/_next/static/chunks/835-6796553906b16152.js",
+      "bytes": 21615,
+      "sha256": "05d1d8f55f31d318dcc0f6a333d3fdfc8a9585682e6aa93858a31af4b0ea59c9"
+    },
+    {
+      "file": "17-3639-875223baf6932f8d.js",
+      "url": "https://app.topify.ai/_next/static/chunks/3639-875223baf6932f8d.js",
+      "bytes": 12827,
+      "sha256": "207ee0c2450f33680cc522f1251f2171a308d65e67900d979b5ea8065d47ae69"
+    },
+    {
+      "file": "18-9533-89ec4e2ed0c34bdd.js",
+      "url": "https://app.topify.ai/_next/static/chunks/9533-89ec4e2ed0c34bdd.js",
+      "bytes": 124102,
+      "sha256": "6dd8de69471b78a9ba6d37c92b166898f4d6bb2f6fdd0ecc9fd529d754f7dbb2"
+    },
+    {
+      "file": "19-3835-3d02b278bb0a3471.js",
+      "url": "https://app.topify.ai/_next/static/chunks/3835-3d02b278bb0a3471.js",
+      "bytes": 6672,
+      "sha256": "285db2692b478a0306bce961f02239bc2fb9867cfd36ab73c31712d6b43a423c"
+    },
+    {
+      "file": "20-3107-2f62e274cca29329.js",
+      "url": "https://app.topify.ai/_next/static/chunks/3107-2f62e274cca29329.js",
+      "bytes": 7580,
+      "sha256": "0b64fb04894312ec86beb10648154da18919dc2fbc4ce439fa4f456a52d819e5"
+    },
+    {
+      "file": "21-6976-f79b9449050663d5.js",
+      "url": "https://app.topify.ai/_next/static/chunks/6976-f79b9449050663d5.js",
+      "bytes": 81372,
+      "sha256": "b815a506b45ed06b98b01cb33bf1a8b4744bfc85facdc0b83b610e39ac74e911"
+    },
+    {
+      "file": "22-8411-48bf2bcfc2ad4c6f.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8411-48bf2bcfc2ad4c6f.js",
+      "bytes": 10712,
+      "sha256": "6d03d5a5ea8eb0944ece26ed2ad8100422faacc4fd09dfa40cb775fec0f5f943"
+    },
+    {
+      "file": "23-8543-84e6a7ead0799c95.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8543-84e6a7ead0799c95.js",
+      "bytes": 15330,
+      "sha256": "ceb1f35df40f5d92b52807e2963381a9c7b35b0b28383a325e6a0381cf1bc5a8"
+    },
+    {
+      "file": "24-5549-3d0b8578d13969b3.js",
+      "url": "https://app.topify.ai/_next/static/chunks/5549-3d0b8578d13969b3.js",
+      "bytes": 95462,
+      "sha256": "614b0ff7037882ab6eada696299aeb3b0648ef07ba5e973694d09fbfa8416c4f"
+    },
+    {
+      "file": "25-4362-504f1dc5ecce2f35.js",
+      "url": "https://app.topify.ai/_next/static/chunks/4362-504f1dc5ecce2f35.js",
+      "bytes": 32715,
+      "sha256": "9f8d42a3a8d62b7adf78aad33d4870859a86a84146123ba3b92b3c4f32da0253"
+    },
+    {
+      "file": "26-1641-6e4701f3b37198f4.js",
+      "url": "https://app.topify.ai/_next/static/chunks/1641-6e4701f3b37198f4.js",
+      "bytes": 18307,
+      "sha256": "6bb4ad59cfef692c69d0e3fbbf400d353d41ac9153894196b614ad3900e3b42b"
+    },
+    {
+      "file": "27-5428-05e26d7ca54cf199.js",
+      "url": "https://app.topify.ai/_next/static/chunks/5428-05e26d7ca54cf199.js",
+      "bytes": 27868,
+      "sha256": "cbc5fe0463bae58b74c01e8718e91f2107d428adfdf73c6f4003311d6323b334"
+    },
+    {
+      "file": "28-page-93485b196ab7f8ab.js",
+      "url": "https://app.topify.ai/_next/static/chunks/app/(auth)/create-workspace/page-93485b196ab7f8ab.js",
+      "bytes": 276,
+      "sha256": "813859215f8b677ed617b78694c81e949b04cb6e972e68a55772f8ff6108c6aa"
+    },
+    {
+      "file": "29-4678-c86dc4c889eb72ae.js",
+      "url": "https://app.topify.ai/_next/static/chunks/4678-c86dc4c889eb72ae.js",
+      "bytes": 70600,
+      "sha256": "68e06e39b93aa099cc38b5428a80d3f4e605e287996ec2ff32c454cee4838259"
+    },
+    {
+      "file": "30-global-error-095718c5b2fa0f2b.js",
+      "url": "https://app.topify.ai/_next/static/chunks/app/global-error-095718c5b2fa0f2b.js",
+      "bytes": 4422,
+      "sha256": "9ab403095104f99fb1f73fe3abbbb198eda19b22dcd165d6327056de4973b2e8"
+    },
+    {
+      "file": "31-4136-a00a4c9c5bbb98cc.js",
+      "url": "https://app.topify.ai/_next/static/chunks/4136-a00a4c9c5bbb98cc.js",
+      "bytes": 140119,
+      "sha256": "347dba155fde4af4e47d4f47103b1f313dbbe8a57e11b1b0d2568b75f5e07aae"
+    },
+    {
+      "file": "32-8065-b9f3a0ffd0befc2c.js",
+      "url": "https://app.topify.ai/_next/static/chunks/8065-b9f3a0ffd0befc2c.js",
+      "bytes": 3484,
+      "sha256": "017110246909ff896683bd449cda052f1cddd2d530985b7fb9b0dab1470a1da3"
+    },
+    {
+      "file": "33-1650-ec95c87e291affbd.js",
+      "url": "https://app.topify.ai/_next/static/chunks/1650-ec95c87e291affbd.js",
+      "bytes": 11167,
+      "sha256": "c9bdb332cb143768ae722bdb38fc79d7245c597ec66a00001e8a4ef80da0b1fa"
+    },
+    {
+      "file": "34-layout-87567244faa615b5.js",
+      "url": "https://app.topify.ai/_next/static/chunks/app/layout-87567244faa615b5.js",
+      "bytes": 20317,
+      "sha256": "5d4a58c04e16ffbeafefdc65bee9aa67fd4b24c5480a45d61e603195dbced2ce"
+    },
+    {
+      "file": "35-1840-9dd47c1d4798a52d.js",
+      "url": "https://app.topify.ai/_next/static/chunks/1840-9dd47c1d4798a52d.js",
+      "bytes": 188944,
+      "sha256": "ba382ca1b10e0d08e47988dc3277b6689934c6516f57456096dffca1a6f10b44"
+    },
+    {
+      "file": "36-not-found-d388791b35898729.js",
+      "url": "https://app.topify.ai/_next/static/chunks/app/not-found-d388791b35898729.js",
+      "bytes": 1421,
+      "sha256": "8c6142cd6d4e3f206308bc5728533f18ea4480aafbd7269ea48ad8df98cd98eb"
+    }
+  ]
+}

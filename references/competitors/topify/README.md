@@ -15,6 +15,7 @@
 | [05 指标与采集](05-metrics-and-collection.md) | 指标口径、采样、Fanouts、冲突与未知 |
 | [06 OpenGEO 落地](06-opengeo-implementation.md) | 当前差距、建议目录与数据契约、开发顺序与验收 |
 | [07 证据与复现](07-evidence-and-reproduction.md) | REA 成功记录、分析覆盖、文件指纹、复现方法 |
+| [09 创建工作空间](09-workspace-onboarding.md) | 海外建档、自动研究、问题筛选、bootstrap 状态与恢复 |
 | [08 Prompts 监控差距](08-prompts-monitoring-gap.md) | Prompts 页的三层结构、逐列差距矩阵、P0 落地顺序与验收 |
 
 ## 本轮覆盖
