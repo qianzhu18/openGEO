@@ -6,6 +6,20 @@
 
 当前版本 `0.2.0`。项目吸收 [Pi](references/competitors/pi.md) 的轻量 Agent harness 形态和 [niubigeo](references/competitors/niubigeo.md) 的证据测量思路，但不把两者混成一个通用 Agent 或测量面板；OpenGEO 的核心是 GEO 交付闭环。
 
+## 海外 MVP 本地入口（2026-10-31）
+
+```bash
+npm start
+```
+
+打开 [Create workspace](http://127.0.0.1:8847/create-workspace)：输入官网、English 和 US / GB / CA / AU → 自动收集来源与品牌画像 → 可选一次模型研究生成主题和问题 → 审核选题 → 进入英文工作台。工作台支持 Agent、Overview、Prompts、Sources、Actions、Project；诊断与写作确认分开，尚未核准发布事实也可采集内部诊断基线。
+
+模型 ID 使用自己账号实际可用的值。API key 仅随当前请求使用，不写入项目或浏览器存储；Provider 环境配置也可复用。研究最多一次模型操作、2500 输出 token；诊断每轮最多 5 个问题、总计 8 次模型操作。调用上限不等于精确金额预算。未勾选模型研究时，只运行公网页面抓取与明确标记的英文模板。
+
+本地 Git 已建立。当前实现与尚未完成的海外 MVP 能力见 [实施进度](docs/09-international-mvp.md#8-当前实现与明确差距)，创建流程逆向见 [Onboarding 证据](references/competitors/topify/09-workspace-onboarding.md)。真实 PostHog 冒烟取得 2 条 API 原文及 3 个行动，研究与诊断共 4 次调用、Provider 返回费用合计约 $0.00089；[脱敏摘要](examples/international-mvp/live-smoke-summary.json)。它是未联网模型 API 基线，未验证消费级网页搜索、地区路由或优化效果。
+
+旧中文工作台仍可从 `/` 访问，用于已有案例回归。海外工作台使用 `/workspace?project=<id>`；两者复用同一本地服务和证据数据，不另建第三套存储。CLI 数据统一仍待完成。
+
 ## 快速开始
 
 ```bash

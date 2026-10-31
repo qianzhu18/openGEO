@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-31",
+  "projectId": "project-research-632c5d46-75fb-4b8b-9cbe-0840ccdfca34",
+  "runId": "702d2440-2c64-4e42-98a5-2fcaff8fa1d6",
+  "status": "completed",
+  "market": "international",
+  "language": "en",
+  "requestedCountry": "US",
+  "regionEnforced": false,
+  "channel": "model-api",
+  "webSearch": false,
+  "provider": "openrouter",
+  "model": "qwen/qwen3.5-flash-02-23",
+  "queryIds": [
+    "prompt-96a070562d898c308579",
+    "prompt-3ee0af5f14376a96fee2"
+  ],
+  "research": {
+    "status": "completed",
+    "topics": 3,
+    "prompts": 5,
+    "costUsd": 0.000212355
+  },
+  "diagnostic": {
+    "planned": 2,
+    "collected": 2,
+    "analyzed": 2,
+    "mention": {
+      "numerator": 1,
+      "denominator": 2,
+      "value": 0.5
+    },
+    "citations": 0,
+    "actions": 3,
+    "draftStatus": "blocked",
+    "calls": 3,
+    "costUsd": 0.000674245,
+    "unknownCostCalls": 0
+  },
+  "limitations": [
+    "No consumer AI website collection or live search was performed.",
+    "Target country is metadata; actual API regional routing was not verified.",
+    "Single-run baseline does not establish optimization effects.",
+    "Source statements remain unconfirmed for publishing."
+  ],
+  "totalReportedCostUsd": 0.0008866
+}
