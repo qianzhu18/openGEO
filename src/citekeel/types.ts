@@ -6,7 +6,7 @@ export interface Claim {
   sourceIds: string[]; alternatives?: { value: string; sourceId: string }[];
   confirmation?: { sourceId: string; at: string };
 }
-export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string }
+export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; country?: string; language?: string }
 export interface Citation {
   url: string; kind: 'provider_citation' | 'search_result' | 'grounding' | 'answer_url';
   source: string; payloadPath?: string; integrity: 'matched' | 'unverified' | 'mismatch';
@@ -20,6 +20,8 @@ export interface Sample {
   recommendationEvidence?: string; sourceJudgment?: string;
 }
 export interface Project {
+  market?: 'international'; language?: string; country?: string; researchId?: string;
+  topics?: { id: string; name: string; sourceIds: string[] }[];
   id: string; name: string; brand: string; aliases: string[]; domain: string; industry: string;
   description: string; origin: 'synthetic' | 'archive' | 'manual'; goal: string;
   sources: ClaimSource[]; claims: Claim[]; queries: Query[]; queryVersion: number;

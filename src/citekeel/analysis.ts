@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { extractTextUrlCitations } from '../../vendor/niubigeo/src/providers/citation-extractors.js';
 import type { Audit, Citation, Judgment, Metric, Project, Sample } from './types.js';
 
@@ -69,11 +70,11 @@ function metric(values: (boolean | null)[]): Metric {
   const numerator = eligible.filter(Boolean).length, denominator = eligible.length;
   return { numerator, denominator, value: denominator ? numerator / denominator : null };
 }
-export function auditSamples(samples: Sample[], project: Pick<Project, 'brand' | 'aliases'>): Audit {
+export function auditSamples(samples: Sample[], project: Pick<Project, 'brand' | 'aliases'> & Partial<Pick<Project, 'market'>>): Audit {
   const judgments = samples.map(s => judgeSample(s, project));
   const groups = new Map<string, Sample[]>();
   for (const sample of samples) {
-    const label = `${sample.origin} · ${sample.model} · ${sample.branded ? '品牌问题' : '非品牌问题'} · ${sample.runGroup}`;
+    const label = `${sample.origin} · ${sample.model} · ${project.market === 'international' ? (sample.branded ? 'Branded questions' : 'Unbranded questions') : (sample.branded ? '品牌问题' : '非品牌问题')} · ${sample.runGroup}`;
     groups.set(label, [...(groups.get(label) || []), sample]);
   }
   const citations = samples.flatMap(s => s.citations);
@@ -94,15 +95,16 @@ export function auditSamples(samples: Sample[], project: Pick<Project, 'brand' |
 }
 export function validateImport(input: unknown): Sample[] {
   if (!Array.isArray(input) || input.length > 300) throw new Error('请导入最多 300 条回答的 JSON 数组');
+  const batchId = `manual-batch-${randomUUID()}`;
   return input.map((value: any, i) => {
     if (!value || typeof value.question !== 'string' || !value.question.trim() || typeof value.answer !== 'string') throw new Error(`第 ${i + 1} 条需要 question 和 answer 文本`);
     if (value.question.length > 2000 || value.answer.length > 100000) throw new Error('问题或回答超过长度限制');
     const links = bodyLinks(value.answer);
     // Unauthenticated manual URLs cannot be promoted to provider citations.
-    return { id: `manual-${i + 1}`, queryId: `import-${i + 1}`, question: value.question.trim(), intent: typeof value.intent === 'string' ? value.intent : '人工导入',
+    return { id: `manual-${randomUUID()}`, queryId: `import-${i + 1}`, question: value.question.trim(), intent: typeof value.intent === 'string' ? value.intent : '人工导入',
       branded: value.branded === true, origin: 'manual', model: typeof value.model === 'string' ? value.model : '人工记录',
       observedAt: typeof value.observedAt === 'string' ? value.observedAt : new Date().toISOString(),
-      runGroup: typeof value.runGroup === 'string' ? value.runGroup : 'manual-import', protocolId: 'manual/v1',
+      runGroup: typeof value.runGroup === 'string' ? value.runGroup : batchId, protocolId: 'manual/v1',
       collectionStatus: value.collectionStatus === 'failed' ? 'failed' : 'completed',
       analysisStatus: value.analysisStatus === 'failed' ? 'failed' : 'completed', answer: value.answer, citations: links,
       ...(typeof value.error === 'string' ? { error: value.error } : {}) } as Sample;

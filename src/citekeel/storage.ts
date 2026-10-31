@@ -11,7 +11,7 @@ export class Store {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(id)) throw new Error('无效的记录 ID');
     return join(this.root, kind, `${id}.json`);
   }
-  async save<T extends { id: string }>(kind: 'projects' | 'runs', value: T): Promise<void> {
+  async save<T extends { id: string }>(kind: 'projects' | 'runs' | 'researches', value: T): Promise<void> {
     const copy = JSON.stringify(value, null, 2);
     const work = this.queue.catch(() => {}).then(async () => {
       const dest = this.path(kind, value.id);
@@ -23,11 +23,11 @@ export class Store {
     this.queue = work;
     await work;
   }
-  async get<T>(kind: 'projects' | 'runs', id: string): Promise<T | null> {
+  async get<T>(kind: 'projects' | 'runs' | 'researches', id: string): Promise<T | null> {
     try { return JSON.parse(await readFile(this.path(kind, id), 'utf8')) as T; }
     catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null; throw e; }
   }
-  async list<T>(kind: 'projects' | 'runs'): Promise<T[]> {
+  async list<T>(kind: 'projects' | 'runs' | 'researches'): Promise<T[]> {
     const names = await readdir(join(this.root, kind)).catch(() => [] as string[]);
     return (await Promise.all(names.filter(n => n.endsWith('.json')).map(n => this.get<T>(kind, n.slice(0, -5))))).filter(Boolean) as T[];
   }
