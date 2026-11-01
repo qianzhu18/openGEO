@@ -4,6 +4,8 @@
 
 2026-11-01 复核结论：静态接口层未变化（API 客户端 chunk 字节一致），但登录后页面本轮不可达；新增权威证据源为公开 API 文档。详见 [状态复核](../../../docs/research/2026-11-01-topify-rea-status.md)。
 
+2026-11-02 更新：已通过 ego lite 复用登录态完成登录后复核（82/84 chunk 字节一致、IA 改为 Analyze / Tracking 嵌套），见 [11 登录后产品复核](11-logged-in-reverse-2026-11-02.md)。
+
 ## 阅读入口
 
 | 文档 | 用途 |
@@ -18,6 +20,7 @@
 | [08 Prompts 监控差距](08-prompts-monitoring-gap.md) | Prompts 页的三层结构、逐列差距矩阵、P0 落地顺序与验收 |
 | [09 创建工作空间](09-workspace-onboarding.md) | 海外建档、自动研究、问题筛选、bootstrap 状态与恢复 |
 | [10 公开 API 与服务逻辑](10-public-api-and-service-logic.md) | 厂商自述的实体、指标公式、Actions 状态机、Webhook、计费与增长机制（2026-11-01） |
+| [11 登录后产品复核](11-logged-in-reverse-2026-11-02.md) | 登录态下的 IA、11 个页面、31 个内部 API、响应结构与 REA 证据（2026-11-02） |
 
 2026-10-30 轮把「概览页视觉基线」扩展到产品、页面、交互、接口、数据、Agent、指标、权限、计费、设计和开发映射。交付是可供实现的规格与证据包；没有把尚未开发的功能标为已完成。
 

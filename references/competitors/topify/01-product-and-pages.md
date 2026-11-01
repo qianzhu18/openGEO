@@ -1,5 +1,7 @@
 # 01 产品结构、页面与交互
 
+> 2026-11-02 更新：登录后路由已改为 `analyze/overview`、`analyze/tracking/{prompts,recording,sources,fanouts}` 等；本页记录的是 2026-10-30 的扁平路由。现行结构与页面清单见 [11](11-logged-in-reverse-2026-11-02.md)。
+
 本页的 UI 事实来自本次页面读取和弹窗探查。路由中的 `{workspace}` 是占位符，不包含真实账号标识。机器清单见 [pages.json](evidence/pages.json)。
 
 ## 1. 信息架构

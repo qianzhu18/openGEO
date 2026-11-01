@@ -1,0 +1,65 @@
+{
+ "capturedAt": "2026-11-02",
+ "tool": "rea-agents@6.8.0 (npx CLI)",
+ "artifact": {
+  "path": "/tmp/topify-live/scripts",
+  "files": 84,
+  "bytes": 5773772,
+  "note": "downloaded from a logged-in session"
+ },
+ "runs": [
+  {
+   "batch": "A",
+   "outcome": "completed",
+   "selected_paths": [
+    "page-2cde621a55c05dfc.js",
+    "page-17450b2dffb0a198.js",
+    "page-acc021911c701ade.js"
+   ],
+   "statistics": {
+    "parsed_javascript_files": 3,
+    "visited_ast_nodes": 40236,
+    "findings": 356,
+    "modules": 39,
+    "parse_failures": 0
+   },
+   "application_graph": {
+    "nodes": 456,
+    "edges": 563,
+    "coverage": "partial"
+   },
+   "evidence_id": "ev_3312351cc9646594c4b0f66c75e12f07a779896253a8fed3560ae6a594074d96"
+  },
+  {
+   "batch": "B",
+   "outcome": "completed",
+   "selected_paths": [
+    "page-da38d264c560c82d.js",
+    "page-71fbb00313532a40.js",
+    "page-62c3a4ddabcdf725.js"
+   ],
+   "statistics": {
+    "parsed_javascript_files": 3,
+    "visited_ast_nodes": 146321,
+    "findings": 1187,
+    "modules": 58,
+    "parse_failures": 0
+   },
+   "application_graph": {
+    "nodes": 1025,
+    "edges": 1413,
+    "coverage": "partial"
+   },
+   "evidence_id": "ev_ebea41408d88cfa4b5d98ee312a087cd525d78cf46dcedbf5392de6eaf4c772e"
+  }
+ ],
+ "drift": {
+  "previous_manifest_files": 84,
+  "current_files": 84,
+  "byte_identical": 82,
+  "changed": 0,
+  "new": 2,
+  "gone": 2
+ },
+ "limitations": "Each batch analyzed 3 of 84 files; inert parse only; 81 files outside scope."
+}

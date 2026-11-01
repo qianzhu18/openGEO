@@ -1,0 +1,228 @@
+{
+ "capturedAt": "2026-11-02",
+ "note": "field names and types only; string/number values replaced by type names",
+ "endpoints": {
+  "/api/v2/sources/list": {
+   "status": 200,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "data": {
+     "analysis_status": {
+      "is_complete": "boolean"
+     },
+     "stats": {
+      "total_sources": "number",
+      "total_citations": "number",
+      "date_range": {
+       "start": "null",
+       "end": "null",
+       "duration_days": "number"
+      }
+     },
+     "chart_data": {
+      "dates": {
+       "array": 7,
+       "item": "string"
+      },
+      "series": {
+       "<domain_1>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_2>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_3>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_4>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_5>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_6>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_7>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_8>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_9>": {
+        "array": 7,
+        "item": "number"
+       },
+       "<domain_10>": {
+        "array": 7,
+        "item": "number"
+       }
+      }
+     },
+     "category_breakdown": {
+      "corporate": "number",
+      "editorial": "number",
+      "institutional": "number",
+      "reference": "number",
+      "ugc": "number",
+      "other": "number"
+     },
+     "domain_table": {
+      "total": "number",
+      "items": {
+       "array": 20,
+       "item": {
+        "rank": "number",
+        "domain": "string",
+        "domain_type": "number",
+        "citation_count": "number",
+        "citation_share_pct": "number",
+        "avg_citations": "number",
+        "used_percentage": "number",
+        "mentioned": "boolean",
+        "brands_appeared": {
+         "array": 3,
+         "item": "object"
+        }
+       }
+      }
+     },
+     "url_table": {
+      "total": "number",
+      "items": {
+       "array": 0,
+       "item": "empty"
+      }
+     },
+     "opportunities": {
+      "array": 10,
+      "item": {
+       "source_domain": "string",
+       "source_icon": "null",
+       "reason": "string",
+       "priority": "number",
+       "opportunity_type": "string"
+      }
+     }
+    }
+   }
+  },
+  "/api/v2/recording/list": {
+   "status": 405,
+   "shape": {
+    "__nonjson": "string"
+   }
+  },
+  "/api/v2/topics": {
+   "status": 200,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "data": {
+     "topics": {
+      "array": 2,
+      "item": {
+       "topic_id": "string",
+       "project_id": "string",
+       "name": "string",
+       "description": "null",
+       "created_at": "string",
+       "preserve_when_empty": "boolean"
+      }
+     },
+     "total": "number"
+    }
+   }
+  },
+  "/api/v2/prompts/fanouts": {
+   "status": 200,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "data": {
+     "items": {
+      "array": 0,
+      "item": "empty"
+     },
+     "distinct_query_count": "number",
+     "total_occurrences": "number",
+     "total_items": "number",
+     "page": "number",
+     "page_size": "number",
+     "total_pages": "number"
+    }
+   }
+  },
+  "/api/v2/prompts/fanouts/insights": {
+   "status": 200,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "data": {
+     "brand_mentions": {
+      "array": 0,
+      "item": "empty"
+     },
+     "common_phrases": {
+      "array": 0,
+      "item": "empty"
+     }
+    }
+   }
+  },
+  "/api/v2/actions": {
+   "status": 200,
+   "shape": {
+    "data": {
+     "array": 0,
+     "item": "empty"
+    }
+   }
+  },
+  "/api/heatmap/{project_id}": {
+   "status": 404,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "error_code": "string"
+   }
+  },
+  "/api/v2/projects/{project_id}/settings/table-settings": {
+   "status": 200,
+   "shape": {
+    "code": "number",
+    "message": "string",
+    "data": {
+     "project_id": "string",
+     "table_settings": {
+      "version": "number",
+      "tables": {
+       "tracking_prompts": {
+        "hidden_columns": {
+         "array": 0,
+         "item": "empty"
+        },
+        "delta_display": "string"
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/v1/overview/visibility": {
+   "status": 405,
+   "shape": {
+    "__nonjson": "string"
+   }
+  }
+ }
+}

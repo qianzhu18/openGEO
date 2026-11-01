@@ -11,7 +11,7 @@
 - Topify 逆向复核：静态接口层未漂移（API 客户端 chunk 字节一致），登录后页面本轮不可达；新增公开 API 文档证据。见 [状态复核](research/2026-11-01-topify-rea-status.md) 与 [公开 API 与服务逻辑](../references/competitors/topify/10-public-api-and-service-logic.md)。
 - 开源竞品格局核验：niubigeo 8,927 stars，另有 GetCito / GEO-AEO Tracker / OneGlanse / Ansvisor；"开源仪表盘"已非空位。见 [格局](../references/competitors/oss-geo-landscape.md)。
 - 海外增长方案与 90 天计划：[10 海外增长](10-overseas-growth.md)。
-- 本地：55 项核心测试与 9 项浏览器测试通过；修复 320px 下 Prompts 表格的横向溢出（`.table-scroll` 缺少定位上下文）。
+- 本地：56 项核心测试与 10 项浏览器测试通过；修复 320px 下 Prompts 表格的横向溢出（`.table-scroll` 缺少定位上下文）；Recording 页面接通 server。
 
 ## 本地增量（2026-10-31）
 
@@ -81,7 +81,7 @@
 
 - [x] 复核 Topify 逆向状态并保存新证据（2026-11-01）。
 - [x] 核验开源竞品格局，确认差异化（[格局](../references/competitors/oss-geo-landscape.md)）。
-- [ ] 把 `recordings.ts` 接入 server 路由与 UI，补空态、失败态与测试（当前模块存在但不可用）。
+- [x] 把 `recordings.ts` 接入 server 路由与 UI（URL 池、收集、最多 5 个生成候选问题、空态/失败态/测试）。
 - [ ] 报告带证据链：指标 → 原始回答 → 协议 → 分母与排除数，导出 HTML 可复算。
 - [ ] `opengeo audit <url>` 与 `opengeo replay` 一条命令；作为 demo、对比页与免费工具的共用素材。
 - [ ] 按 [公开 API 合同](../references/competitors/topify/10-public-api-and-service-logic.md) 对齐 prompts / competitors / sources / actions 的字段与状态机。
