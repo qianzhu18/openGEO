@@ -52,8 +52,8 @@ test('unsafe URLs and unsupported markets are rejected before any injected fetch
   for (const url of ['http://127.0.0.1/', 'http://2130706433/', 'http://localhost/', 'http://[::1]/', 'https://user:password@acme.example/', 'file:///etc/passwd', 'javascript:alert(1)', 'ftp://acme.example/']) {
     await assert.rejects(researchWebsite({ url }, options), Error, url);
   }
-  await assert.rejects(researchWebsite({ url: 'https://acme.example', country: 'CN' }, options));
-  await assert.rejects(researchWebsite({ url: 'https://acme.example', language: 'zh' }, options));
+  await assert.rejects(researchWebsite({ url: 'https://acme.example', country: 'FR' }, options));
+  await assert.rejects(researchWebsite({ url: 'https://acme.example', language: 'fr' }, options));
   assert.equal(requests, 0);
 });
 
@@ -88,4 +88,27 @@ test('a stalled fetch cannot exceed the overall research deadline', async () => 
   assert.equal(result.status, 'failed');
   assert.ok(Date.now() - started < 1000);
   assert.match(result.attempts[0]!.reason!, /time budget/);
+});
+
+
+test('Chinese research uses Chinese templates and the China market', async () => {
+  const result = await researchWebsite({ url: 'https://acme.example/', language: 'zh', country: 'CN' }, { fetchPage: async url => page(url) });
+  assert.equal(result.status, 'completed');
+  assert.equal(result.market, 'china');
+  assert.equal(result.language, 'zh');
+  assert.equal(result.country, 'CN');
+  assert.ok(result.prompts.length >= 2);
+  assert.ok(result.prompts[0]!.text.includes('是做什么的'));
+  assert.ok(result.prompts.some(prompt => prompt.text.includes('应该核实')));
+  assert.ok(result.warnings.some(warning => warning.includes('未调用模型')));
+});
+
+test('client-rendered pages fall back to __NEXT_DATA__ evidence instead of failing', async () => {
+  const clientRendered = `<html><head><title>IGN AI | 社区</title><meta name="description" content="AI 学习与实践社区"></head><body><div id="root"></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"allEvents":[{"title":"AI 漫剧共学营","subtitle":"一次从故事到成片的学习招募","excerpt":"记录 2026 年 9 月的共学营招募与报名信息"}]}}}</script></body></html>`;
+  const result = await researchWebsite({ url: 'https://ignai.example/', language: 'zh', country: 'CN' }, { fetchPage: async url => ({ url, text: clientRendered, contentType: 'text/html' }) });
+  assert.equal(result.status, 'completed');
+  assert.equal(result.profile?.brand, 'IGN AI');
+  assert.equal(result.sources.length, 1);
+  assert.ok(result.sources[0]!.text.includes('共学营'));
+  assert.ok(result.prompts.length >= 2);
 });

@@ -36,7 +36,7 @@ test('interrupted research is explicit after restart; unsafe URLs and out-of-sco
     await service.initialize();assert.equal((await service.get('research-stopped'))?.status,'interrupted');
     await assert.rejects(service.accept('research-stopped',['x']),/Usable website research/);
     for(const url of ['http://127.0.0.1','file:///tmp/a','https://user:secret@example.com'])await assert.rejects(service.start({url}));
-    await assert.rejects(service.start({url:'https://example.com',country:'CN'}),/MVP supports/);
+    await assert.rejects(service.start({url:'https://example.com',country:'FR'}),/MVP supports/);
   } finally {await cleanup();}
 });
 test('HTTP research route persists progress and accepts reviewed prompts, with local origin checks',async()=>{

@@ -28,3 +28,24 @@ test('URL-first onboarding restores source research and creates a workspace from
   await page.getByRole('link',{name:'Open workspace',exact:false}).click();await expect(page.getByRole('heading',{name:'Your brand, in AI answers'})).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('Chinese onboarding sends zh/CN and renders Chinese review copy', async ({ page }) => {
+  const result = await researchWebsite({ url: 'https://example.com', language: 'zh', country: 'CN' }, { fetchPage: async url => ({ url, contentType: 'text/html', text: '<title>Northstar | 产品分析</title><meta name="description" content="帮助团队理解用户如何使用软件。"><h1>产品分析</h1>' }) });
+  const job: ResearchJob = { id: `research-${randomUUID()}`, status: result.status, input: { url: result.submittedUrl, language: 'zh', country: 'CN' }, result, createdAt: new Date().toISOString() };
+  await page.route('**/api/researches', async route => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const input = route.request().postDataJSON();
+    expect(input.language).toBe('zh');
+    expect(input.country).toBe('CN');
+    await new Store('data/browser-tests').save('researches', job);
+    await route.fulfill({ status: 202, json: job });
+  });
+  await page.goto('/create-workspace');
+  await page.selectOption('select[name=language]', 'zh');
+  await expect(page.getByRole('heading', { name: '你的网站是？' })).toBeVisible();
+  await page.getByLabel('网站地址').fill('example.com');
+  await page.getByRole('button', { name: '研究我的网站' }).click();
+  await expect(page.getByRole('heading', { name: '审核你的第一批问题' })).toBeVisible();
+  await expect(page.getByText('中文 · CN')).toBeVisible();
+  await expect(page.getByText('是做什么的', { exact: false })).toBeVisible();
+});

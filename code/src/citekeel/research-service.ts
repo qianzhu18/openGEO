@@ -34,8 +34,10 @@ export class ResearchService {
     const raw = input.url.trim();
     if (!raw.includes('://') && /^[a-z][a-z\d+.-]*:/i.test(raw)) throw new Error('Use a public HTTP(S) website.');
     const url = validatePublicWebUrl(raw.includes('://') ? raw : `https://${raw}`); url.hash = '';
-    const language = input.language ?? 'en', country = input.country ?? 'US';
-    if (language !== 'en' || typeof country !== 'string' || !['US', 'GB', 'CA', 'AU'].includes(country)) throw new Error('This MVP supports English in the US, UK, Canada and Australia.');
+    const rawLanguage = String(input.language ?? 'en').trim().toLowerCase();
+    const language = rawLanguage.startsWith('zh') ? 'zh' : rawLanguage.startsWith('en') ? 'en' : rawLanguage;
+    const country = typeof input.country === 'string' && input.country.trim() ? input.country.trim().toUpperCase() : (language === 'zh' ? 'CN' : 'US');
+    if (!['en', 'zh'].includes(language) || !['US', 'GB', 'CA', 'AU', 'CN'].includes(country)) throw new Error('This MVP supports English and Chinese in the US, UK, Canada, Australia and China.');
     const id = input.requestId ?? `research-${randomUUID()}`;
     if (typeof id !== 'string' || !/^research-[a-zA-Z0-9-]{1,80}$/.test(id)) throw new Error('Invalid research request ID.');
     let config: LiveConfig | undefined;
@@ -97,12 +99,16 @@ export class ResearchService {
       const project: Project = {
         id: projectId, name: result.profile.brand, brand: result.profile.brand, aliases: [],
         domain: result.domain, industry: result.profile.industry || '', description: result.profile.description,
-        origin: 'manual', market: 'international', language: result.language, country: result.country,
+        origin: 'manual', market: result.market, language: result.language, country: result.country,
         researchId: job.id, topics: result.topics,
-        goal: `Diagnose ${result.profile.brand}'s AI visibility in ${result.country} using English questions and traceable answer evidence.`,
+        goal: result.language === 'zh'
+          ? `诊断「${result.profile.brand}」在 ${result.country} 的 AI 可见性，使用中文问题与可回溯的回答证据。`
+          : `Diagnose ${result.profile.brand}'s AI visibility in ${result.country} using English questions and traceable answer evidence.`,
         sources: result.sources, claims: result.claims,
         queries: result.prompts.map(p => ({
-          id: p.id, text: p.text, intent: p.intent, branded: p.branded, origin: p.origin === 'model-assisted' ? 'Model-assisted proposal grounded in website sources; reviewed at onboarding' : 'Website-grounded English template; reviewed at onboarding',
+          id: p.id, text: p.text, intent: p.intent, branded: p.branded, origin: p.origin === 'model-assisted'
+            ? (result.language === 'zh' ? '基于网站来源的模型提案；已在建档时审核' : 'Model-assisted proposal grounded in website sources; reviewed at onboarding')
+            : (result.language === 'zh' ? '由网站来源生成的中文模板；已在建档时审核' : 'Website-grounded English template; reviewed at onboarding'),
           status: selected.has(p.id) ? 'active' : 'suggested', revision: 1, topicId: p.topicId, sourceIds: p.sourceIds, country: result.country, language: result.language,
         })), queryVersion: 1, samples: [], createdAt: now, updatedAt: now,
       };

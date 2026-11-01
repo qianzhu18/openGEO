@@ -25,7 +25,7 @@ export interface Project {
   competitors?: TrackedBrand[];
   tableSettings?: { hiddenColumns: string[]; deltaDisplay: 'full' | 'icon' | 'none'; version: number };
   promptChanges?: { requestId: string; fingerprint: string; ids: string[]; version: number }[];
-  market?: 'international'; language?: string; country?: string; researchId?: string;
+  market?: 'international' | 'china'; language?: string; country?: string; researchId?: string;
   topics?: { id: string; name: string; sourceIds: string[] }[];
   id: string; name: string; brand: string; aliases: string[]; domain: string; industry: string;
   description: string; origin: 'synthetic' | 'archive' | 'manual'; goal: string;

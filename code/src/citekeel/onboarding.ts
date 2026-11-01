@@ -11,7 +11,7 @@ export interface WebsiteResearch {
   domain: string;
   language: string;
   country: string;
-  market: 'international';
+  market: 'international' | 'china';
   methodology: 'source-derived-templates/v1' | 'model-assisted/v1';
   profile: { brand: string; description: string; industry?: string } | null;
   sources: { id: string; title: string; url: string; text: string }[];
@@ -34,6 +34,44 @@ export interface WebsiteResearchOptions {
 
 const stableId = (kind: string, value: string) => `${kind}-${createHash('sha256').update(value).digest('hex').slice(0, 20)}`;
 const compact = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+type FallbackEvidence = { title?: string; description?: string; text: string; headings: string[] };
+function collectNextStrings(value: unknown, out: string[], depth = 0): void {
+  if (depth > 8 || out.length > 600) return;
+  if (typeof value === 'string') {
+    const clean = compact(value);
+    if (clean.length >= 12 && clean.length <= 400 && !/^https?:\/\//i.test(clean) && !/^[0-9a-f-]{20,}$/i.test(clean) && !clean.includes('@')) out.push(clean);
+    return;
+  }
+  if (Array.isArray(value)) { for (const item of value) collectNextStrings(item, out, depth + 1); return; }
+  if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (/^(title|description|excerpt|subtitle|summary|content|text|name|quote|role)$/i.test(key) || typeof item === 'object') collectNextStrings(item, out, depth + 1);
+    }
+  }
+}
+/** Fallback for client-rendered pages: meta tags, __NEXT_DATA__ strings and noscript/body text. */
+function fallbackEvidence(html: string): FallbackEvidence | null {
+  const document = load(html);
+  const title = compact(document('meta[property="og:title"]').attr('content') || document('title').first().text() || '');
+  const description = compact(document('meta[property="og:description"]').attr('content') || document('meta[name="description"]').attr('content') || '');
+  const headings = document('h1,h2,h3').map((_, element) => compact(document(element).text())).get().filter(Boolean).slice(0, 10);
+  const bodyCopy = load(html); bodyCopy('script,style').remove();
+  const bodyText = compact(bodyCopy('body').text());
+  const nextRaw = document('script').filter((_, element) => document(element).attr('id') === '__NEXT_DATA__').first().text();
+  const strings: string[] = [];
+  if (nextRaw) { try { collectNextStrings(JSON.parse(nextRaw), strings); } catch { /* ignore malformed payloads */ } }
+  const text = compact([title, description, ...new Set(strings).values() as unknown as string[], bodyText].filter(Boolean).join(' ')).slice(0, 12_000);
+  return text.length >= 40 ? { ...(title ? { title } : {}), ...(description ? { description } : {}), text, headings } : null;
+}
+function attemptReason(error: unknown, deadline: number): string {
+  if (Date.now() >= deadline) return 'Research time budget exhausted.';
+  const message = error instanceof Error ? error.message : '';
+  if (/No readable text/i.test(message)) return 'The page returned no readable text; client-rendered pages need browser rendering.';
+  if (/No HTML/i.test(message)) return 'The URL did not return HTML.';
+  if (/Redirect/i.test(message)) return 'The page redirected off the submitted domain.';
+  return 'Could not obtain usable public HTML evidence.';
+}
 
 function entryUrl(input: string): URL {
   if (typeof input !== 'string' || !input.trim() || input.length > 2048) throw new Error('Enter a public website URL of up to 2048 characters.');
@@ -63,25 +101,34 @@ export async function researchWebsite(
   options: WebsiteResearchOptions = {},
 ): Promise<WebsiteResearch> {
   const submitted = entryUrl(input.url);
-  const language = (input.language || 'en').trim();
-  const country = (input.country || 'US').trim().toUpperCase();
-  if (!/^en(?:-[A-Za-z]{2})?$/.test(language)) throw new Error('The international MVP currently supports English research and prompt templates only.');
-  if (!/^[A-Z]{2}$/.test(country) || country === 'CN') throw new Error('Select a two-letter international market country; China is outside this MVP.');
+  const rawLanguage = (input.language || 'en').trim().toLowerCase();
+  const language = rawLanguage.startsWith('zh') ? 'zh' : rawLanguage.startsWith('en') ? 'en' : rawLanguage;
+  const country = (input.country || (language === 'zh' ? 'CN' : 'US')).trim().toUpperCase();
+  if (!['en', 'zh'].includes(language)) throw new Error('Research supports English and Chinese prompt templates only.');
+  if (!['US', 'GB', 'CA', 'AU', 'CN'].includes(country)) throw new Error('Select a supported market: US, GB, CA, AU or CN.');
+  const market: 'international' | 'china' = country === 'CN' ? 'china' : 'international';
   const timeoutMs = options.timeoutMs ?? 25_000;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error('Research timeout must be positive.');
   const deadline = Date.now() + Math.min(timeoutMs, 25_000);
   const fetchPage = options.fetchPage || fetchPublicWebText;
   const result: WebsiteResearch = {
     id: `research-${randomUUID()}`, status: 'failed', submittedUrl: submitted.href,
-    domain: normalizeDomain(submitted.href), language, country, market: 'international',
+    domain: normalizeDomain(submitted.href), language, country, market,
     methodology: 'source-derived-templates/v1', profile: null,
     sources: [], claims: [], topics: [], prompts: [], competitors: [], attempts: [],
-    warnings: [
+    warnings: language === 'zh' ? [
+      '网站陈述属于来源证据，不等于已独立核实的品牌事实。',
+      '建议问题来自已采集页面的中文模板；未调用模型，也未做搜索量测量。',
+      '竞品发现需要额外研究；不会仅凭域名推断竞品。',
+    ] : [
       'Website statements are source evidence, not independently verified brand facts.',
       'Suggested prompts use English templates grounded in collected pages; no LLM research or search-volume measurement was performed.',
       'Competitor discovery requires additional research; no competitors are inferred from the domain.',
     ], createdAt: new Date().toISOString(),
   };
+  const alternateHost = (() => {
+    try { const variant = new URL(submitted.href); variant.hostname = variant.hostname.startsWith('www.') ? variant.hostname.slice(4) : `www.${variant.hostname}`; return variant.href; } catch { return null; }
+  })();
   const queue = [submitted.href];
   const seen = new Set<string>();
   for (let index = 0; index < queue.length && result.attempts.length < 3; index++) {
@@ -97,25 +144,41 @@ export async function researchWebsite(
       finalUrl.hash = '';
       const html = page.text.slice(0, 260_000);
       const parsed = extractSiteEvidencePage({ url: finalUrl.href, html });
-      if (!compact(parsed.textSnippet || parsed.description || parsed.title || '')) throw new Error('Empty website evidence.');
+      let evidenceTitle = parsed.title;
+      let evidenceDescription = compact(parsed.description || parsed.ogDescription || parsed.jsonLdDescriptions?.[0] || '');
+      let evidenceText = compact(parsed.textSnippet || '');
+      let evidenceHeadings = (parsed.headings || []).map(compact).filter(Boolean);
+      // Client-rendered pages often expose only the title as text; merge structured payload text.
+      if (evidenceText.length < 120) {
+        const fallback = fallbackEvidence(html);
+        if (fallback) {
+          evidenceTitle ||= fallback.title;
+          evidenceDescription ||= fallback.description || '';
+          if (fallback.text.length > evidenceText.length) evidenceText = fallback.text;
+          if (!evidenceHeadings.length) evidenceHeadings = fallback.headings;
+        }
+      }
+      if (!evidenceText) evidenceText = compact([evidenceTitle, evidenceDescription].filter(Boolean).join(' '));
+      if (!evidenceText) throw new Error('No readable text on this page.');
       const sourceId = stableId('source', finalUrl.href);
       if (!result.sources.some(source => source.id === sourceId)) {
-        result.sources.push({ id: sourceId, title: parsed.title || finalUrl.hostname, url: finalUrl.href, text: compact(parsed.textSnippet || parsed.description || parsed.title || '').slice(0, 10_000) });
+        result.sources.push({ id: sourceId, title: evidenceTitle || finalUrl.hostname, url: finalUrl.href, text: evidenceText.slice(0, 10_000) });
         if (index === 0) {
           const document = load(html);
           const siteName = document('meta[property="og:site_name"]').first().attr('content');
-          const titleBrand = (parsed.title || '').split(/\s+[|–—-]\s+|\s*\|\s*/)[0];
-          const brand = compact(siteName || titleBrand || parsed.headings?.[0] || '').slice(0, 100);
-          const description = compact(parsed.description || parsed.ogDescription || parsed.jsonLdDescriptions?.[0] || '').slice(0, 1000);
-          if (brand) result.profile = { brand, description };
-          if (brand) result.claims.push({ id: stableId('claim', `${sourceId}:brand`), label: 'Website brand label', value: brand, status: 'unconfirmed', sourceIds: [sourceId] });
-          if (description) result.claims.push({ id: stableId('claim', `${sourceId}:description`), label: 'Website description', value: description, status: 'unconfirmed', sourceIds: [sourceId] });
+          const titleBrand = (evidenceTitle || '').split(/\s+[|–—-]\s+|\s*\|\s*/)[0];
+          const rawDomainLabel = finalUrl.hostname.replace(/^www\./, '').split('.')[0] || '';
+          const domainLabel = rawDomainLabel ? rawDomainLabel.charAt(0).toUpperCase() + rawDomainLabel.slice(1) : '';
+          const brand = compact(siteName || titleBrand || evidenceHeadings[0] || domainLabel).slice(0, 100);
+          if (brand) result.profile = { brand, description: evidenceDescription.slice(0, 1000) };
+          if (brand) result.claims.push({ id: stableId('claim', `${sourceId}:brand`), label: language === 'zh' ? '网站品牌名称' : 'Website brand label', value: brand, status: 'unconfirmed', sourceIds: [sourceId] });
+          if (evidenceDescription) result.claims.push({ id: stableId('claim', `${sourceId}:description`), label: language === 'zh' ? '网站描述' : 'Website description', value: evidenceDescription.slice(0, 1000), status: 'unconfirmed', sourceIds: [sourceId] });
           const links = extractSameDomainLinks(html, finalUrl.href, result.domain).filter(link => {
             try { validatePublicWebUrl(link); return true; } catch { return false; }
           });
           queue.push(...links.slice(0, 2));
         }
-        for (const heading of parsed.headings || []) {
+        for (const heading of evidenceHeadings) {
           const name = compact(heading);
           if (name.length < 5 || name.length > 120 || /^(get started|contact us|sign up|log in|learn more|welcome|home)$/i.test(name)) continue;
           const id = stableId('topic', name.toLowerCase());
@@ -125,30 +188,40 @@ export async function researchWebsite(
         }
       }
       result.attempts.push({ url, status: 'completed' });
-    } catch {
+    } catch (error) {
       // A transport may include sensitive response details in its error. Persist only a safe summary.
-      result.attempts.push({ url, status: 'failed', reason: Date.now() >= deadline ? 'Research time budget exhausted.' : 'Could not obtain usable public HTML evidence.' });
+      result.attempts.push({ url, status: 'failed', reason: attemptReason(error, deadline) });
+      if (index === 0 && alternateHost && !seen.has(alternateHost)) queue.splice(index + 1, 0, alternateHost);
       if (Date.now() >= deadline) break;
     }
   }
   if (!result.sources.length || !result.profile) {
     result.status = 'failed';
-    result.warnings.push('No usable homepage brand profile was obtained. No diagnostic answers or metrics were created.');
+    result.warnings.push(language === 'zh' ? '没有取得可用的首页品牌画像；未创建任何诊断回答或指标。' : 'No usable homepage brand profile was obtained. No diagnostic answers or metrics were created.');
     return result;
   }
   const homeSource = result.sources[0]!;
-  if (!result.topics.length) result.topics.push({ id: stableId('topic', `${result.domain}:brand-evaluation`), name: 'Brand evaluation', sourceIds: [homeSource.id], origin: 'template' });
+  if (!result.topics.length) result.topics.push({ id: stableId('topic', `${result.domain}:brand-evaluation`), name: language === 'zh' ? '品牌评估' : 'Brand evaluation', sourceIds: [homeSource.id], origin: 'template' });
   const addPrompt = (text: string, intent: string, branded: boolean, topic: WebsiteResearch['topics'][number]) => {
     result.prompts.push({ id: stableId('prompt', `${result.domain}:${language}:${country}:${text}`), text, intent, branded, status: 'suggested', topicId: topic.id, sourceIds: [...topic.sourceIds], origin: 'template' });
   };
-  addPrompt(`What does ${result.profile.brand} offer, and who is it for?`, 'brand_awareness', true, result.topics[0]!);
-  addPrompt(`What should a buyer verify before choosing ${result.profile.brand}?`, 'commercial', true, result.topics[0]!);
-  for (const topic of result.topics.filter(topic => topic.origin === 'source-derived')) {
-    const mentionsBrand = topic.name.toLowerCase().includes(result.profile.brand.toLowerCase());
-    addPrompt(`What should teams consider when evaluating solutions for ${topic.name}?`, 'informational', mentionsBrand, topic);
+  if (language === 'zh') {
+    addPrompt(`${result.profile.brand} 是做什么的，适合谁？`, 'brand_awareness', true, result.topics[0]!);
+    addPrompt(`选择 ${result.profile.brand} 之前，应该核实哪些信息？`, 'commercial', true, result.topics[0]!);
+    for (const topic of result.topics.filter(topic => topic.origin === 'source-derived')) {
+      const mentionsBrand = topic.name.toLowerCase().includes(result.profile.brand.toLowerCase());
+      addPrompt(`评估「${topic.name}」相关方案时，团队应该考虑什么？`, 'informational', mentionsBrand, topic);
+    }
+  } else {
+    addPrompt(`What does ${result.profile.brand} offer, and who is it for?`, 'brand_awareness', true, result.topics[0]!);
+    addPrompt(`What should a buyer verify before choosing ${result.profile.brand}?`, 'commercial', true, result.topics[0]!);
+    for (const topic of result.topics.filter(topic => topic.origin === 'source-derived')) {
+      const mentionsBrand = topic.name.toLowerCase().includes(result.profile.brand.toLowerCase());
+      addPrompt(`What should teams consider when evaluating solutions for ${topic.name}?`, 'informational', mentionsBrand, topic);
+    }
   }
   result.status = result.attempts.some(attempt => attempt.status === 'failed') || !result.profile.description ? 'partial' : 'completed';
-  if (!result.profile.description) result.warnings.push('The homepage did not expose a usable description; it was left blank.');
-  if (result.attempts.some(attempt => attempt.status === 'failed')) result.warnings.push('Some requested pages could not be collected. Available sources and suggestions have been retained.');
+  if (!result.profile.description) result.warnings.push(language === 'zh' ? '首页没有可用的描述，已留空，不做补写。' : 'The homepage did not expose a usable description; it was left blank.');
+  if (result.attempts.some(attempt => attempt.status === 'failed')) result.warnings.push(language === 'zh' ? '部分页面未能采集；已保留可用来源与建议问题。' : 'Some requested pages could not be collected. Available sources and suggestions have been retained.');
   return result;
 }

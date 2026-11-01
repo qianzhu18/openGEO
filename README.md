@@ -22,7 +22,7 @@ npm ci
 npm start          # http://127.0.0.1:8847
 ```
 
-打开 [Create workspace](http://127.0.0.1:8847/create-workspace)：输入官网、English、US/GB/CA/AU → 自动收集来源与品牌画像 → 可选一次模型研究生成问题 → 审核 → 进入工作台。
+打开 [Create workspace](http://127.0.0.1:8847/create-workspace)：输入官网、语言（English / 中文）、市场（US/GB/CA/AU/CN）→ 自动收集来源与品牌画像 → 可选一次模型研究生成问题 → 审核 → 进入工作台。
 
 其他命令：
 
