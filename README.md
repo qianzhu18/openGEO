@@ -6,6 +6,13 @@
 
 当前版本 `0.2.0`。项目吸收 [Pi](references/competitors/pi.md) 的轻量 Agent harness 形态和 [niubigeo](references/competitors/niubigeo.md) 的证据测量思路，但不把两者混成一个通用 Agent 或测量面板；OpenGEO 的核心是 GEO 交付闭环。
 
+## 逆向复核与海外增长（2026-11-01）
+
+- **Topify 逆向现状**：公开入口的 36 个客户端脚本里，28 个与 2026-10-30 指纹逐字节相同、0 个变化；API 客户端 chunk 未漂移，静态接口证据仍可引用。登录后的 48 个文件（含产品页面）本轮不可达，因此旧页面结论只能标为"上次观察"，不能称为"当前版本"。REA 6.8.0 已复现并绕开本机 Swift 模块重复问题；全目录运行超时，聚焦 3 文件完成（303 findings、0 parse failure）。详见 [状态复核](docs/research/2026-11-01-topify-rea-status.md)。
+- **新的权威证据源**：公开 API 文档（294,643 字节）给出实体、指标公式、Actions 状态机、Webhook 与 credits 计费。整理见 [公开 API 与服务逻辑](references/competitors/topify/10-public-api-and-service-logic.md)。产品侧已改为 credits 定价（$149 / $299 / $599）并有 13 个免费工具、1,111 篇博客。
+- **竞争现实**："开源 GEO 仪表盘"已经拥挤（niubigeo 8,927 stars；GetCito / GEO-AEO Tracker / OneGlanse / Ansvisor 各有 200–500 stars），差异化只能是**可复算的交付闭环**。见 [开源格局](references/competitors/oss-geo-landscape.md)。
+- **增长方案**：90 天计划、渠道、度量与 GEO 效果表述规范见 [海外增长](docs/10-overseas-growth.md)。
+
 ## 海外 MVP 本地入口（2026-10-31）
 
 ```bash

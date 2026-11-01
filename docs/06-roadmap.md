@@ -2,9 +2,16 @@
 
 > 2026-10-31 方向更新：**海外优先，国内 GEO 暂不做**，当前实施与验收以 [海外 MVP 规格](09-international-mvp.md) 的 I0–I5 为准。以 [Topify 对齐的诊断链路](08-topify-aligned-diagnostic-flow.md) 为当前产品基线。优先交付官网 URL → 自动品牌研究 → 竞品 / 问题发现 → 采集计划 → 真实采集与诊断的垂直链路；Model Gateway 是其中组件。下列 M2 状态仅表示旧 CLI 里程碑完成，不代表新的端到端诊断已完成。
 
-更新：2026-10-30 · 负责人：千逐 · 状态：M2 完成，准备进入 M3
+更新：2026-11-01 · 负责人：千逐 · 状态：海外 MVP I0–I1 完成，I2–I3 部分完成
 
-本文是 OpenGEO 的项目管理入口：目标、工作流、里程碑、当前迭代、待办队列、风险与完成定义。里程碑对齐 [`05-opengeo-engine.md`](./05-opengeo-engine.md) 的设计，并补充参考研究与开源发布两条工作流。
+本文是 OpenGEO 的项目管理入口：目标、工作流、里程碑、当前迭代、待办队列、风险与完成定义。里程碑对齐 [`05-opengeo-engine.md`](./05-opengeo-engine.md) 的设计，并补充参考研究、开源发布与海外增长三条工作流。
+
+## 基础设施增量（2026-11-01）
+
+- Topify 逆向复核：静态接口层未漂移（API 客户端 chunk 字节一致），登录后页面本轮不可达；新增公开 API 文档证据。见 [状态复核](research/2026-11-01-topify-rea-status.md) 与 [公开 API 与服务逻辑](../references/competitors/topify/10-public-api-and-service-logic.md)。
+- 开源竞品格局核验：niubigeo 8,927 stars，另有 GetCito / GEO-AEO Tracker / OneGlanse / Ansvisor；"开源仪表盘"已非空位。见 [格局](../references/competitors/oss-geo-landscape.md)。
+- 海外增长方案与 90 天计划：[10 海外增长](10-overseas-growth.md)。
+- 本地：55 项核心测试与 9 项浏览器测试通过；修复 320px 下 Prompts 表格的横向溢出（`.table-scroll` 缺少定位上下文）。
 
 ## 本地增量（2026-10-31）
 
@@ -12,7 +19,7 @@
 - 已落地海外 URL-first 自动建档、可选模型语义研究和英文诊断工作台。
 - 已修复导入回答覆盖问题库；增加跨轮原文、分协议统计、英文策略与报告。
 - PostHog 真实 API 冒烟完成：3 主题、5 候选问题、2 回答、3 行动；共 4 次模型调用。
-- 核心测试 37 项与浏览器测试 9 项通过；剩余海外 MVP 能力以 [I0–I5 状态](09-international-mvp.md#8-当前实现与明确差距) 为准。
+- 剩余海外 MVP 能力以 [I0–I5 状态](09-international-mvp.md#8-当前实现与明确差距) 为准。
 
 ## 1. 项目目标
 
@@ -28,10 +35,11 @@
 
 | 编号 | 工作流 | 目标 | 当前状态 |
 | --- | --- | --- | --- |
-| W1 | 参考与竞对研究 | 摸清可借鉴的形态、可对照的能力、明确不做什么 | 🚧 进行中（Pi、niubigeo、Klepsy、geo-citation-lab、Topify 已覆盖；其他开源项目待核验） |
+| W1 | 参考与竞对研究 | 摸清可借鉴的形态、可对照的能力、明确不做什么 | ✅ 主要对象已覆盖（Pi、niubigeo、Topify、GetCito、GEO-AEO Tracker、OneGlanse、Ansvisor；见 [格局](../references/competitors/oss-geo-landscape.md)） |
 | W2 | 行业理解 | 建立可引用的行业事实、机制与边界 | 🚧 进行中（学术、全球流量、国内平台、实操方法、引用可靠性已覆盖；付费市场规模未核验） |
 | W3 | Agent 引擎 | CLI / workspace / 证据 / Skill / 模型 / MCP | 🚧 进行中（M2 完成，M3 待做） |
-| W4 | 开源叙事与发布 | README、对比、演示、许可证与发布纪律 | ⬜ 未开始（素材已备，待组织对外版本） |
+| W4 | 开源叙事与发布 | README、对比、演示、许可证与发布纪律 | 🚧 进行中（素材与对比已备；待仓库首页、llms.txt、目录提交与 v1.0） |
+| W5 | 海外增长 | 定位、基准、免费工具、渠道与度量 | 🚧 已出方案（[90 天计划](10-overseas-growth.md)），未执行 |
 
 ## 3. 里程碑
 
@@ -71,15 +79,22 @@
 
 ### P0
 
+- [x] 复核 Topify 逆向状态并保存新证据（2026-11-01）。
+- [x] 核验开源竞品格局，确认差异化（[格局](../references/competitors/oss-geo-landscape.md)）。
+- [ ] 把 `recordings.ts` 接入 server 路由与 UI，补空态、失败态与测试（当前模块存在但不可用）。
+- [ ] 报告带证据链：指标 → 原始回答 → 协议 → 分母与排除数，导出 HTML 可复算。
+- [ ] `opengeo audit <url>` 与 `opengeo replay` 一条命令；作为 demo、对比页与免费工具的共用素材。
+- [ ] 按 [公开 API 合同](../references/competitors/topify/10-public-api-and-service-logic.md) 对齐 prompts / competitors / sources / actions 的字段与状态机。
 - [ ] M3 Model Gateway：Provider 接口 + 预算/重试/脱敏。
-- [ ] 把模型步骤接入现有 workspace，运行记录保留规则回放降级路径。
 
 ### P1
 
 - [x] geo-citation-lab 记录（[note](../references/industry/geo-citation-lab.md)）；原报告的 602 prompts / 各百分比待核验。
 - [x] Topify 对标与 agent 架构逆向（[topify.md](../references/competitors/topify.md)）。
 - [x] Tw93 延伸阅读索引（[tw93-references-index.md](../references/industry/tw93-references-index.md)），含 CJR 1,600 次引用测试。
-- [ ] 其他开源 GEO 项目核验：Elmo、Aperture、OneGlanse、AiCMO、Citatra（niubigeo 的 `CAPABILITY_MATRIX.md` 提到过，逐个确认仓库、license、能力，再决定是否进 `references/competitors/`）。
+- [x] 其他开源 GEO 项目核验：niubigeo、GetCito、GEO-AEO Tracker、OneGlanse、Ansvisor、Searchstack（见格局文档）。
+- [ ] 登录态浏览器采集与地区能力验证（Topify 四引擎是浏览器驱动；我们目前只有 API 基线）。
+- [ ] 国外部基准数据集 v1：3 品类 × 10 品牌 × 10 prompt × 4 引擎，公开方法与复算脚本。
 - [ ] 国内平台样本：把 Klepsy 的引用来源 TOP40 作为 `china-platforms` 的初始假设，补可复现的采样记录。
 - [ ] 付费行业报告核验：GII Research 等市场规模，只引用可核实数字。
 
@@ -87,7 +102,7 @@
 
 - [ ] M4 MCP server。
 - [ ] M5 Market Pack 两套适配。
-- [ ] M6 开源发布清单与对外 README。
+- [ ] M6 开源发布清单与对外 README（llms.txt、对比页、目录提交）。
 
 ## 6. 风险与边界
 

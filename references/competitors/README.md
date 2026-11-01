@@ -8,6 +8,8 @@
 - [pi.md](./pi.md)：派 Agent（Pi）—— 轻量可扩展 harness、按需 Skill、CLI / JSON / RPC / SDK、包分发。
 - [niubigeo.md](./niubigeo.md)：牛比 GEO（niubigeo）—— Provider 目录、测量运行、原始回答、引用溯源、失败保留、可复现历史。
 - [topify.md](./topify.md)：Topify（商业 SaaS）—— 浏览器自动化采样、prompt 发现、action 工作流、agent 框架逆向与对标。
+- [topify/10-public-api-and-service-logic.md](./topify/10-public-api-and-service-logic.md)：Topify 公开 API 合同、指标公式、Actions 状态机、Webhook、credits 与增长机制（2026-11-01）。
+- [oss-geo-landscape.md](./oss-geo-landscape.md)：开源 GEO 工具格局（niubigeo、GetCito、GEO/AEO Tracker、OneGlanse、Ansvisor）与仍然空着的位置。
 
 ## 源码快照
 

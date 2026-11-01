@@ -1,0 +1,68 @@
+{
+ "date": "2026-11-01",
+ "tool": "rea-agents@6.8.0 (npx CLI, no MCP registration)",
+ "target": "https://app.topify.ai public chunks reachable from /account/sign-in",
+ "artifact": {
+  "path": "/tmp/topify-20261101/app",
+  "files": 36,
+  "bytes": 1561664,
+  "root_sha256": "c429f5e9ee5b5ef259b17b31a7cd670a1d8c98a0e575917594a4dfefb0bae577",
+  "inventory_manifest_id": "agm_69194d4c085cb6b852d15aea21bbe980986b3e90120833f3a5278630f090a627"
+ },
+ "runs": [
+  {
+   "run": "public-shell-full",
+   "outcome": "provider_timeout",
+   "selected_files": 37,
+   "statistics": {
+    "parsed_javascript_files": 13,
+    "skipped_javascript_files": 23,
+    "visited_ast_nodes": 153819,
+    "findings": 592,
+    "modules": 138,
+    "parse_failures": 0
+   },
+   "evidence_id": "ev_727c1673c1c450f1814055cc790ffefcb8badf1a2391924d17ecaab7fdf7f92b",
+   "note": "Timed out while projecting; partial evidence retained."
+  },
+  {
+   "run": "api-client-focused",
+   "outcome": "completed",
+   "selected_paths": [
+    "6976-f79b9449050663d5.js",
+    "1641-6e4701f3b37198f4.js",
+    "layout-87567244faa615b5.js"
+   ],
+   "statistics": {
+    "parsed_javascript_files": 3,
+    "skipped_javascript_files": 0,
+    "visited_ast_nodes": 29676,
+    "findings": 303,
+    "modules": 27,
+    "parse_failures": 0
+   },
+   "application_graph": {
+    "nodes": 315,
+    "edges": 404,
+    "coverage": "partial"
+   },
+   "evidence_id": "ev_5bf09f28f28677bc874751ded758c762265f0842c158891fa914abd679f07759",
+   "confidence": "derived",
+   "authority": "shipped-artifact",
+   "limitations": "34 inventoried files outside analysis scope; inert parse, no execution."
+  }
+ ],
+ "drift": {
+  "previous_manifest_files": 84,
+  "current_public_files": 36,
+  "byte_identical": 28,
+  "changed": 0,
+  "new": 8,
+  "not_reachable_without_session": 48
+ },
+ "toolchain": {
+  "blocker": "SwiftBridging module redefinition when compiling the macOS process-ownership helper",
+  "workaround": "VFS overlay mapping /Library/Developer/CommandLineTools/usr/include/swift/module.modulemap to an empty file for the compiler view only; REA_DARWIN_SWIFTC_PATH wrapper + SDKROOT",
+  "does_not_fix": "provider_timeout for large selections; reduce --source-path count"
+ }
+}
