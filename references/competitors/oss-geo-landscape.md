@@ -14,7 +14,7 @@
 | [Searchstack AEO](https://github.com/alexpospekhov/searchstack-aeo) | 112 | MIT | Python CLI | 模型 API | CLI 式 AI 可见性，偏技术创始人 |
 | [RankSpot awesome-geo-tools](https://github.com/RankSpotAI/awesome-geo-tools) | — | 列表 | — | — | 收录上述项目与 SaaS 对比，明确写"没有开源的 Profound/Peec 等价物" |
 
-OpenGEO 自身 vendored 的上游正是 niubigeo v0.3.2（见 [UPSTREAM.md](../../UPSTREAM.md)），也就是说**我们最直接的对标对象是仓库里已经包含的那份代码**。
+OpenGEO 自身 vendored 的上游正是 niubigeo v0.3.2（见 [UPSTREAM.md](../UPSTREAM.md)），也就是说**我们最直接的对标对象是仓库里已经包含的那份代码**。
 
 ## 2. 已经商品化的能力
 

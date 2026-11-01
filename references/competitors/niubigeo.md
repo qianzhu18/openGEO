@@ -4,7 +4,7 @@
 - Release: v0.3.2
 - Commit: `dd51eedc8e400006755639c0cb332a7fa1a71420`
 - License: Apache-2.0
-- Local source snapshot: [`../../vendor/niubigeo/`](../../vendor/niubigeo/)
+- Local source snapshot: [`../../vendor/niubigeo/`](../../code/vendor/niubigeo)
 
 ## What OpenGEO borrows
 

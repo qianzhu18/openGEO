@@ -22,4 +22,4 @@ Canvas #fff，sidebar / panels #fafafa，文字 #292724，次级文字 #85817d�
 
 ## 全站规格补充
 
-完整页面、交互和实测视觉参数以 [Topify 全站规格](references/competitors/topify/README.md) 为参考目标。当前代码的 232px / 64px 是首轮近似值；原站实测为 15vw（200–300px）侧栏与 68px 桌面顶栏。Recording 应为网址资料池；聊天式 Agent 与执行轨迹分别建模，后续实现按落地规格推进。
+完整页面、交互和实测视觉参数以 [Topify 全站规格](../references/competitors/topify/README.md) 为参考目标。当前代码的 232px / 64px 是首轮近似值；原站实测为 15vw（200–300px）侧栏与 68px 桌面顶栏。Recording 应为网址资料池；聊天式 Agent 与执行轨迹分别建模，后续实现按落地规格推进。

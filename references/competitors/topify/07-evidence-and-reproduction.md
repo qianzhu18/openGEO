@@ -38,7 +38,7 @@ REA 的指纹校验用于把结论绑定到本次脚本版本；不证明该版�
 
 ## 4. 可复现的静态提取
 
-仓库脚本：[extract-client-contracts.mjs](../../../scripts/research/topify/extract-client-contracts.mjs)。它只解析文件，不执行 bundle。使用 REA 所带的 Babel parser，避免把逆向工具加入产品依赖。
+仓库脚本：[extract-client-contracts.mjs](../../../code/scripts/research/topify/extract-client-contracts.mjs)。它只解析文件，不执行 bundle。使用 REA 所带的 Babel parser，避免把逆向工具加入产品依赖。
 
 ```bash
 # REA_PACKAGE_ROOT 指向已获取的 rea-agents 包根目录。

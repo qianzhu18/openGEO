@@ -18,7 +18,7 @@ This directory records what OpenGEO borrows from each reference and, equally imp
 | [niubigeo](./competitors/niubigeo.md) | Provider catalog, measurement runs, raw answers, citation provenance, failure retention, repeatable history | OpenGEO adds delivery workflow, selling points, publication state, sentiment risk, retrospective actions, and self-evolution |
 | [Topify](./competitors/topify.md) | Commercial GEO SaaS benchmark: real-UI sampling, prompt discovery, action workflows, agent framework | Not open source; effect claims unverified; borrow the execution model, not the marketing |
 
-The vendored source snapshot lives in [`vendor/niubigeo/`](../vendor/niubigeo/); the analysis and boundary records live here. See [COMPARISON.md](./competitors/COMPARISON.md) for a side-by-side comparison of OpenGEO, Pi, and niubigeo.
+The vendored source snapshot lives in [`vendor/niubigeo/`](../code/vendor/niubigeo); the analysis and boundary records live here. See [COMPARISON.md](./competitors/COMPARISON.md) for a side-by-side comparison of OpenGEO, Pi, and niubigeo.
 
 ## Knowledge
 

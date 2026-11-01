@@ -49,4 +49,4 @@
 
 `npm run check`；`npm run test:browser`。浏览器覆盖归档回放、原文与导出、新建项目与确认事实、内容审核与链接登记、375/320px 无整页横向溢出；新增筛选、指标切换、侧栏收起与信源返回原文的检查。
 
-最终结果：构建通过，核心测试 19/19、浏览器流程 5/5 通过；桌面 1440px、手机 375px / 320px 截图已检查，手机无整页横向溢出。预览截图位于 `artifacts/topify-baseline/`。旧版文件备份位于 `artifacts/backups/topify-20261030/`。
+最终结果：构建通过，核心测试 19/19、浏览器流程 5/5 通过；桌面 1440px、手机 375px / 320px 截图已检查，手机无整页横向溢出。预览截图位于 `code/artifacts/topify-baseline/`。旧版文件备份位于 `code/artifacts/backups/topify-20261030/`。

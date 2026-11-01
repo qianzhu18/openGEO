@@ -105,7 +105,7 @@ I1 可以用 source-derived templates 打通交互和存储，但 **I1 完成不
 
 源码：`src/citekeel/onboarding.ts`、`semantic-research.ts`、`research-service.ts`、`international.ts`、`recordings.ts`（Recording URL 池已接通 server 与工作台），以及现有 `engine.ts`、`server.ts`。研究方法分别标记 `source-derived-templates/v1` 与 `model-assisted/v1`；没有可用官网来源时不发模型编造画像。有效模型输出没有费用时记录 unknown 并停止本次研究的后续操作（研究本身仅一次模型操作）；非法结构、未知来源或截断结果保留原来源和模板。来源声明保持 unconfirmed，供内部研究使用，对外写作另审核。
 
-验证：`npm run check` 构建及 56 项核心测试通过（2026-11-02 复核）；`npm run test:browser` 10 项通过，覆盖 320px、英文工作台、跨轮证据、配置、刷新与密钥不落浏览器存储。复用公网页面抓取器的安全测试另通过。真实调用摘要见 [PostHog smoke](../examples/international-mvp/live-smoke-summary.json)：1 次研究 + 2 次采样 + 1 次策略，共 4 次调用，Provider 费用合计 $0.0008866。没有消费级网页样本、没有实时搜索、没有对外发布，也没有因果提升结论。
+验证：`npm run check` 构建及 56 项核心测试通过（2026-11-02 复核）；`npm run test:browser` 10 项通过，覆盖 320px、英文工作台、跨轮证据、配置、刷新与密钥不落浏览器存储。复用公网页面抓取器的安全测试另通过。真实调用摘要见 [PostHog smoke](../code/examples/international-mvp/live-smoke-summary.json)：1 次研究 + 2 次采样 + 1 次策略，共 4 次调用，Provider 费用合计 $0.0008866。没有消费级网页样本、没有实时搜索、没有对外发布，也没有因果提升结论。
 
 下一优先级：真实海外搜索／浏览器 adapter 与协议 → 带依据的竞品研究 → 问题编辑与停用 → 持久采集计划和恢复 → 内容审批与 CMS。完整海外 MVP 尚未完成，不将当前 API 基线切片称为 Topify 全量替代。
 
