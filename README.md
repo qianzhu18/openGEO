@@ -45,6 +45,7 @@ npm run opengeo -- skills
 | 海外 MVP 的范围与差距 | [海外 MVP](docs/09-海外最小可行版.md) |
 | 90 天增长方案 | [海外增长](docs/10-海外增长方案.md) |
 | 交付边界、抓数、发布 | [GEO 交付与采集架构](docs/12-交付与采集架构.md) |
+| 采集方式与失败原因 | [采集方式与差异](docs/14-采集方式与差异.md) |
 | 项目路线图 | [路线图](docs/06-路线图.md) |
 | 上游 niubigeo 怎么做的 | [niubigeo 拆解](references/competitors/niubigeo-deep-dive.md) |
 | 开源 GEO 竞争格局 | [开源格局](references/competitors/oss-geo-landscape.md) |

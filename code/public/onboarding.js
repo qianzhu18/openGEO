@@ -103,9 +103,21 @@ async function resume(id) {
 function review() {
   const result = job.result, c = t();
   if (!result?.profile || !['completed','partial'].includes(job.status)) {
-    const reasons = (result?.attempts || []).filter(a => a.status === 'failed').map(a => a.reason).filter(Boolean);
+    const failures = (result?.attempts || []).filter(a => a.status === 'failed');
+    const seen = new Set(), unique = [];
+    for (const a of failures) { const key = `${a.url}\n${a.reason}`; if (!seen.has(key)) { seen.add(key); unique.push(a); } }
+    const localReason = reason => {
+      if (uiLang !== 'zh') return reason;
+      return {
+        'The page returned no readable text; client-rendered pages need browser rendering.': '页面没有可读文本（客户端渲染），需要浏览器渲染。',
+        'Could not obtain usable public HTML evidence.': '没有取得可用的公开 HTML 证据。',
+        'The URL did not return HTML.': '该网址没有返回 HTML。',
+        'The page redirected off the submitted domain.': '页面跳转到了提交域名之外。',
+        'Research time budget exhausted.': '研究时间预算用尽。',
+      }[reason] || reason;
+    };
     progress(1);
-    $('#content').innerHTML = `<h2>${c.failTitle}</h2><p class="subtle">${escapeHtml(job.error || c.failNote)}</p>${reasons.length?`<ul class="subtle">${reasons.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ul>`:''}<button class="secondary" id="start-over">${c.retryOther}</button>`;
+    $('#content').innerHTML = `<h2>${c.failTitle}</h2><p class="subtle">${c.failNote}</p>${unique.length?`<ul class="subtle">${unique.map(a=>`<li>${escapeHtml(a.url)} — ${escapeHtml(localReason(a.reason))}</li>`).join('')}</ul>`:''}<button class="secondary" id="start-over">${c.retryOther}</button>`;
     $('#start-over').onclick=()=>info(); return;
   }
   progress(2); selected = new Set(result.prompts.map(p=>p.id));

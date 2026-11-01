@@ -28,6 +28,8 @@ type Page = { url: string; text: string; contentType: string };
 export interface WebsiteResearchOptions {
   /** Dependency injection for offline tests. Production uses the DNS-pinned public web fetcher. */
   fetchPage?: (url: string) => Promise<Page | null>;
+  /** Optional renderer for client-rendered pages (browser execution). */
+  renderPage?: (url: string) => Promise<Page | null>;
   /** A caller may shorten, but cannot increase, the 25-second overall budget. */
   timeoutMs?: number;
 }
@@ -55,14 +57,18 @@ function fallbackEvidence(html: string): FallbackEvidence | null {
   const document = load(html);
   const title = compact(document('meta[property="og:title"]').attr('content') || document('title').first().text() || '');
   const description = compact(document('meta[property="og:description"]').attr('content') || document('meta[name="description"]').attr('content') || '');
-  const headings = document('h1,h2,h3').map((_, element) => compact(document(element).text())).get().filter(Boolean).slice(0, 10);
+  const scope = document('main, article, [role="main"]').first();
+  const scopeText = compact(scope.text());
+  const headings = (scopeText.length >= 80 ? scope.find('h1,h2,h3') : document('h1,h2,h3')).map((_, element) => compact(document(element).text())).get().filter(Boolean).slice(0, 10);
   const bodyCopy = load(html); bodyCopy('script,style').remove();
-  const bodyText = compact(bodyCopy('body').text());
+  const bodyText = scopeText.length >= 80 ? scopeText : compact(bodyCopy('body').text());
+  const paragraph = compact(scope.find('p').first().text()) || compact(document('p').first().text());
+  const derivedDescription = description || (paragraph.length >= 16 && paragraph.length <= 300 ? paragraph : '');
   const nextRaw = document('script').filter((_, element) => document(element).attr('id') === '__NEXT_DATA__').first().text();
   const strings: string[] = [];
   if (nextRaw) { try { collectNextStrings(JSON.parse(nextRaw), strings); } catch { /* ignore malformed payloads */ } }
-  const text = compact([title, description, ...new Set(strings).values() as unknown as string[], bodyText].filter(Boolean).join(' ')).slice(0, 12_000);
-  return text.length >= 40 ? { ...(title ? { title } : {}), ...(description ? { description } : {}), text, headings } : null;
+  const text = compact([title, derivedDescription, ...new Set(strings).values() as unknown as string[], bodyText].filter(Boolean).join(' ')).slice(0, 12_000);
+  return text.length >= 40 ? { ...(title ? { title } : {}), ...(derivedDescription ? { description: derivedDescription } : {}), text, headings } : null;
 }
 function attemptReason(error: unknown, deadline: number): string {
   if (Date.now() >= deadline) return 'Research time budget exhausted.';
@@ -93,6 +99,24 @@ async function boundedPage(fetchPage: (url: string) => Promise<Page | null>, url
       new Promise<never>((_resolve, reject) => { timer = setTimeout(() => reject(new Error('Research time budget exhausted.')), remaining); }),
     ]);
   } finally { if (timer) clearTimeout(timer); }
+}
+
+function readEvidence(html: string, url: string): { title?: string; description: string; text: string; headings: string[] } {
+  const parsed = extractSiteEvidencePage({ url, html });
+  let title = parsed.title;
+  let description = compact(parsed.description || parsed.ogDescription || parsed.jsonLdDescriptions?.[0] || '');
+  let text = compact(parsed.textSnippet || '');
+  let headings = (parsed.headings || []).map(compact).filter(Boolean);
+  // Prefer the richer candidate: rendered/SSR DOM text or structured payload text.
+  const fallback = fallbackEvidence(html);
+  if (fallback) {
+    title ||= fallback.title;
+    description ||= fallback.description || '';
+    if (fallback.text.length > text.length) text = fallback.text;
+    if (!headings.length) headings = fallback.headings;
+  }
+  if (!text) text = compact([title, description].filter(Boolean).join(' '));
+  return { ...(title ? { title } : {}), description, text, headings };
 }
 
 /** Local, source-derived preparation. No model calls, search-volume estimates, or inferred competitors. */
@@ -139,26 +163,28 @@ export async function researchWebsite(
       validatePublicWebUrl(url);
       const page = await boundedPage(fetchPage, url, deadline);
       if (!page || !/text\/html|application\/xhtml/i.test(page.contentType)) throw new Error('No HTML evidence.');
-      const finalUrl = validatePublicWebUrl(page.url);
+      let finalUrl = validatePublicWebUrl(page.url);
       if (normalizeDomain(finalUrl.href) !== result.domain) throw new Error('Redirect left the submitted website.');
       finalUrl.hash = '';
-      const html = page.text.slice(0, 260_000);
-      const parsed = extractSiteEvidencePage({ url: finalUrl.href, html });
-      let evidenceTitle = parsed.title;
-      let evidenceDescription = compact(parsed.description || parsed.ogDescription || parsed.jsonLdDescriptions?.[0] || '');
-      let evidenceText = compact(parsed.textSnippet || '');
-      let evidenceHeadings = (parsed.headings || []).map(compact).filter(Boolean);
-      // Client-rendered pages often expose only the title as text; merge structured payload text.
-      if (evidenceText.length < 120) {
-        const fallback = fallbackEvidence(html);
-        if (fallback) {
-          evidenceTitle ||= fallback.title;
-          evidenceDescription ||= fallback.description || '';
-          if (fallback.text.length > evidenceText.length) evidenceText = fallback.text;
-          if (!evidenceHeadings.length) evidenceHeadings = fallback.headings;
+      let html = page.text.slice(0, 260_000);
+      let evidence = readEvidence(html, finalUrl.href);
+      // A JS shell has no readable text: render once with a real browser, then re-read the DOM.
+      if (evidence.text.length < 120 && options.renderPage) {
+        const rendered = await boundedPage(options.renderPage, url, deadline).catch(() => null as Page | null);
+        if (rendered && /text\/html|application\/xhtml/i.test(rendered.contentType)) {
+          const renderedUrl = validatePublicWebUrl(rendered.url);
+          if (normalizeDomain(renderedUrl.href) === result.domain) {
+            renderedUrl.hash = '';
+            finalUrl = renderedUrl;
+            html = rendered.text.slice(0, 400_000);
+            evidence = readEvidence(html, finalUrl.href);
+          }
         }
       }
-      if (!evidenceText) evidenceText = compact([evidenceTitle, evidenceDescription].filter(Boolean).join(' '));
+      const evidenceTitle = evidence.title;
+      const evidenceDescription = evidence.description;
+      const evidenceText = evidence.text;
+      const evidenceHeadings = evidence.headings;
       if (!evidenceText) throw new Error('No readable text on this page.');
       const sourceId = stableId('source', finalUrl.href);
       if (!result.sources.some(source => source.id === sourceId)) {
@@ -167,9 +193,11 @@ export async function researchWebsite(
           const document = load(html);
           const siteName = document('meta[property="og:site_name"]').first().attr('content');
           const titleBrand = (evidenceTitle || '').split(/\s+[|–—-]\s+|\s*\|\s*/)[0];
+          const genericLabel = (value: string) => /^(home|homepage|personal blog|blog|welcome|index|untitled)$/i.test((value || '').trim());
+          const genericTitle = genericLabel(titleBrand);
           const rawDomainLabel = finalUrl.hostname.replace(/^www\./, '').split('.')[0] || '';
           const domainLabel = rawDomainLabel ? rawDomainLabel.charAt(0).toUpperCase() + rawDomainLabel.slice(1) : '';
-          const brand = compact(siteName || titleBrand || evidenceHeadings[0] || domainLabel).slice(0, 100);
+          const brand = compact((genericLabel(siteName || '') ? '' : siteName) || (genericTitle ? '' : titleBrand) || domainLabel || evidenceHeadings[0]).slice(0, 100);
           if (brand) result.profile = { brand, description: evidenceDescription.slice(0, 1000) };
           if (brand) result.claims.push({ id: stableId('claim', `${sourceId}:brand`), label: language === 'zh' ? '网站品牌名称' : 'Website brand label', value: brand, status: 'unconfirmed', sourceIds: [sourceId] });
           if (evidenceDescription) result.claims.push({ id: stableId('claim', `${sourceId}:description`), label: language === 'zh' ? '网站描述' : 'Website description', value: evidenceDescription.slice(0, 1000), status: 'unconfirmed', sourceIds: [sourceId] });
@@ -179,8 +207,9 @@ export async function researchWebsite(
           queue.push(...links.slice(0, 2));
         }
         for (const heading of evidenceHeadings) {
-          const name = compact(heading);
+          const name = compact(heading).replace(/^[A-Z]\s*(?=[\u4e00-\u9fa5])/, '').trim();
           if (name.length < 5 || name.length > 120 || /^(get started|contact us|sign up|log in|learn more|welcome|home)$/i.test(name)) continue;
+          if (/(归档|搜索|分类|标签|导航|menu|search|archive|category|tag)/i.test(name)) continue;
           const id = stableId('topic', name.toLowerCase());
           const existing = result.topics.find(topic => topic.id === id);
           if (existing && !existing.sourceIds.includes(sourceId)) existing.sourceIds.push(sourceId);

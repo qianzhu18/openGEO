@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { validatePublicWebUrl } from '../../vendor/niubigeo/src/utils/public-web-fetch.js';
 import { researchWebsite, type WebsiteResearch } from './onboarding.js';
+import { renderPage } from './browser-render.js';
 import type { Project } from './types.js';
 import { Store } from './storage.js';
 import { enrichWebsiteResearch, type EnrichedWebsiteResearch } from './semantic-research.js';
@@ -66,7 +67,7 @@ export class ResearchService {
   private async execute(job: ResearchJob, config?: LiveConfig) {
     try {
       job.status = 'running'; await this.store.save('researches', job);
-      job.result = await this.research(job.input);
+      job.result = await this.research(job.input, { renderPage });
       if (config) {
         await this.store.save('researches', job);
         const enriched = await this.enrich(job.result, config);

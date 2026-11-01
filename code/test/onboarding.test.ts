@@ -112,3 +112,18 @@ test('client-rendered pages fall back to __NEXT_DATA__ evidence instead of faili
   assert.ok(result.sources[0]!.text.includes('共学营'));
   assert.ok(result.prompts.length >= 2);
 });
+
+test('client-rendered pages use the browser renderer when static HTML has no text', async () => {
+  const shell = '<html><head><title>Personal Blog</title></head><body><div id="__next"></div><script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{}}}</script></body></html>';
+  const rendered = '<html><head><title>Personal Blog</title></head><body><main><h1>千逐</h1><p>写想法，也写想法如何落地。这里记录产品与工程实践。</p></main></body></html>';
+  const result = await researchWebsite({ url: 'https://qianzhu.example/', language: 'zh', country: 'CN' }, {
+    fetchPage: async url => ({ url, text: shell, contentType: 'text/html' }),
+    renderPage: async url => ({ url, text: rendered, contentType: 'text/html' }),
+  });
+  assert.equal(result.status, 'completed');
+  assert.equal(result.profile?.brand, 'Qianzhu');
+  assert.ok(result.profile?.description?.includes('写想法'));
+  assert.equal(result.sources.length, 1);
+  assert.ok(result.sources[0]!.text.includes('写想法'));
+  assert.ok(result.prompts.every(prompt => !prompt.text.includes('Personal Blog')));
+});
