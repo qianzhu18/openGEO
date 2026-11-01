@@ -1,4 +1,5 @@
 import { PromptService, WorkspaceError } from './prompts.js';
+import { RecordingService } from './recordings.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -36,6 +37,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
   await store.initialize(await loadCases());
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
+  const recordings = new RecordingService(store);
   let activeRunId: string | null = null;
   const server = createServer(async (req, res) => {
     try {
@@ -85,6 +87,16 @@ export async function createApp(store = new Store(), options: { research?: typeo
           }), queries: strings.map((text, i) => ({ id: `q-${i + 1}`, text, intent: i === 0 ? '品牌核验' : '供应商发现', branded: i === 0, origin: '本地模板，待用户选择' })),
           queryVersion: 1, samples: [], createdAt: now, updatedAt: now };
         await store.save('projects', project); return send(res, 201, project);
+      }
+      const recordingMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/recordings(?:\/([a-zA-Z0-9_-]+))?(?:\/(collect))?$/);
+      if (recordingMatch) {
+        const [, id, rid, action] = recordingMatch;
+        if (method === 'GET' && !rid) return send(res, 200, { recordings: await recordings.list(id) });
+        if (method === 'POST' && !rid) return send(res, 201, await recordings.add(id, await body(req)));
+        if (method === 'POST' && rid === 'prompts') return send(res, 200, await recordings.proposePrompts(id, (await body(req)).ids));
+        if (method === 'DELETE' && rid && !action) return send(res, 200, await recordings.remove(id, rid));
+        if (method === 'POST' && rid && action === 'collect') return send(res, 200, await recordings.collect(id, rid));
+        return send(res, 405, { error: 'Unsupported recording operation.' });
       }
       const promptMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/(prompts|topics|table-settings)(?:\/([a-zA-Z0-9_-]+))?$/);
       if (promptMatch) {

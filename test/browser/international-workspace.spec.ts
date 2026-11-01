@@ -98,3 +98,19 @@ test('mobile project review and failure evidence remain usable at 320px', async 
   await expect(page.locator('#evidence-dialog .answer-text')).toContainText('No answer text was collected.');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('recording pool keeps URLs as source inputs and can be removed', async ({ page }) => {
+  await page.goto(`/workspace?project=${projectId}&view=recording`);
+  await expect(page.getByRole('heading', { name: 'Recording', exact: true })).toBeVisible();
+  await expect(page.getByText('No URLs recorded yet', { exact: false })).toBeVisible();
+  await page.fill('#recording-form input[name=url]', 'https://docs.example.com/guide');
+  await page.click('#recording-form button[type=submit]');
+  await expect(page.locator('.source-table tbody tr')).toHaveCount(1);
+  await expect(page.getByText('https://docs.example.com/guide', { exact: false })).toBeVisible();
+  await page.locator('.source-table tbody tr input[type=checkbox]').check();
+  await expect(page.getByText('1 / 5 selected', { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
+  await expect(page.getByText('No URLs recorded yet', { exact: false })).toBeVisible();
+});

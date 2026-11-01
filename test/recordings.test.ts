@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RecordingService, listObservedFanouts, type RecordingFetcher } from '../src/citekeel/recordings.js';
 import { Store } from '../src/citekeel/storage.js';
+import { createApp } from '../src/citekeel/server.js';
 import type { Project, Sample } from '../src/citekeel/types.js';
 
 function project(): Project { const now=new Date().toISOString();return {id:'project-recording-test',name:'Acme',brand:'Acme',aliases:[],domain:'acme.example',industry:'',description:'',origin:'manual',market:'international',language:'en',country:'US',goal:'Diagnose',sources:[],claims:[],queries:[{id:'original-prompt',text:'What does Acme offer?',intent:'brand_awareness',branded:true,origin:'manual',status:'active'}],queryVersion:1,samples:[],createdAt:now,updatedAt:now}; }
@@ -69,4 +70,37 @@ test('fanouts retain actual provider queries and distinguish unknown capture fro
  const result=listObservedFanouts([sample('actual',{requested:true,used:true,webQueries:['product analytics tools','product analytics tools','session replay']}),sample('missing'),sample('withheld',{requested:true,used:true,webQueries:[]}),sample('unused',{requested:false,used:false,webQueries:[]}),sample('failed',{requested:true,used:true,webQueries:['must not be reported']},true),sample('malformed',{queries:['not the supported provider structure']}),sample('unconfirmed',{requested:true,used:false,usedMode:'requested_not_confirmed',webQueries:[]})]);
  assert.deepEqual(result.items.map(i=>i.query),['product analytics tools','session replay']);assert.ok(result.items.every(i=>i.sampleId==='actual'&&i.queryId==='prompt-1'&&i.provider==='gemini'));
  assert.deepEqual(result.knownSampleIds,['actual','unused']);assert.deepEqual(result.unknownSampleIds,['missing','withheld','failed','malformed','unconfirmed']);assert.equal(result.unknownCount,5);
+});
+
+
+test('recording HTTP routes expose the URL pool without inventing answers', async () => {
+  const { store, cleanup } = await fixture();
+  const { server } = await createApp(store);
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${(server.address() as import('node:net').AddressInfo).port}`;
+  const request = async (path: string, method = 'GET', value?: unknown) => {
+    const response = await fetch(base + path, { method, headers: { 'content-type': 'application/json' }, ...(value === undefined ? {} : { body: JSON.stringify(value) }) });
+    return { status: response.status, body: await response.json() };
+  };
+  try {
+    const added = await request('/api/projects/project-recording-test/recordings', 'POST', { url: 'https://docs.example/guide' });
+    assert.equal(added.status, 201);
+    assert.equal(added.body.status, 'queued');
+    const id = added.body.id as string;
+    const listed = await request('/api/projects/project-recording-test/recordings');
+    assert.equal(listed.body.recordings.length, 1);
+    assert.equal(listed.body.recordings[0].url, 'https://docs.example/guide');
+    const blocked = await request('/api/projects/project-recording-test/recordings/prompts', 'POST', { ids: [id] });
+    assert.equal(blocked.status, 400);
+    assert.match(blocked.body.error, /Collect each selected URL/);
+    const rejected = await request('/api/projects/project-recording-test/recordings', 'POST', { url: 'http://127.0.0.1' });
+    assert.equal(rejected.status, 400);
+    const removed = await request(`/api/projects/project-recording-test/recordings/${id}`, 'DELETE');
+    assert.equal(removed.body.removed, true);
+    const after = await request('/api/projects/project-recording-test/recordings');
+    assert.equal(after.body.recordings.length, 0);
+  } finally {
+    server.close();
+    await cleanup();
+  }
 });
