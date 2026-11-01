@@ -15,14 +15,17 @@
     "case": "tsx src/citekeel/cli.ts",
     "upstream": "cd vendor/niubigeo && tsx src/product/product-server.ts",
     "check:upstream": "npm --prefix vendor/niubigeo ci --no-audit --no-fund && npm --prefix vendor/niubigeo run self-check",
-    "test:browser": "playwright test --config playwright.config.ts"
+    "test:browser": "playwright test --config playwright.config.ts",
+    "browser:check": "tsx src/citekeel/browser/cli.ts check",
+    "browser:ask": "tsx src/citekeel/browser/cli.ts ask"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
     "cron-parser": "^5.10.0",
     "linkify-it": "^6.1.0",
     "marked": "^18.0.11",
-    "nodemailer": "^10.0.0"
+    "nodemailer": "^10.0.0",
+    "playwright-core": "^1.63.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
