@@ -14,6 +14,7 @@
 - **登录态复核（2026-11-02）**：用 ego lite 复用会话完成登录后复核。84 个产品 chunk 中 82 个与 10-30 逐字节一致，0 个变化；但 IA 已改为 `Analyze / Tracking{prompts,recording,sources,fanouts}`、`Optimization/Actions`、`Preferences/Competitors`、`Management/*`，旧扁平路由返回 404。Prompts 首屏新增 AI Volume / Sentiment / Position / SOV / Mentions / CVR，Recording 是 URL 池（最多选 5 个生成问题）。见 [登录后产品复核](references/competitors/topify/11-logged-in-reverse-2026-11-02.md)。
 - **产品机制白话版**：完整用户体验、GEO 优化、检测口径与定时采集逐段拆解见 [Topify 怎么运作](docs/11-topify-flow-and-geo-mechanics.md)。
 - **交付与采集架构**：建站/内容/平台的分工，Reddit、LinkedIn 发什么，抓数与发布边界，以及要不要“云电脑”见 [GEO 交付与采集架构](docs/12-geo-delivery-and-collection-architecture.md)。
+- **上游与路线**：niubigeo 的架构、调度、测量纪律与增长机制拆解见 [niubigeo 拆解](references/competitors/niubigeo-deep-dive.md)；OpenGEO 的定位、架构与 90 天路线见 [OpenGEO 计划](docs/13-opengeo-product-plan.md)。
 - **增长方案**：90 天计划、渠道、度量与 GEO 效果表述规范见 [海外增长](docs/10-overseas-growth.md)。
 
 ## 海外 MVP 本地入口（2026-10-31）

@@ -1,5 +1,7 @@
 # OpenGEO 项目路线图与里程碑
 
+> 2026-11-02 优先级更新：以 [OpenGEO 计划](13-opengeo-product-plan.md) 为准——先冻结数据契约、跑通 `opengeo audit` 一条链路，再补 Competitors/Prompts 列等页面能力；不要并行铺页面。
+
 > 2026-10-31 方向更新：**海外优先，国内 GEO 暂不做**，当前实施与验收以 [海外 MVP 规格](09-international-mvp.md) 的 I0–I5 为准。以 [Topify 对齐的诊断链路](08-topify-aligned-diagnostic-flow.md) 为当前产品基线。优先交付官网 URL → 自动品牌研究 → 竞品 / 问题发现 → 采集计划 → 真实采集与诊断的垂直链路；Model Gateway 是其中组件。下列 M2 状态仅表示旧 CLI 里程碑完成，不代表新的端到端诊断已完成。
 
 更新：2026-11-01 · 负责人：千逐 · 状态：海外 MVP I0–I1 完成，I2–I3 部分完成
