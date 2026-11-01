@@ -12,6 +12,7 @@
 - **新的权威证据源**：公开 API 文档（294,643 字节）给出实体、指标公式、Actions 状态机、Webhook 与 credits 计费。整理见 [公开 API 与服务逻辑](references/competitors/topify/10-public-api-and-service-logic.md)。产品侧已改为 credits 定价（$149 / $299 / $599）并有 13 个免费工具、1,111 篇博客。
 - **竞争现实**："开源 GEO 仪表盘"已经拥挤（niubigeo 8,927 stars；GetCito / GEO-AEO Tracker / OneGlanse / Ansvisor 各有 200–500 stars），差异化只能是**可复算的交付闭环**。见 [开源格局](references/competitors/oss-geo-landscape.md)。
 - **登录态复核（2026-11-02）**：用 ego lite 复用会话完成登录后复核。84 个产品 chunk 中 82 个与 10-30 逐字节一致，0 个变化；但 IA 已改为 `Analyze / Tracking{prompts,recording,sources,fanouts}`、`Optimization/Actions`、`Preferences/Competitors`、`Management/*`，旧扁平路由返回 404。Prompts 首屏新增 AI Volume / Sentiment / Position / SOV / Mentions / CVR，Recording 是 URL 池（最多选 5 个生成问题）。见 [登录后产品复核](references/competitors/topify/11-logged-in-reverse-2026-11-02.md)。
+- **产品机制白话版**：完整用户体验、GEO 优化、检测口径与定时采集逐段拆解见 [Topify 怎么运作](docs/11-topify-flow-and-geo-mechanics.md)。
 - **增长方案**：90 天计划、渠道、度量与 GEO 效果表述规范见 [海外增长](docs/10-overseas-growth.md)。
 
 ## 海外 MVP 本地入口（2026-10-31）

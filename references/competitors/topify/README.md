@@ -21,6 +21,7 @@
 | [09 创建工作空间](09-workspace-onboarding.md) | 海外建档、自动研究、问题筛选、bootstrap 状态与恢复 |
 | [10 公开 API 与服务逻辑](10-public-api-and-service-logic.md) | 厂商自述的实体、指标公式、Actions 状态机、Webhook、计费与增长机制（2026-11-01） |
 | [11 登录后产品复核](11-logged-in-reverse-2026-11-02.md) | 登录态下的 IA、11 个页面、31 个内部 API、响应结构与 REA 证据（2026-11-02） |
+| [白话说清 Topify](../../../docs/11-topify-flow-and-geo-mechanics.md) | 面向非技术的完整流程、GEO 优化、检测与定时采集解释 |
 
 2026-10-30 轮把「概览页视觉基线」扩展到产品、页面、交互、接口、数据、Agent、指标、权限、计费、设计和开发映射。交付是可供实现的规格与证据包；没有把尚未开发的功能标为已完成。
 
