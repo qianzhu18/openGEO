@@ -101,9 +101,9 @@ export class ResearchService {
         researchId: job.id, topics: result.topics,
         goal: `Diagnose ${result.profile.brand}'s AI visibility in ${result.country} using English questions and traceable answer evidence.`,
         sources: result.sources, claims: result.claims,
-        queries: result.prompts.filter(p => selected.has(p.id)).map(p => ({
+        queries: result.prompts.map(p => ({
           id: p.id, text: p.text, intent: p.intent, branded: p.branded, origin: p.origin === 'model-assisted' ? 'Model-assisted proposal grounded in website sources; reviewed at onboarding' : 'Website-grounded English template; reviewed at onboarding',
-          status: 'active', topicId: p.topicId, sourceIds: p.sourceIds, country: result.country, language: result.language,
+          status: selected.has(p.id) ? 'active' : 'suggested', revision: 1, topicId: p.topicId, sourceIds: p.sourceIds, country: result.country, language: result.language,
         })), queryVersion: 1, samples: [], createdAt: now, updatedAt: now,
       };
       await this.store.save('projects', project);

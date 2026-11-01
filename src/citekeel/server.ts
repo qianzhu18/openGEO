@@ -1,3 +1,4 @@
+import { PromptService, WorkspaceError } from './prompts.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -34,6 +35,7 @@ function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.
 export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch } = {}) {
   await store.initialize(await loadCases());
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
+  const prompts = new PromptService(store);
   let activeRunId: string | null = null;
   const server = createServer(async (req, res) => {
     try {
@@ -83,6 +85,19 @@ export async function createApp(store = new Store(), options: { research?: typeo
           }), queries: strings.map((text, i) => ({ id: `q-${i + 1}`, text, intent: i === 0 ? '品牌核验' : '供应商发现', branded: i === 0, origin: '本地模板，待用户选择' })),
           queryVersion: 1, samples: [], createdAt: now, updatedAt: now };
         await store.save('projects', project); return send(res, 201, project);
+      }
+      const promptMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/(prompts|topics|table-settings)(?:\/([a-zA-Z0-9_-]+))?$/);
+      if (promptMatch) {
+        const [, id, resource, item] = promptMatch;
+        if (resource === 'prompts' && method === 'GET' && !item) return send(res, 200, await prompts.list(id, {status:url.searchParams.get('status')||undefined,search:url.searchParams.get('search')||undefined,topicId:url.searchParams.get('topicId')||undefined,page:Number(url.searchParams.get('page')),pageSize:Number(url.searchParams.get('pageSize'))}));
+        if (resource === 'table-settings' && method === 'GET') return send(res,200,await prompts.settings(id));
+        const input=await body(req);
+        if (resource === 'prompts' && method === 'POST' && !item) return send(res,201,await prompts.add(id,input));
+        if (resource === 'prompts' && method === 'POST' && item === 'batch') return send(res,200,await prompts.batch(id,input));
+        if (resource === 'prompts' && method === 'PATCH' && item) return send(res,200,await prompts.edit(id,item,input));
+        if (resource === 'topics' && method === 'POST') return send(res,201,await prompts.addTopic(id,input));
+        if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
+        return send(res,405,{error:'Unsupported prompt operation.'});
       }
       const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations))?$/);
       if (projectMatch) {
@@ -152,10 +167,20 @@ export async function createApp(store = new Store(), options: { research?: typeo
           const model = textField(input.model, '模型', 200); if (!model) throw new Error('请填写当前账号可用的模型 ID');
           const apiKey = textField(input.apiKey, 'API Key', 2000) || resolveProviderKey(provider);
           const maxQuestions = Math.min(5, Math.max(1, Number(input.maxQuestions) || 3));
-          if (Array.isArray(input.questions)) {
+          if (Array.isArray(input.queryIds)) {
+            if (!input.queryIds.length || input.queryIds.length > maxQuestions || new Set(input.queryIds).size !== input.queryIds.length) throw new WorkspaceError('Select 1–5 distinct active prompts.');
+            const selected: Query[] = input.queryIds.map((id: unknown) => {
+              const query = project.queries.find(q => q.id === id);
+              if (!query || (query.status && query.status !== 'active')) throw new WorkspaceError('Only active prompts can be collected.');
+              return query;
+            });
+            project.queries = selected;
+          } else if (Array.isArray(input.questions)) {
             project.queries = input.questions.slice(0, maxQuestions).map((s: unknown, i: number): Query => {
               const text = textField(s, '问题', 800); if (!text) throw new Error('采样问题不能为空');
-              return project.queries.find(q => q.text === text) || { id: `live-q${i + 1}`, text, intent: '用户确认的 API 采样问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '本轮确认' };
+              const known = project.queries.find(q => q.text === text);
+              if (known?.status && known.status !== 'active') throw new WorkspaceError('Track a suggested or inactive prompt before collection.');
+              return known || { id: `adhoc-${randomUUID()}`, text, intent: '用户确认的 API 采样问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '本轮确认' };
             });
           }
           config = { provider, model, apiKey, maxQuestions, webSearch: input.webSearch === true };
@@ -193,7 +218,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
         await store.save('runs', run); return send(res, 200, run);
       }
       return send(res, 404, { error: '没有这个页面或接口' });
-    } catch (error) { send(res, 400, { error: error instanceof Error ? error.message : '请求失败' }); }
+    } catch (error) { send(res, error instanceof WorkspaceError ? error.status : 400, { error: error instanceof Error ? error.message : '请求失败', ...(error instanceof WorkspaceError ? {code:error.code} : {}) }); }
   });
   return { server, store };
 }

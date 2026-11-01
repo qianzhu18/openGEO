@@ -22,7 +22,7 @@ test('research creates one source-backed workspace with stable selected prompt I
     const ids=job.result!.prompts.slice(0,1).map(p=>p.id);
     const project=await service.accept(job.id,ids), again=await service.accept(job.id,ids);
     assert.equal(project.id,again.id);assert.equal((await store.list('projects')).length,1);
-    assert.equal(project.queries[0]!.id,ids[0]);assert.equal(project.queries[0]!.status,'active');
+    assert.equal(project.queries[0]!.id,ids[0]);assert.equal(project.queries[0]!.status,'active');assert.ok(project.queries.some(q=>q.status==='suggested'));assert.equal(project.queries.filter(q=>q.status==='active').length,1);
     assert.equal(project.market,'international');assert.equal(project.language,'en');assert.equal(project.samples.length,0);
     assert.ok(project.claims.every(c=>c.status==='unconfirmed'));assert.ok(project.sources.length);
     await assert.rejects(service.accept(job.id,['foreign-prompt']),/selection/);

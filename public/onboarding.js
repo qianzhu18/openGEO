@@ -57,7 +57,7 @@ function review() {
 }
 function ready() {
   progress(3);$('#error').textContent='';
-  $('#content').innerHTML=`<div class="check" aria-hidden="true">✓</div><h2>Your workspace is ready</h2><p class="subtle">${escapeHtml(project.brand)} · ${project.queries.length} active prompts · English / ${escapeHtml(project.country)}</p><div class="note">Website research is saved. AI visibility is still unmeasured. Open your workspace to configure a provider and collect your first real answers.</div><a class="primary" href="/workspace?project=${encodeURIComponent(project.id)}">Open workspace →</a><a class="secondary" href="/workspace?project=${encodeURIComponent(project.id)}&view=agent">Configure first API measurement</a>`;
+  $('#content').innerHTML=`<div class="check" aria-hidden="true">✓</div><h2>Your workspace is ready</h2><p class="subtle">${escapeHtml(project.brand)} · ${project.queries.filter(q=>q.status==='active').length} active prompts · English / ${escapeHtml(project.country)}</p><div class="note">Website research is saved. AI visibility is still unmeasured. Open your workspace to configure a provider and collect your first real answers.</div><a class="primary" href="/workspace?project=${encodeURIComponent(project.id)}">Open workspace →</a><a class="secondary" href="/workspace?project=${encodeURIComponent(project.id)}&view=agent">Configure first API measurement</a>`;
 }
 const saved = new URLSearchParams(location.search).get('research');
 if(saved && /^research-[a-zA-Z0-9-]{1,80}$/.test(saved)) resume(saved);else info();

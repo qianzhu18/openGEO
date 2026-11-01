@@ -6,7 +6,7 @@ export interface Claim {
   sourceIds: string[]; alternatives?: { value: string; sourceId: string }[];
   confirmation?: { sourceId: string; at: string };
 }
-export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; country?: string; language?: string }
+export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; country?: string; language?: string; revision?: number; previousVersionId?: string; createdAt?: string; updatedAt?: string }
 export interface Citation {
   url: string; kind: 'provider_citation' | 'search_result' | 'grounding' | 'answer_url';
   source: string; payloadPath?: string; integrity: 'matched' | 'unverified' | 'mismatch';
@@ -19,7 +19,12 @@ export interface Sample {
   upstreamAttemptId?: string; search?: unknown; costUsd?: number; latencyMs?: number;
   recommendationEvidence?: string; sourceJudgment?: string;
 }
+export interface TrackedBrand { id: string; name: string; aliases: string[]; domains: string[]; status: 'active' | 'suggested' | 'inactive'; isOwn: boolean }
 export interface Project {
+  recordings?: import('./recordings.js').Recording[];
+  competitors?: TrackedBrand[];
+  tableSettings?: { hiddenColumns: string[]; deltaDisplay: 'full' | 'icon' | 'none'; version: number };
+  promptChanges?: { requestId: string; fingerprint: string; ids: string[]; version: number }[];
   market?: 'international'; language?: string; country?: string; researchId?: string;
   topics?: { id: string; name: string; sourceIds: string[] }[];
   id: string; name: string; brand: string; aliases: string[]; domain: string; industry: string;
