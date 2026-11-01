@@ -1,6 +1,6 @@
 # 06 OpenGEO 的实现映射与验收规格
 
-> 2026-10-31 实施顺序更新：先交付 URL 自动研究、竞品 / 问题发现与诊断的完整垂直链路，Agent 入口不再排在分析页面全部完成之后。以 [最新产品链路](../../../docs/08-topify-aligned-diagnostic-flow.md) 为准；本页其他实体和证据约束仍适用。
+> 2026-10-31 实施顺序更新：先交付 URL 自动研究、竞品 / 问题发现与诊断的完整垂直链路，Agent 入口不再排在分析页面全部完成之后。以 [最新产品链路](../../../docs/08-诊断链路.md) 为准；本页其他实体和证据约束仍适用。
 
 本页是 **DESIGN / 待实现方案**。沿用用户确定的 Topify 框架，不另起视觉方向。此次未把下表待做功能伪装成已开发。
 
@@ -22,7 +22,7 @@ Prompts 监控页的逐列拆解、根因与 P0 顺序见 [08](08-prompts-monito
 | Project settings | 有品牌资料与模型配置 | 默认品牌、结构化别名、语言地区、集成、Agent 知识 |
 | Members / Billing | 单人本地模式 | 自托管多人 / SaaS 阶段才引入 |
 | 采集调度 | API 观察 / 导入 / 回放 | 计划运行、消费级采样 adapter、失败与预算记录 |
-| 数据统一 | `src/citekeel` 工作台与 `src/opengeo` CLI 并存 | Web / CLI / 后续 MCP 共享一个 workspace 服务 |
+| 数据统一 | `code/src/citekeel` 工作台与 `code/src/opengeo` CLI 并存 | Web / CLI / 后续 MCP 共享一个 workspace 服务 |
 
 ## 2. 目标导航
 

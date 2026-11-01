@@ -2,7 +2,7 @@
 
 开源 GEO 交付引擎：把 AI 回答变成可回放的证据、可执行的动作、可复测的结论。
 
-当前是 `0.2.0` 本地原型：URL-first 建档、可选模型研究、英文诊断工作台、Recording URL 池、CLI 回放。**还没有**每日调度、浏览器采集 adapter、Competitors 实体、发布与复测闭环——这些是 [OpenGEO 计划](docs/13-opengeo-product-plan.md) 的 P0–P4。
+当前是 `0.2.0` 本地原型：URL-first 建档、可选模型研究、英文诊断工作台、Recording URL 池、CLI 回放。**还没有**每日调度、浏览器采集 adapter、Competitors 实体、发布与复测闭环——这些是 [OpenGEO 计划](docs/13-产品计划.md) 的 P0–P4。
 
 ## 目录
 
@@ -40,17 +40,17 @@ npm run opengeo -- skills
 
 | 想了解 | 看这里 |
 | --- | --- |
-| 这个产品怎么运转（白话版） | [Topify 流程、检测与采集](docs/11-topify-flow-and-geo-mechanics.md) |
-| OpenGEO 怎么定位、怎么做 | [OpenGEO 产品计划](docs/13-opengeo-product-plan.md) |
-| 海外 MVP 的范围与差距 | [海外 MVP](docs/09-international-mvp.md) |
-| 90 天增长方案 | [海外增长](docs/10-overseas-growth.md) |
-| 交付边界、抓数、发布 | [GEO 交付与采集架构](docs/12-geo-delivery-and-collection-architecture.md) |
-| 项目路线图 | [路线图](docs/06-roadmap.md) |
+| 这个产品怎么运转（白话版） | [Topify 流程、检测与采集](docs/11-产品运转机制.md) |
+| OpenGEO 怎么定位、怎么做 | [OpenGEO 产品计划](docs/13-产品计划.md) |
+| 海外 MVP 的范围与差距 | [海外 MVP](docs/09-海外最小可行版.md) |
+| 90 天增长方案 | [海外增长](docs/10-海外增长方案.md) |
+| 交付边界、抓数、发布 | [GEO 交付与采集架构](docs/12-交付与采集架构.md) |
+| 项目路线图 | [路线图](docs/06-路线图.md) |
 | 上游 niubigeo 怎么做的 | [niubigeo 拆解](references/competitors/niubigeo-deep-dive.md) |
 | 开源 GEO 竞争格局 | [开源格局](references/competitors/oss-geo-landscape.md) |
 | Topify 逆向全套 | [Topify 索引](references/competitors/topify/README.md) |
 
-完整文档索引见 [`docs/README.md`](docs/README.md)。
+完整文档索引见 [`docs/文档索引.md`](docs/文档索引.md)。
 
 ## 数据与隐私
 

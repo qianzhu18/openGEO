@@ -2,14 +2,14 @@
 
 > 结论先行：**Pi 给的是「最小可扩展 harness」的形态，niubigeo 给的是「可复现的 AI 可见性证据」，OpenGEO 要做的是把两者接到「GEO 交付闭环」上。** 三者不是同一赛道的直接竞品，而是「形态参考 + 能力参考 + 交付层」的关系。
 
-本文基于本地 `vendor/niubigeo/`（v0.3.2，commit `dd51eedc…`）源码与文档、Pi 仓库 `main` 分支提交 `19ce8059…` 的阅读，以及本仓库 `docs/05-opengeo-engine.md`。竞对事实只写到可核对的范围，不把推断写成对方实现。
+本文基于本地 `vendor/niubigeo/`（v0.3.2，commit `dd51eedc…`）源码与文档、Pi 仓库 `main` 分支提交 `19ce8059…` 的阅读，以及本仓库 `docs/05-引擎设计.md`。竞对事实只写到可核对的范围，不把推断写成对方实现。
 
 ## 1. 三个项目各自是什么
 
 | | OpenGEO（我们） | Pi | niubigeo（牛比 GEO） |
 | --- | --- | --- | --- |
 | 一句话 | 以证据为中心的 GEO 交付与实验引擎 | 通用 AI agent 工具包（unified LLM API、agent loop、TUI、coding agent CLI） | 开源 GEO 研究 / 测量工具（AI visibility、可复现测试、竞对与证据） |
-| 仓库 | 本仓库（CiteKeel 0.1.0 + opengeo CLI） | <https://github.com/earendil-works/pi> | <https://github.com/Albert-Weasker/niubigeo> |
+| 仓库 | 本仓库（OpenGEO 0.1.0 原型 + opengeo CLI） | <https://github.com/earendil-works/pi> | <https://github.com/Albert-Weasker/niubigeo> |
 | License | Apache-2.0 | MIT | Apache-2.0 |
 | 版本 / 状态 | 0.1.0 原型 + 下一阶段引擎设计 | 成熟工具包 | v0.3.2，已执行 20 个真实案例 |
 | 默认形态 | CLI / JSON / MCP 优先；Web 仅可选宿主 | CLI / TUI / JSON / RPC / SDK | Web workbench + Docker 自托管 |
@@ -29,7 +29,7 @@
 | 复盘 / 自进化 | iteration-retrospective + self-evolution（下一版问题库提案） | 无 | 历史运行对比、变化查看 |
 | 人工确认门 | 事实 / 问题 / KPI / 发布四道确认门 | 无（通用工具不强加流程） | 问题确认、报告；无发布门 |
 | 数据存储 / 回放 | 本地 workspace + append-only JSONL，可 diff、可进 Git | 会话 / 任务持久化 | 本地文件存储 + 快照，支持重复运行 |
-| 当前实现程度 | CiteKeel 0.1.0 跑通回放案例；opengeo CLI 是**确定性规则版本**，暂不调用模型 | 成熟 | 成熟，且公开了详细的已知限制 |
+| 当前实现程度 | OpenGEO 0.1.0 原型跑通回放案例；opengeo CLI 是**确定性规则版本**，暂不调用模型 | 成熟 | 成熟，且公开了详细的已知限制 |
 
 ## 3. Pi：借形态，不借定位
 

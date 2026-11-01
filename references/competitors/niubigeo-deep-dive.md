@@ -130,4 +130,4 @@ MonitoringTask → ScheduledOccurrence → MeasurementRun
 2. **交付层要按 Topify 的闭环做**，否则只是另一个报告工具；
 3. **分发层要按开源项目的规律做**：可复现 demo、公开案例、对比页、MCP/CLI、两周节奏。
 
-下一篇：[OpenGEO 怎么做](../../docs/13-opengeo-product-plan.md)。
+下一篇：[OpenGEO 怎么做](../../docs/13-产品计划.md)。

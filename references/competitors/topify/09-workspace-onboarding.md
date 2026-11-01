@@ -102,7 +102,7 @@ ONB 约 80200–80900 的 domestic 分支要求 defaultTopicId、跳过海外 bo
 
 不照搬：套餐与支付墙、无限延长的前端等待、假百分比、初始化失败自动删除项目、服务端完成前乐观标成功，以及未验证的私有指标算法。
 
-当前本地 `source-derived-templates/v1` 只提供公开网页提取和英文问题模板，不等于 Topify 的自动关键词／竞品研究，更不等于整个海外 MVP 完成。落地规格见 [海外 MVP](../../../docs/09-international-mvp.md)。
+当前本地 `source-derived-templates/v1` 只提供公开网页提取和英文问题模板，不等于 Topify 的自动关键词／竞品研究，更不等于整个海外 MVP 完成。落地规格见 [海外 MVP](../../../docs/09-海外最小可行版.md)。
 
 ## 10. 调查问题状态
 

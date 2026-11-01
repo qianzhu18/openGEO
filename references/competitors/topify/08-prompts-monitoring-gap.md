@@ -54,7 +54,7 @@ Topify 的 Prompts 页不是一张表，而是三层结构：
 | 官方 Prompts API | DOC | `prompt_type`、字段语义、下钻响应 | https://docs.topify.ai/api-reference/prompts |
 | 官方 Overview API | DOC | `duration_days` 默认 7、`prompt_type` 过滤 | https://docs.topify.ai/api-reference/overview |
 | 官方「Understanding prompts」 | DOC | 状态、intent、Volume 估算 | https://docs.topify.ai/guides/understanding-prompts |
-| 本仓库代码 | CODE | 现有模型、页面、接口 | `src/citekeel/`、`src/opengeo/`、`public/app.js` |
+| 本仓库代码 | CODE | 现有模型、页面、接口 | `code/src/citekeel/`、`code/src/opengeo/`、`code/public/app.js` |
 
 口径冲突已在 [05](05-metrics-and-collection.md) 记录，本文不重复，只在落地方案里给出取舍。
 
@@ -134,14 +134,14 @@ Topify 的 Prompts 页不是一张表，而是三层结构：
 
 ### 3.1 两个互不相通的存储
 
-- `src/citekeel`（网页工作台）：`Project` 里内嵌 `queries`、`samples`，全部存在一个 JSON 里；历史是 `AgentRun` 快照。
-- `src/opengeo`（CLI）：`project.json` 物化视图 + `evidence/*.jsonl` 追加日志 + `runs/*.json`。
+- `code/src/citekeel`（网页工作台）：`Project` 里内嵌 `queries`、`samples`，全部存在一个 JSON 里；历史是 `AgentRun` 快照。
+- `code/src/opengeo`（CLI）：`project.json` 物化视图 + `evidence/*.jsonl` 追加日志 + `runs/*.json`。
 
 两边的 `Query` 字段都不一样（citekeel 没有 status，opengeo 没有 topic/country）。这是 Roadmap W1 已知问题，但它对监控页是**直接阻塞**：页面读哪一边，另一边就没有数据。
 
 ### 3.2 问题没有身份
 
-`src/citekeel/server.ts` 有三处会**整体覆盖**问题库：
+`code/src/citekeel/server.ts` 有三处会**整体覆盖**问题库：
 
 ```text
 :88   保存问题清单（1–40 条）→ 重建 queries
@@ -159,13 +159,13 @@ opengeo 的 `Query` 有 `status: confirmed | candidate | retired` 和 `priority`
 
 ### 3.3 指标只有提及 / 推荐
 
-`src/citekeel/analysis.ts` 计算：`mention`（字面命中）、`recommendation`（附近措辞启发式）、`strata`（按来源·模型·问题类型·批次分组）。没有 sentiment 分、position、SOV、CVR、Top1、volume 聚合。
+`code/src/citekeel/analysis.ts` 计算：`mention`（字面命中）、`recommendation`（附近措辞启发式）、`strata`（按来源·模型·问题类型·批次分组）。没有 sentiment 分、position、SOV、CVR、Top1、volume 聚合。
 
-`src/opengeo/engine.ts` 的 `CycleMetric` 有 `mentionRate / positive / negative / riskTags / citations`，但粒度是**周期**，不是问题；情绪是三档规则标签，不是 0–100 分。
+`code/src/opengeo/engine.ts` 的 `CycleMetric` 有 `mentionRate / positive / negative / riskTags / citations`，但粒度是**周期**，不是问题；情绪是三档规则标签，不是 0–100 分。
 
 ### 3.4 页面只有文本编辑
 
-`public/app.js`：
+`code/public/app.js`：
 
 - 「问题空间」是整块 textarea，保存即替换；
 - 「主题表现」按 `query.intent` 这个**自由文本**分组，不是 Topic 实体；
@@ -327,7 +327,7 @@ interface PromptAggregate {
 - 行操作：停用/启用；多选批量：track / untrack / 分配主题。
 - 空态、加载、失败、部分完成四态。
 
-最小接口（与现有 `src/citekeel/server.ts` 风格一致，先只读）：
+最小接口（与现有 `code/src/citekeel/server.ts` 风格一致，先只读）：
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
