@@ -57,7 +57,7 @@ export async function askChatGPT(page: Page, prompt: string, timeoutMs = 120_000
   const messages = page.locator(ASSISTANT);
   const last = messages.last();
   const answer = (await last.innerText()).trim();
-  const citations = await last.locator('a[href^="http"]').evaluateAll(nodes => [...new Set(nodes.map(node => (node as HTMLAnchorElement).href))]);
+  const citations: string[] = await page.evaluate(`(() => { const out = []; const seen = new Set(); for (const a of Array.from(document.querySelectorAll('[data-message-author-role="assistant"] a[href^="http"]'))) { const href = a.href; if (seen.has(href)) continue; seen.add(href); out.push(href); if (out.length >= 15) break; } return out; })()`);
   if (!answer) throw new Error('ChatGPT returned an empty answer.');
   const id = evidenceId('chatgpt', prompt);
   return saveEvidence(page, { id, engine: 'chatgpt', prompt, answer, citations, loginState: state, startedAt });

@@ -17,7 +17,8 @@
     "check:upstream": "npm --prefix vendor/niubigeo ci --no-audit --no-fund && npm --prefix vendor/niubigeo run self-check",
     "test:browser": "playwright test --config playwright.config.ts",
     "browser:check": "tsx src/citekeel/browser/cli.ts check",
-    "browser:ask": "tsx src/citekeel/browser/cli.ts ask"
+    "browser:ask": "tsx src/citekeel/browser/cli.ts ask",
+    "browser:login": "tsx src/citekeel/browser/cli.ts login"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

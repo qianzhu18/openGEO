@@ -1,5 +1,6 @@
 import { PromptService, WorkspaceError } from './prompts.js';
 import { RecordingService } from './recordings.js';
+import { createBrowserCollector, type BrowserEngine } from './browser/collector.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -173,14 +174,12 @@ export async function createApp(store = new Store(), options: { research?: typeo
         const input = await body(req), project = await store.get<Project>('projects', String(input.projectId || ''));
         if (!project) throw new Error('请选择项目');
         const mode = input.mode === 'live' ? 'live' : 'replay'; let config: LiveConfig | undefined;
+        const channel = input.channel === 'browser' ? 'browser' : 'api';
+        let browserEngine: BrowserEngine | undefined;
         if (mode === 'live') {
-          const provider = textField(input.provider, 'Provider', 30, 'openrouter');
-          if (!PROVIDERS.includes(provider)) throw new Error('不支持这个 Provider');
-          const model = textField(input.model, '模型', 200); if (!model) throw new Error('请填写当前账号可用的模型 ID');
-          const apiKey = textField(input.apiKey, 'API Key', 2000) || resolveProviderKey(provider);
-          const maxQuestions = Math.min(5, Math.max(1, Number(input.maxQuestions) || 3));
+          const maxQuestions = channel === 'browser' ? Math.min(3, Math.max(1, Number(input.maxQuestions) || 2)) : Math.min(5, Math.max(1, Number(input.maxQuestions) || 3));
           if (Array.isArray(input.queryIds)) {
-            if (!input.queryIds.length || input.queryIds.length > maxQuestions || new Set(input.queryIds).size !== input.queryIds.length) throw new WorkspaceError('Select 1–5 distinct active prompts.');
+            if (!input.queryIds.length || input.queryIds.length > maxQuestions || new Set(input.queryIds).size !== input.queryIds.length) throw new WorkspaceError(channel === 'browser' ? 'Select 1–3 distinct active prompts for a browser run.' : 'Select 1–5 distinct active prompts.');
             const selected: Query[] = input.queryIds.map((id: unknown) => {
               const query = project.queries.find(q => q.id === id);
               if (!query || (query.status && query.status !== 'active')) throw new WorkspaceError('Only active prompts can be collected.');
@@ -195,13 +194,31 @@ export async function createApp(store = new Store(), options: { research?: typeo
               return known || { id: `adhoc-${randomUUID()}`, text, intent: '用户确认的 API 采样问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '本轮确认' };
             });
           }
-          config = { provider, model, apiKey, maxQuestions, webSearch: input.webSearch === true };
+          if (channel === 'api') {
+            const provider = textField(input.provider, 'Provider', 30, 'openrouter');
+            if (!PROVIDERS.includes(provider)) throw new Error('不支持这个 Provider');
+            const model = textField(input.model, '模型', 200); if (!model) throw new Error('请填写当前账号可用的模型 ID');
+            const apiKey = textField(input.apiKey, 'API Key', 2000) || resolveProviderKey(provider);
+            config = { provider, model, apiKey, maxQuestions, webSearch: input.webSearch === true };
+          } else {
+            browserEngine = input.engine === 'perplexity' ? 'perplexity' : 'chatgpt';
+          }
         }
         if (activeRunId) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config);
         activeRunId = run.id;
         try { await store.save('runs', run); } catch (error) { activeRunId = null; throw error; }
-        void executeRun(run, store, config).catch(async () => { run.status = 'failed'; run.error = '执行异常，已有证据已保留'; await store.save('runs', run); }).finally(() => { activeRunId = null; });
+        void (async () => {
+          let collector: Awaited<ReturnType<typeof createBrowserCollector>> | undefined;
+          try {
+            if (browserEngine) collector = await createBrowserCollector(browserEngine);
+            await executeRun(run, store, config, collector ? { ask: collector.ask, engine: collector.engine } : undefined);
+          } catch (error) {
+            run.status = 'failed'; run.error = error instanceof Error ? error.message : '执行异常，已有证据已保留'; await store.save('runs', run);
+          } finally {
+            await collector?.close().catch(() => {}); activeRunId = null;
+          }
+        })();
         return send(res, 202, { id: run.id });
       }
       const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|export|actions|draft|publications))?$/);

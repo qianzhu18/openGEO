@@ -1,5 +1,5 @@
 export type Mode = 'replay' | 'live';
-export type Origin = 'synthetic' | 'archive' | 'api' | 'manual';
+export type Origin = 'synthetic' | 'archive' | 'api' | 'manual' | 'browser';
 export interface ClaimSource { id: string; title: string; text: string; url?: string }
 export interface Claim {
   id: string; label: string; value: string; status: 'confirmed' | 'unconfirmed' | 'conflict';
@@ -57,7 +57,7 @@ export interface Draft {
 export interface Step {
   id: string; label: string; skill: string; status: 'pending' | 'running' | 'completed' | 'blocked' | 'failed';
   startedAt?: string; finishedAt?: string; summary?: string; evidenceIds: string[];
-  executor: 'rules' | 'archive' | 'llm';
+  executor: 'rules' | 'archive' | 'llm' | 'browser';
 }
 export interface ModelCall {
   id: string; purpose: string; provider: string; model: string; startedAt: string;

@@ -1,6 +1,7 @@
 import { internationalContentPrompt } from './international.js';
 import { randomUUID } from 'node:crypto';
 import type { Action, AgentRun, LiveConfig, Project, Query, Sample } from './types.js';
+import type { BrowserAsk } from './browser/collector.js';
 import { SKILLS } from './types.js';
 import { answerTruncated, auditSamples, normalizeCitation } from './analysis.js';
 import { Store } from './storage.js';
@@ -13,11 +14,11 @@ export function createRun(project: Project, mode: 'replay' | 'live', goal = proj
     limitations: ['推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。', '引用项存在不证明来源正确，也不证明导致了推荐。'], review: '',
     ...(config ? { model: config.model, provider: config.provider } : {}) };
 }
-export async function executeRun(run: AgentRun, store: Store, config?: LiveConfig): Promise<AgentRun> {
+export async function executeRun(run: AgentRun, store: Store, config?: LiveConfig, browser?: { ask: BrowserAsk; engine: string }): Promise<AgentRun> {
   const project = run.projectSnapshot;
   const persist = () => store.save('runs', run);
   const session = config ? new ModelSession(config, run, persist) : null;
-  const step = async (id: string, executor: 'rules' | 'archive' | 'llm', work: () => Promise<{ summary: string; ids?: string[]; blocked?: boolean }>) => {
+  const step = async (id: string, executor: 'rules' | 'archive' | 'llm' | 'browser', work: () => Promise<{ summary: string; ids?: string[]; blocked?: boolean }>) => {
     const current = run.steps.find(s => s.id === id)!;
     Object.assign(current, { status: 'running', startedAt: new Date().toISOString(), executor }); await persist();
     try { const result = await work(); Object.assign(current, { status: result.blocked ? 'blocked' : 'completed', summary: result.summary, evidenceIds: result.ids || [], finishedAt: new Date().toISOString() }); }
@@ -32,8 +33,25 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
       if (config) run.queries = run.queries.slice(0, config.maxQuestions);
       return { summary: `采用问题集 v${project.queryVersion}，本轮 ${run.queries.length} 个问题。候选来自${project.origin === 'archive' ? '上游协议' : '本地问题模板与人工输入'}，不推断搜索量。`, ids: run.queries.map(q => q.id) };
     });
-    await step('audit', config ? 'llm' : 'archive', async () => {
-      if (session && config) {
+    await step('audit', browser ? 'browser' : config ? 'llm' : 'archive', async () => {
+      if (browser) {
+        run.samples = [];
+        for (const query of run.queries) {
+          const sample: Sample = { id: randomUUID(), queryId: query.id, question: query.text, intent: query.intent, branded: query.branded,
+            origin: 'browser', model: `${browser.engine}-web`, observedAt: new Date().toISOString(), runGroup: run.id,
+            protocolId: `browser-ui/v1;engine=${browser.engine};session=personal;language=${project.language || 'en'};requestedCountry=${project.country || 'unknown'};regionEnforced=false`,
+            collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [] };
+          run.samples.push(sample); await persist();
+          try {
+            // The page only receives the question text; brand facts and goals stay local.
+            const result = await browser.ask(query.text);
+            Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: result.answer,
+              observedAt: new Date().toISOString(), latencyMs: result.latencyMs, upstreamAttemptId: result.evidenceId,
+              citations: result.citations.map(url => ({ url, kind: 'search_result' as const, source: `browser-ui/${result.engine}`, integrity: 'unverified' as const })) });
+            await persist();
+          } catch (error) { sample.error = error instanceof Error ? error.message : String(error); await persist(); }
+        }
+      } else if (session && config) {
         run.samples = [];
         for (const query of run.queries) {
           const sample: Sample = { id: randomUUID(), queryId: query.id, question: query.text, intent: query.intent, branded: query.branded,

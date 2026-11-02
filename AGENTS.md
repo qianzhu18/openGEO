@@ -68,6 +68,14 @@ AGENTS.md    本文件
 - 不保存密码、Cookie 原文、无关页面内容；
 - 平台 ToS 风险写进文档，不隐藏。
 
+### 账号政策（2026-11-03 定）
+
+- 专用 profile 绑定**唯一指定的 Google 账号**；
+- 非 Claude 引擎（Perplexity / ChatGPT / Gemini 等）一律用该 Google 账号 SSO 登录；
+- Claude 不支持 Google SSO，暂不纳入浏览器采集；
+- 不在 profile 里加第二个账号，不重建 profile 绕过配额或风控；
+- 登录入口：`cd code && npm run browser:login`（默认 Perplexity，可传 `chatgpt`）。
+
 ## 6. 代码地图
 
 | 位置 | 作用 |

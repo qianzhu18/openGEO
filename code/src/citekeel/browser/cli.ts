@@ -39,6 +39,31 @@ async function ask() {
   }
 }
 
+async function login() {
+  const engine = rest[0] === 'chatgpt' ? 'chatgpt' : 'perplexity';
+  const context = await openSession({ headless: false });
+  const page = context.pages()[0] || await context.newPage();
+  try {
+    await page.goto(engine === 'chatgpt' ? 'https://chatgpt.com/' : 'https://www.perplexity.ai/', { waitUntil: 'domcontentloaded', timeout: 45_000 }).catch(() => {});
+    console.log(`Sign-in window opened for ${engine}.`);
+    console.log('Use the designated Google account (non-Claude engines all support Google SSO). Complete any 2FA in the window.');
+    console.log('Waiting for sign-in (up to 5 minutes)...');
+    const domain = engine === 'chatgpt' ? 'https://chatgpt.com' : 'https://www.perplexity.ai';
+    const deadline = Date.now() + 300_000;
+    let signedIn = false;
+    while (Date.now() < deadline) {
+      await page.waitForTimeout(5_000);
+      const cookies = await context.cookies(domain).catch(() => []);
+      signedIn = cookies.some(cookie => /session|auth/i.test(cookie.name) && !/^__?cf/i.test(cookie.name));
+      if (signedIn) break;
+    }
+    console.log(signedIn ? `${engine}: signed_in (session cookie present)` : `${engine}: still not signed in after 5 minutes. Run this command again when ready.`);
+    if (!signedIn) process.exitCode = 1;
+  } finally {
+    await closeSession(context);
+  }
+}
+
 async function probe() {
   const context = await openSession();
   const page = context.pages()[0] || await context.newPage();
@@ -54,8 +79,9 @@ try {
   if (command === 'check') await check();
   else if (command === 'ask') await ask();
   else if (command === 'probe') await probe();
+  else if (command === 'login') await login();
   else {
-    console.log('Usage: browser:check | browser:ask -- "question" | browser:probe');
+    console.log('Usage: browser:check | browser:login [perplexity|chatgpt] | browser:ask -- "question" | browser:probe');
     process.exitCode = command ? 1 : 0;
   }
 } catch (error) {
