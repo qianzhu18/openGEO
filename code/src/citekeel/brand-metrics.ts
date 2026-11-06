@@ -21,7 +21,7 @@ export interface BrandObservation {
 }
 export interface BrandMetricRow {
   brandId: string; name: string; isOwn: boolean;
-  visibility: DerivedMetric; position: DerivedMetric; sov: DerivedMetric; top1Rate: DerivedMetric;
+  visibility: DerivedMetric; position: DerivedMetric; sov: DerivedMetric; top1Rate: DerivedMetric; top3Rate: DerivedMetric;
   sentiment: { value: null; status: 'unavailable'; reason: string };
   estimatedDemand: null; cvr: null;
   mentionedObservationIds: string[]; eligibleObservationIds: string[]; excludedObservationIds: string[];
@@ -35,13 +35,14 @@ export interface BrandMetricsResult {
   mixedCohorts: boolean; brands: BrandMetricRow[]; cohorts: BrandMetricCohort[];
   observations: BrandObservation[]; eligibleObservationIds: string[]; excludedObservationIds: string[];
   exclusions: { sampleId: string; reason: string }[];
-  formulas: { visibility: string; position: string; sov: string; top1Rate: string };
+  formulas: { visibility: string; position: string; sov: string; top1Rate: string; top3Rate: string };
 }
 const formulas = {
   visibility: 'Distinct eligible answers mentioning brand / eligible answers.',
   position: 'Mean first-appearance rank among tracked brands in answers mentioning this brand; absent brands are excluded.',
   sov: 'Distinct response × brand slots for brand / distinct response × tracked-brand slots for all active tracked brands.',
   top1Rate: 'Eligible answers in which brand has first-appearance rank 1 / all eligible answers.',
+  top3Rate: 'Eligible answers in which brand has first-appearance rank 1, 2, or 3 among tracked brands / all eligible answers. Absence is not rank 3.',
 };
 export function metricCohortIdentity(sample: Sample): CohortIdentity {
   const identity = { origin: sample.origin, model: sample.model || 'unknown-model', protocolId: sample.protocolId || 'unknown-protocol', branded: Boolean(sample.branded) };
@@ -128,7 +129,9 @@ function rows(observations: BrandObservation[], brands: BrandEntity[], mixed: bo
     return { brandId: brand.id, name: brand.name, isOwn: brand.isOwn,
       visibility: metric(mentioned.length, eligible.length, mixed),
       position: metric(ranked.reduce((sum, row) => sum + row.position!, 0), ranked.length, mixed),
-      sov: metric(mentioned.length, allSlots, mixed), top1Rate: metric(ranked.filter(row => row.position === 1).length, eligible.length, mixed),
+      sov: metric(mentioned.length, allSlots, mixed),
+      top1Rate: metric(ranked.filter(row => row.position === 1).length, eligible.length, mixed),
+      top3Rate: metric(ranked.filter(row => row.position !== null && row.position <= 3).length, eligible.length, mixed),
       sentiment: { value: null, status: 'unavailable', reason: 'No validated sentiment judgment was supplied; mention or recommendation wording is not a sentiment score.' }, estimatedDemand: null, cvr: null,
       mentionedObservationIds: mentioned.map(row => row.sampleId), eligibleObservationIds: eligible.map(row => row.sampleId), excludedObservationIds: excluded.map(row => row.sampleId) };
   });

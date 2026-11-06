@@ -10,6 +10,24 @@ function sample(id:string,answer:string, extra:Partial<Sample>={}):Sample {
   return {id,queryId:'q1',question:'Which products should I consider?',intent:'commercial',branded:false,origin:'api',model:'provider/model',observedAt:'2026-10-31T00:00:00Z',runGroup:'r1',protocolId:'api/search/v1',collectionStatus:'completed',analysisStatus:'completed',answer,citations:[],...extra};
 }
 const citation=(url:string,kind:Citation['kind']='provider_citation',integrity:Citation['integrity']='matched'):Citation=>({url,kind,integrity,source:'fixture'});
+test('top 3 rate uses first-appearance rank and keeps failed answers out of the denominator',()=>{
+  const tracked:BrandEntity[]=[
+    ...brands,
+    {id:'c',name:'Gamma',aliases:[],domains:[],status:'active',isOwn:false},
+    {id:'d',name:'Delta',aliases:[],domains:[],status:'active',isOwn:false},
+  ];
+  const result=deriveBrandMetrics([
+    sample('ranked','Beta, Gamma, Delta, then Alpha.'),
+    sample('absent','Delta only.'),
+    sample('failed','Alpha',{collectionStatus:'failed',analysisStatus:'unknown'}),
+  ],tracked);
+  const alpha=result.brands.find(row=>row.brandId==='a')!;
+  const beta=result.brands.find(row=>row.brandId==='b')!;
+  assert.equal(alpha.position.value,4);assert.equal(alpha.top1Rate.value,0);assert.equal(alpha.top3Rate.value,0);
+  assert.equal(beta.top1Rate.value,.5);assert.equal(beta.top3Rate.value,.5);
+  assert.equal(beta.top3Rate.numerator,1);assert.equal(beta.top3Rate.denominator,2);
+  assert.equal(result.excludedObservationIds.includes('failed'),true);
+});
 test('SOV counts each response-brand slot once and ranks by the first actual brand position',()=>{
   const result=deriveBrandMetrics([sample('one','Beta first; Alpha is also useful. Alpha Alpha.')],brands);
   assert.equal(result.brands[0]!.sov.value,.5);assert.equal(result.brands[1]!.sov.value,.5);
