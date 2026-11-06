@@ -18,7 +18,10 @@
     "test:browser": "playwright test --config playwright.config.ts",
     "browser:check": "tsx src/citekeel/browser/cli.ts check",
     "browser:ask": "tsx src/citekeel/browser/cli.ts ask",
-    "browser:login": "tsx src/citekeel/browser/cli.ts login"
+    "browser:batch": "tsx src/citekeel/browser/cli.ts batch",
+    "browser:probe": "tsx src/citekeel/browser/cli.ts probe",
+    "browser:login": "tsx src/citekeel/browser/cli.ts login",
+    "campaign": "tsx scripts/campaign.ts"
   },
   "dependencies": {
     "cheerio": "^1.2.0",

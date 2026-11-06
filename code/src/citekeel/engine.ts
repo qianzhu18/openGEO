@@ -46,6 +46,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             // The page only receives the question text; brand facts and goals stay local.
             const result = await browser.ask(query.text);
             Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: result.answer,
+              ...(result.protocolId ? { protocolId: `${result.protocolId};language=${project.language || 'en'};requestedCountry=${project.country || 'unknown'};regionEnforced=false` } : {}),
               observedAt: new Date().toISOString(), latencyMs: result.latencyMs, upstreamAttemptId: result.evidenceId,
               citations: result.citations.map(url => ({ url, kind: 'search_result' as const, source: `browser-ui/${result.engine}`, integrity: 'unverified' as const })) });
             await persist();
@@ -74,7 +75,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
         if (run.samples.length !== project.samples.length) run.limitations.push('部分旧回答与当前问题版本不匹配，已排除；需为新问题导入回答或重新采样。');
       }
       run.audit = auditSamples(run.samples, project);
-      return { summary: `${run.audit.planned} 条样本，${run.audit.collected} 条有原文，${run.audit.analyzed} 条分析完成。${config ? '新 API 调用。' : '仅回放原始数据，未调用模型。'}`, ids: run.samples.map(s => s.id) };
+      return { summary: `${run.audit.planned} 条样本，${run.audit.collected} 条有原文，${run.audit.analyzed} 条分析完成。${browser ? '新网页采样。' : config ? '新 API 调用。' : '仅回放原始数据，未调用模型。'}`, ids: run.samples.map(s => s.id) };
     });
     await step('sources', 'rules', async () => ({ summary: `${run.audit!.providerCitations} 个 Provider 引用、${run.audit!.searchResults} 个搜索结果、${run.audit!.groundings} 个 grounding 来源、${run.audit!.answerUrls} 个正文 URL；分别记录。`, ids: run.samples.filter(s => s.citations.length).map(s => s.id) }));
     await step('strategy', session ? 'llm' : 'rules', async () => {
@@ -110,12 +111,12 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
     });
     await step('monitor', 'rules', async () => {
       const groups = new Set(run.samples.map(s => s.runGroup));
-      run.limitations.push(config ? 'API 回答不等价于消费级网页客户端结果。' : project.origin === 'synthetic' ? '全部回答为合成 fixture，只检验业务流程。' : '回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。');
+      run.limitations.push(browser ? '本轮为个人浏览器网页采样；地区和页面模型版本未独立核验，不等价于 API 结果。' : config ? 'API 回答不等价于消费级网页客户端结果。' : project.origin === 'synthetic' ? '全部回答为合成 fixture，只检验业务流程。' : '回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。');
       return { summary: `保留 ${groups.size} 个原始采样批次，按模型、品牌词与非品牌词分组。没有干预对照，不输出提升结论。`, ids: [...groups] };
     });
     await step('review', 'rules', async () => {
       const conflicts = project.claims.filter(c => c.status === 'conflict');
-      run.review = `${run.mode === 'replay' ? '本轮完成案例回放。' : '本轮完成一次 API 观察流程。'}计划 ${run.audit!.planned} 条，取得原文 ${run.audit!.collected} 条。${conflicts.length ? `先确认 ${conflicts.length} 项冲突，再生成可发布内容。` : '可继续审核内容与执行任务。'}下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。`;
+      run.review = `${run.mode === 'replay' ? '本轮完成案例回放。' : browser ? '本轮完成一次网页采样流程。' : '本轮完成一次 API 观察流程。'}计划 ${run.audit!.planned} 条，取得原文 ${run.audit!.collected} 条。${conflicts.length ? `先确认 ${conflicts.length} 项冲突，再生成可发布内容。` : '可继续审核内容与执行任务。'}下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。`;
       return { summary: run.review, ids: run.actions.map(a => a.id) };
     });
     run.status = (project.market === 'international' ? !run.audit?.analyzed : run.draft?.status === 'blocked') || run.samples.some(s => s.collectionStatus === 'failed') ? 'needs_review' : 'completed';
@@ -135,7 +136,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
     };
     for (const step of run.steps) { step.label = labels[step.id] || step.label; if (step.status !== 'failed') step.summary = summaries[step.id] || step.summary; }
     run.review = summaries.review;
-    run.limitations = ['Mention detection is a literal-name rule; recommendation wording is a heuristic requiring context review.', 'API answers do not represent consumer AI web interfaces.', 'Target country is requested metadata; regional routing is not enforced or independently verified.', 'Website statements have sources but are not independently verified facts.', 'No intervention control or causal improvement claim is available.',
+    run.limitations = ['Mention detection is a literal-name rule; recommendation wording is a heuristic requiring context review.', browser ? 'Personal consumer web-UI sampling; page model version is unknown. These are not API results.' : 'API answers do not represent consumer AI web interfaces.', 'Target country is requested metadata; regional routing is not enforced or independently verified.', 'Website statements have sources but are not independently verified facts.', 'No intervention control or causal improvement claim is available.',
       ...run.limitations.filter(item=>item.includes('模型策略未采用')||item.includes('模型内容不可用')||item.includes('Provider'))];
   }
   run.finishedAt = new Date().toISOString(); await persist(); return run;

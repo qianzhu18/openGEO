@@ -1,0 +1,717 @@
+{
+  "schemaVersion": "opengeo-campaign/v1",
+  "id": "agilex-public-pilot",
+  "round": 1,
+  "asOf": "2026-11-05",
+  "brand": "松灵机器人",
+  "aliases": [
+    "AgileX Robotics",
+    "AgileX",
+    "AGILE·X",
+    "松灵"
+  ],
+  "domain": "global.agilex.ai",
+  "objective": "用公开证据为英语科研和机器人开发者准备可核验的选型与开发内容，建立可重复的 GEO 测量流程。",
+  "access": "external-public-only",
+  "platforms": [
+    "chatgpt",
+    "perplexity",
+    "gemini",
+    "deepseek",
+    "doubao",
+    "qwen"
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "url": "https://global.agilex.ai/",
+      "title": "松灵英文官网首页",
+      "kind": "official-site"
+    },
+    {
+      "id": "S02",
+      "url": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+      "title": "PiPER 产品与 FAQ",
+      "kind": "official-site"
+    },
+    {
+      "id": "S03",
+      "url": "https://global.agilex.ai/products/limo-pro",
+      "title": "LIMO PRO 产品与 FAQ",
+      "kind": "official-site"
+    },
+    {
+      "id": "S04",
+      "url": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+      "title": "具身智能数据采集解决方案",
+      "kind": "official-site"
+    },
+    {
+      "id": "S05",
+      "url": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+      "title": "松灵技术文档中心",
+      "kind": "official-site"
+    },
+    {
+      "id": "S06",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+      "title": "松灵官方 GitHub 项目入口",
+      "kind": "official-repository"
+    },
+    {
+      "id": "S07",
+      "url": "https://github.com/agilexrobotics/piper_sdk",
+      "title": "PiPER Python SDK",
+      "kind": "official-repository"
+    },
+    {
+      "id": "S08",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+      "title": "LIMO ROS2 Humble 说明",
+      "kind": "official-repository"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C01",
+      "sourceId": "S02",
+      "quote": "Universities & Robotics Labs",
+      "statement": "PiPER 产品页把高校与机器人实验室列为受众。",
+      "scope": "PiPER 受众",
+      "review": "source-checked"
+    },
+    {
+      "id": "C02",
+      "sourceId": "S02",
+      "quote": "Embodied AI Developers",
+      "statement": "PiPER 产品页也面向具身智能开发者；这不代表所有模型适配都已由我们实测。",
+      "scope": "PiPER 受众",
+      "review": "source-checked"
+    },
+    {
+      "id": "C03",
+      "sourceId": "S02",
+      "quote": "Compatible with Python, ROS 1/ROS 2, URDF, Gazebo, and Isaac Sim",
+      "statement": "产品页列出了 Python、ROS 与仿真相关生态入口；实际可用版本须进一步核对。",
+      "scope": "PiPER 软件生态，自述",
+      "review": "source-checked"
+    },
+    {
+      "id": "C04",
+      "sourceId": "S02",
+      "quote": "PiPER-X",
+      "statement": "产品页另列 PiPER-X；不同型号的信息应分别核对。",
+      "scope": "型号身份",
+      "review": "source-checked"
+    },
+    {
+      "id": "C05",
+      "sourceId": "S03",
+      "quote": "Four Motion Modes",
+      "statement": "LIMO PRO 页面以多种运动配置介绍平台。",
+      "scope": "LIMO PRO 运动模式",
+      "review": "source-checked"
+    },
+    {
+      "id": "C06",
+      "sourceId": "S03",
+      "quote": "robotics education",
+      "statement": "LIMO PRO 官方页面明确涉及机器人教育方向。",
+      "scope": "教育受众",
+      "review": "source-checked"
+    },
+    {
+      "id": "C07",
+      "sourceId": "S03",
+      "quote": "standard configuration does not include a robotic arm",
+      "statement": "LIMO PRO 的 FAQ 表明其标准配置不含机械臂；不能与 LIMO COBOT 直接混为一款。",
+      "scope": "LIMO PRO 与 COBOT 的配置边界",
+      "review": "source-checked"
+    },
+    {
+      "id": "C08",
+      "sourceId": "S03",
+      "quote": "4.8 kg ### Payload",
+      "statement": "读取文本的顶部指标把 4.8 kg 放在 Payload 标签下，需核对真实页面与手册。",
+      "scope": "待核对的指标标签",
+      "review": "source-checked"
+    },
+    {
+      "id": "C09",
+      "sourceId": "S03",
+      "quote": "### weight 4.8 kg",
+      "statement": "同页规格区又把 4.8 kg 放在 weight 下，未据此确定实际载荷。",
+      "scope": "待核对的指标标签",
+      "review": "source-checked"
+    },
+    {
+      "id": "C10",
+      "sourceId": "S04",
+      "quote": "task design, human demonstration capture",
+      "statement": "数据采集解决方案以任务设计和示范采集开始描述流程。",
+      "scope": "数据采集流程，自述",
+      "review": "source-checked"
+    },
+    {
+      "id": "C11",
+      "sourceId": "S04",
+      "quote": "data review, management, and delivery",
+      "statement": "同一方案包含数据审核、管理与交付描述；不等于我们验证了数据质量。",
+      "scope": "数据采集流程，自述",
+      "review": "source-checked"
+    },
+    {
+      "id": "C12",
+      "sourceId": "S05",
+      "quote": "Technical Document & CAD Catalog",
+      "statement": "官方文档中心已有技术文档与 CAD 目录入口，不能把它诊断为完全没有资料入口。",
+      "scope": "现有内容",
+      "review": "source-checked"
+    },
+    {
+      "id": "C13",
+      "sourceId": "S06",
+      "quote": "Arm ROS2 driver",
+      "statement": "官方 GitHub 项目索引为机械臂列出独立 ROS2 驱动入口，版本匹配需逐项核对。",
+      "scope": "官方开发索引",
+      "review": "source-checked"
+    },
+    {
+      "id": "C14",
+      "sourceId": "S07",
+      "quote": "The new robotic arm SDK has been released.",
+      "statement": "旧 piper_sdk 仓库正文提示已有新 SDK 并链接 pyAgxArm，教程需交代所用软件入口。",
+      "scope": "SDK 版本选择",
+      "review": "source-checked"
+    },
+    {
+      "id": "C15",
+      "sourceId": "S08",
+      "quote": "# Limo ROS2 Humble",
+      "statement": "LIMO ROS2 仓库当前抓取的是 humble 分支，不能把它自动解释为所有发行版都兼容。",
+      "scope": "ROS2 分支",
+      "review": "source-checked"
+    },
+    {
+      "id": "C16",
+      "sourceId": "S08",
+      "quote": "ubuntu 22.04",
+      "statement": "该分支 README 的环境段指定 Ubuntu 22.04，实际课程环境应明确版本。",
+      "scope": "开发环境边界",
+      "review": "source-checked"
+    }
+  ],
+  "audiences": [
+    {
+      "id": "U01",
+      "name": "具身智能／模仿学习研究人员",
+      "job": "为一个具体操作任务选择机械臂、采集方式与数据流程。",
+      "decision": "现有硬件和软件入口能否支持目标任务，如何验证而不是只看演示。",
+      "concerns": [
+        "型号与软件版本是否匹配",
+        "采集字段、标定和失败记录是否齐全",
+        "从演示到可复现任务还差什么"
+      ],
+      "basis": "website-declared",
+      "claimIds": [
+        "C01",
+        "C02",
+        "C03",
+        "C10",
+        "C11"
+      ],
+      "validateWith": "请品牌方用近期真实咨询验证这些疑问是否常见；本轮无客户访谈。"
+    },
+    {
+      "id": "U02",
+      "name": "高校机器人课程教师与实验室工程师",
+      "job": "选择能支撑导航或操作课程的教学平台，制定可复现实验。",
+      "decision": "课程究竟需要移动导航还是移动操作；所需硬件与教学环境能否对齐。",
+      "concerns": [
+        "标准配置是否含机械臂",
+        "ROS 发行版与系统版本",
+        "实验是否能按步骤验收，失败时如何排查"
+      ],
+      "basis": "website-declared",
+      "claimIds": [
+        "C06",
+        "C07",
+        "C15",
+        "C16"
+      ],
+      "validateWith": "用教师的课程目标、学生基础、已有设备与实验室环境复核；未知预算不编价格段。"
+    },
+    {
+      "id": "U03",
+      "name": "机器人系统集成与研发工程师",
+      "job": "把指定型号与驱动、传感器和上层控制连接起来，评估集成工作量。",
+      "decision": "选择哪个版本入口和配置，而非看到“支持 ROS”就默认全部开箱可用。",
+      "concerns": [
+        "新旧 SDK 入口",
+        "ROS1 与 ROS2 驱动不能混写",
+        "型号参数和测试条件是否一致"
+      ],
+      "basis": "hypothesis",
+      "claimIds": [
+        "C03",
+        "C04",
+        "C13",
+        "C14"
+      ],
+      "validateWith": "通过实际工程师提问和一次硬件复现确认；本轮没有硬件或 SDK 实测。"
+    }
+  ],
+  "questions": [
+    {
+      "id": "Q01",
+      "text": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U01",
+      "stage": "discovery",
+      "reason": "未点名品牌的供应商发现问题，检验是否进入初筛。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q02",
+      "text": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U01",
+      "stage": "evaluation",
+      "reason": "从指标推进到任务和复现材料，不预设某品牌最好。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q03",
+      "text": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "language": "en",
+      "branded": true,
+      "audienceId": "U01",
+      "stage": "evaluation",
+      "reason": "点名后核对型号、软件入口和任务边界。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q04",
+      "text": "What evidence should a robot demonstration dataset include before policy training?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U01",
+      "stage": "implementation",
+      "reason": "形成有实际用途的方法内容；不是已有搜索热度证明。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q05",
+      "text": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U02",
+      "stage": "discovery",
+      "reason": "区分教育方向的主动发现与机械臂方向。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q06",
+      "text": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U02",
+      "stage": "evaluation",
+      "reason": "从课程任务区分底盘与带臂系统，降低配置误解。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q07",
+      "text": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "language": "en",
+      "branded": true,
+      "audienceId": "U02",
+      "stage": "evaluation",
+      "reason": "可与官方 FAQ 逐项比对，重点看配置准确性。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q08",
+      "text": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "language": "en",
+      "branded": true,
+      "audienceId": "U02",
+      "stage": "implementation",
+      "reason": "检查系统与 ROS 分支边界，而非泛称兼容。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q09",
+      "text": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "language": "en",
+      "branded": true,
+      "audienceId": "U03",
+      "stage": "implementation",
+      "reason": "检查回答能否区分官方索引、新旧 SDK 与 ROS2 入口。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q10",
+      "text": "Which public evidence matters when comparing robot arm integration options?",
+      "language": "en",
+      "branded": false,
+      "audienceId": "U03",
+      "stage": "evaluation",
+      "reason": "无竞品核验材料时先比较证据维度，不造性能榜。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q11",
+      "text": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "language": "zh",
+      "branded": false,
+      "audienceId": "U01",
+      "stage": "evaluation",
+      "reason": "作为中文对照单独建组，不与英文问题合并计算。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    },
+    {
+      "id": "Q12",
+      "text": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "language": "zh",
+      "branded": true,
+      "audienceId": "U02",
+      "stage": "evaluation",
+      "reason": "中文配置准确性对照，与英文题分别保存版本。",
+      "revision": 1,
+      "origin": "editorial-hypothesis"
+    }
+  ],
+  "assets": [
+    {
+      "id": "A01",
+      "title": "How to choose a robot arm for imitation-learning data collection",
+      "language": "en",
+      "audienceId": "U01",
+      "questionIds": [
+        "Q01",
+        "Q02",
+        "Q04",
+        "Q11"
+      ],
+      "priority": "P1",
+      "format": "guide",
+      "channel": "英文官网知识内容／产品页互链；发布由品牌方决定",
+      "existingUrl": null,
+      "proposedPath": "/resources/robot-arm-data-collection-checklist",
+      "objective": "让研究人员把任务、采集流程、开发入口和验收要求转成选型清单。",
+      "reason": "为尚未知道品牌的读者回答真实决策问题；本轮尚未验证 AI 提及缺口或搜索量。",
+      "requiredMaterials": [
+        "品牌方确认的目标任务与可公开记录",
+        "一套具体型号／固件／软件版本清单",
+        "技术负责人审核方法与适用边界"
+      ],
+      "acceptance": "读者能据正文写出一个任务验证要求；所有品牌描述有来源，不用未核验的竞品数值排名。",
+      "linksTo": [
+        "A02"
+      ],
+      "sections": [
+        {
+          "heading": "Start with the experiment, not the specification sheet",
+          "text": "A useful first question is: what repeatable experiment must the lab complete? Define the object, contact task, workspace and desired observations before comparing arms. A precise placement experiment, a demonstration-collection session and a mobile manipulation study create different requirements.\n\nWrite a short task card: initial object state; desired final state; allowed human assistance; what counts as failure; and what must be recorded. This gives suppliers a common question to answer. It also prevents a polished demo from becoming the acceptance test.",
+          "claimIds": []
+        },
+        {
+          "heading": "Check the complete collection workflow",
+          "text": "Hardware choice is only one part of the decision. Ask how demonstrations are captured, reviewed and organized, and how the recorded task will be reproduced. AgileX’s public data-collection page describes those workflow stages. Treat that description as a starting point for questions, rather than proof that a particular dataset will work for your policy.",
+          "claimIds": [
+            "C10",
+            "C11"
+          ]
+        },
+        {
+          "heading": "Turn software support into a versioned evidence list",
+          "text": "For each candidate, record the exact model, firmware, control interface, software package and source revision. Request the documentation for that combination. A compatibility label does not explain camera calibration, action conventions, end-effector configuration or the data format your training code expects.\n\nAgileX lists development and simulation interfaces for PiPER. Its project index and SDK repository are useful entry points; check which maintained package applies before following an older tutorial. This draft has not tested a robot or executed those interfaces.",
+          "claimIds": [
+            "C03",
+            "C13",
+            "C14"
+          ]
+        },
+        {
+          "heading": "Use a small acceptance experiment",
+          "text": "Choose one representative task and agree on its conditions before collection. Preserve the complete trial record, including unsuccessful attempts, resets and operator interventions. Keep the initial state and object variations explicit.\n\nThe useful output is a reproducible record, not a single success clip. A proposed trial sheet can contain: task ID; hardware and software versions; configuration; attempt outcome; intervention; failure explanation; and a link to the original recording. Set acceptance thresholds with the research team; this guide supplies no invented success rates.",
+          "claimIds": []
+        },
+        {
+          "heading": "What to request before a purchase decision",
+          "text": "Ask the supplier for the correct product manual, a versioned integration example, the recording schema, an explanation of how failures are handled, and a demonstration under your conditions. Check what is included in the delivered system and what your team must integrate.\n\nIf PiPER is on the shortlist, continue with the integration checklist linked to this guide. Use the same questions for every candidate. Choose based on the task evidence and integration work your lab can support, rather than a generic claim that one arm is best.",
+          "claimIds": []
+        }
+      ]
+    },
+    {
+      "id": "A02",
+      "title": "AgileX PiPER integration checklist: model, software and task evidence",
+      "language": "en",
+      "audienceId": "U03",
+      "questionIds": [
+        "Q03",
+        "Q09",
+        "Q10"
+      ],
+      "priority": "P0",
+      "format": "faq",
+      "channel": "英文官网知识内容／产品页互链；发布由品牌方决定",
+      "existingUrl": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+      "proposedPath": "/resources/piper-integration-checklist",
+      "objective": "解释如何找到正确型号和软件入口，形成可交给供应商的验证清单。",
+      "reason": "产品页已有 FAQ，因此补的是版本选择与验证交接说明，不是再写一遍产品介绍。",
+      "requiredMaterials": [
+        "当前型号与固件确认",
+        "新旧 SDK 迁移规则和维护状态",
+        "技术人员按一个具体配置实际跑通的记录"
+      ],
+      "acceptance": "明确区分来源声明与本轮实测；不复制未核对的控制命令，不把仿真或模型兼容表写成通用开箱能力。",
+      "linksTo": [
+        "A01"
+      ],
+      "sections": [
+        {
+          "heading": "Which product and configuration are we discussing?",
+          "text": "Record the exact product name and configuration in the project notes. The current product page also presents PiPER-X; do not copy a configuration or specification from one model into another without checking the relevant manual.\n\nBefore comparing quotations, list the supplied end-effector, controller, mounting arrangement and any additional equipment your task requires. Ask the supplier to identify which items are included and which are optional.",
+          "claimIds": [
+            "C04"
+          ]
+        },
+        {
+          "heading": "Where should software evaluation start?",
+          "text": "Begin with AgileX’s official project index and follow the driver or SDK entry for the required software environment. The index distinguishes an arm ROS 2 driver. The piper_sdk repository also directs readers toward a newer SDK. These are documentation observations, not a claim that every old example is obsolete or that a migration has been tested here.\n\nPreserve the package name, branch or release, source revision, firmware version and operating-system environment in your setup record. Ask the maintainer which combination applies when these records disagree.",
+          "claimIds": [
+            "C13",
+            "C14"
+          ]
+        },
+        {
+          "heading": "Does a supported interface prove my application works?",
+          "text": "No. An interface or simulation resource is an entry point for integration. The application still needs an agreed coordinate convention, calibration procedure, end-effector setup and task validation. Model or framework names in a product description do not establish that your particular policy, sensor setup or dataset will operate without adaptation.\n\nUse the product documentation to define a concrete test. This draft does not certify SDK compatibility, hardware safety or task performance.",
+          "claimIds": []
+        },
+        {
+          "heading": "What should a useful integration handoff contain?",
+          "text": "Request a configuration record, links to the relevant manuals and source revisions, a reproducible example, and a record of expected observations. For an experiment, include both a successful trace and an explanation of failure recovery.\n\nA useful handoff lets another engineer identify the environment, repeat the example and explain why a different result may occur. Avoid replacing that evidence with an unversioned claim of ROS compatibility.",
+          "claimIds": []
+        },
+        {
+          "heading": "What is the next step?",
+          "text": "Send the supplier your task definition and proposed configuration, then request confirmation of the correct documentation path. Resolve version and configuration questions before copying installation or motion commands.\n\nOnly after an engineer tests the selected setup should this checklist become a verified tutorial. Keep the observed result, source revision and review date with the published version.",
+          "claimIds": []
+        }
+      ]
+    },
+    {
+      "id": "A03",
+      "title": "Choosing a ROS teaching robot: navigation platform or mobile manipulator?",
+      "language": "en",
+      "audienceId": "U02",
+      "questionIds": [
+        "Q05",
+        "Q06",
+        "Q07",
+        "Q08",
+        "Q12"
+      ],
+      "priority": "P1",
+      "format": "guide",
+      "channel": "英文官网知识内容／产品页互链；发布由品牌方决定",
+      "existingUrl": "https://global.agilex.ai/products/limo-pro",
+      "proposedPath": "/resources/ros-teaching-platform-selection",
+      "objective": "帮助教师根据课程任务区分移动导航平台和带臂操作平台，核对实验环境。",
+      "reason": "教育方向与机械臂科研方向分开，避免一个品牌总览页承接所有用户。",
+      "requiredMaterials": [
+        "课程目标与学生基础",
+        "具体采购配置和额外设备清单",
+        "指定 ROS／系统环境下的课程复现记录"
+      ],
+      "acceptance": "明确标准配置边界，能输出课程任务与必需设备表；不把 humble 分支外推为全部 ROS 版本兼容。",
+      "linksTo": [
+        "A04"
+      ],
+      "sections": [
+        {
+          "heading": "Choose the learning outcome first",
+          "text": "Start with the experiment students must complete. A navigation course may assess mapping, localization and path execution. A mobile manipulation course adds a task involving an arm and an object. These are different teaching objectives, even when both use a mobile base.\n\nWrite the required demonstration and its observable result before selecting hardware. This keeps a platform with appealing features from setting the syllabus by accident.",
+          "claimIds": []
+        },
+        {
+          "heading": "Read the exact configuration, not only the family name",
+          "text": "AgileX presents LIMO PRO for mobile-robot learning and development. Its FAQ says the standard configuration does not include an arm and distinguishes it from LIMO COBOT. Confirm the actual configuration on the quotation rather than assuming every product in the family includes manipulation hardware.\n\nA course comparing mobility configurations and a course assessing grasping need different equipment and evidence. Ask which configuration is being supplied and what additional integration remains.",
+          "claimIds": [
+            "C06",
+            "C07"
+          ]
+        },
+        {
+          "heading": "Make the software environment part of the course specification",
+          "text": "The captured LIMO ROS 2 repository uses a Humble branch, and its README identifies an Ubuntu environment. Treat that as a specific documentation path, not evidence of support for every distribution.\n\nThe course handout should record the operating system, ROS distribution, package revision and hardware configuration together. Before students use the platform, an instructor should reproduce the lesson in that same environment and preserve the result. This independent draft has not executed the repository.",
+          "claimIds": [
+            "C15",
+            "C16"
+          ]
+        },
+        {
+          "heading": "Separate the first experiment from later extensions",
+          "text": "For the first experiment, choose one task with clear inputs and observations. Explain which data should appear, what the student should record and how the instructor will evaluate the result. Add later extensions only after the baseline is reproducible.\n\nA teaching record should include the initial conditions, software version, observations and failure symptoms. A video of a successful run can illustrate the lesson, but it does not replace a lab procedure.",
+          "claimIds": []
+        },
+        {
+          "heading": "What should the supplier and instructor confirm?",
+          "text": "Confirm the supplied hardware, relevant documentation, development environment and support route. Then align the lesson with the students’ experience and the lab equipment already available.\n\nIf a public parameter label is ambiguous, request clarification before using it in the procurement table. Keep the confirmed definition, units, configuration and source date with the final teaching materials. No payload, price or performance assumption is required to make this selection process useful.",
+          "claimIds": []
+        }
+      ]
+    },
+    {
+      "id": "A04",
+      "title": "LIMO PRO 参数标签与配置 FAQ 核验提案",
+      "language": "zh",
+      "audienceId": "U02",
+      "questionIds": [
+        "Q07",
+        "Q12"
+      ],
+      "priority": "P0",
+      "format": "product-update",
+      "channel": "官网参数与FAQ修订提案；未提交",
+      "existingUrl": "https://global.agilex.ai/products/limo-pro",
+      "proposedPath": "现有 LIMO PRO 页面指标卡与规格表，暂不新建 URL",
+      "objective": "供品牌方核对指标含义并统一读者能看到的配置解释。",
+      "reason": "本轮读取文本出现同值不同标签；这是可复核问题，尚不能断言实际网页或参数必然错误。",
+      "requiredMaterials": [
+        "页面实际 DOM／截图与原始手册",
+        "型号、产品版本与字段定义",
+        "产品负责人确认后的修订文本"
+      ],
+      "acceptance": "在相同型号版本下解释重量与载荷，必要时修订前台和结构化字段；未确认不代填真实载荷。",
+      "linksTo": [
+        "A03"
+      ],
+      "sections": [
+        {
+          "heading": "本轮具体看到了什么",
+          "text": "本轮搜索读取工具返回的页面文本，顶部指标把 4.8 kg 与 Payload 连在一起，后部规格区又在 weight 下列出 4.8 kg。文本读取也可能丢失布局关系，因此现在应标“待核对标签”，不能直接宣布产品参数有误，也不应拿该数值作为载荷写入内容。",
+          "claimIds": [
+            "C08",
+            "C09"
+          ]
+        },
+        {
+          "heading": "如何核对与修订",
+          "text": "先由产品负责人对照实际页面、对应版本手册和原始规格表，确认自重、载荷及其定义、单位和配置。若确认前台标签或数据绑定有误，再修订指标卡、规格表和相关结构化字段，并记录更新时间。未确认前可在独立研究材料里保留疑问，不向第三方传播一个自行推定的“正确值”。",
+          "claimIds": []
+        },
+        {
+          "heading": "配置 FAQ 应保留什么",
+          "text": "现有 FAQ 已区分 LIMO PRO 与 LIMO COBOT，并说明标准配置的机械臂边界。建议在采购说明、教育内容与产品入口沿用同一口径；不要从同系列产品的演示推定标准配置包含全部部件。",
+          "claimIds": [
+            "C07"
+          ]
+        },
+        {
+          "heading": "发布后如何验收",
+          "text": "由技术负责人核对实际页面与资料版本；再用固定的中英文配置问题查看 AI 如何描述。页面修订、AI 介绍变化和采购咨询变化分别记录。本轮尚未向品牌方提交修订，也未进行后测。",
+          "claimIds": []
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "title": "已有产品、FAQ 与开源材料，先围绕具体用户任务组织证据",
+      "observation": "松灵英文公开资料已覆盖产品、受众、软件生态与文档入口。现在值得验证的是，科研用户和教育用户能否沿自己的问题，找到正确型号、版本与复现材料；本轮尚不能判断 AI 是否会主动推荐松灵。",
+      "implication": "单纯再写一份公司介绍，未必能解决选型和集成疑问。不同用户需要不同的内容入口与下一步。",
+      "action": "先以机械臂科研和移动机器人教育两条用户路径制作内容提案，并保留独立的英文／中文问题版本。",
+      "basis": "public-source",
+      "claimIds": [
+        "C01",
+        "C02",
+        "C06",
+        "C12"
+      ],
+      "attemptIds": []
+    },
+    {
+      "id": "F02",
+      "title": "开发资料已有多个入口，版本选择应成为内容的一部分",
+      "observation": "官方项目索引为机械臂区分 ROS2 驱动入口，piper_sdk 仓库还提示了新 SDK；LIMO ROS2 的当前归档分支也明确环境。不同入口不等于全部互相替代或同等兼容。",
+      "implication": "只写“支持 ROS／Python”还不足以帮助工程师确认自己的配置。缺少版本说明可能增加评估成本，但本轮没有用户行为数据验证影响程度。",
+      "action": "做一份型号—固件—系统—ROS／SDK—来源版本的核对清单；实际跑通后再升级为验证教程。",
+      "basis": "public-source",
+      "claimIds": [
+        "C13",
+        "C14",
+        "C15",
+        "C16"
+      ],
+      "attemptIds": []
+    },
+    {
+      "id": "F03",
+      "title": "LIMO PRO 的一个参数标签值得优先核对",
+      "observation": "同页读取文本中，4.8 kg 在顶部 Payload 和后部 weight 两处出现。由于页面布局可能影响文本提取，目前只能确认存在值得复核的标签对应关系。",
+      "implication": "读者可能把自重和载荷混淆。应核对页面和原始手册后处理，不能直接把该数值当载荷写进品牌内容。",
+      "action": "先形成字段核验单，由产品负责人确认；若确有标签问题，再同步修订指标卡、规格表和相关内容。",
+      "basis": "public-source",
+      "claimIds": [
+        "C08",
+        "C09"
+      ],
+      "attemptIds": []
+    },
+    {
+      "id": "F04",
+      "title": "先验证“任务清单与版本说明”是否比泛产品介绍更有用",
+      "observation": "建议以一个科研任务指南、一份 PiPER 集成 FAQ、一份教育选型指南和一个参数核验提案开展小规模内容实验。",
+      "implication": "这是基于公开资料提出的内容假设；不代表市场热词、官网缺页或已经证实的 AI 可见度问题。",
+      "action": "先检查现有站点是否有可更新内容，再由品牌方选择一个方向；无发布权限时保留可审核草稿与复测设计。",
+      "basis": "hypothesis",
+      "claimIds": [
+        "C01",
+        "C02",
+        "C06",
+        "C13"
+      ],
+      "attemptIds": []
+    }
+  ],
+  "executiveSummary": {
+    "situation": "松灵已有产品页、FAQ、文档中心和开源入口，能支撑外部研究稿；但 AI 是否主动发现、如何介绍型号与版本，仍无有效样本。",
+    "impact": "现在直接写“提升可见度”没有依据；更可靠的价值是先把科研选型和开发核验问题变成可复查内容，并找出 AI 表述中的配置风险。",
+    "nextAction": "先完成 12 条 Xue 最小基线，人工阅读回答原文；再从“主动缺席、型号混淆、版本不完整、引用不支持”四类发现中选择一个内容方向迭代。"
+  },
+  "baselinePlan": [
+    { "id": "B01", "questionId": "Q01", "platform": "chatgpt", "rationale": "英文未点名科研选型：验证国际主流助手是否会主动发现 AgileX。" },
+    { "id": "B02", "questionId": "Q03", "platform": "chatgpt", "rationale": "英文点名 PiPER：核验品牌介绍、型号边界与开发资料入口。" },
+    { "id": "B03", "questionId": "Q01", "platform": "perplexity", "rationale": "英文未点名科研选型：观察搜索型回答的品牌与来源分布。" },
+    { "id": "B04", "questionId": "Q03", "platform": "perplexity", "rationale": "英文点名 PiPER：核验引用是否支持配置与集成表述。" },
+    { "id": "B05", "questionId": "Q01", "platform": "gemini", "rationale": "英文未点名科研选型：建立 Google 队列的发现基线。" },
+    { "id": "B06", "questionId": "Q03", "platform": "gemini", "rationale": "英文点名 PiPER：比较品牌介绍与文档入口准确性。" },
+    { "id": "B07", "questionId": "Q11", "platform": "deepseek", "rationale": "中文未点名选型：验证国内助手是否会主动提到松灵。" },
+    { "id": "B08", "questionId": "Q12", "platform": "deepseek", "rationale": "中文点名 LIMO PRO：核验标准配置与 LIMO COBOT 边界。" },
+    { "id": "B09", "questionId": "Q11", "platform": "doubao", "rationale": "中文未点名选型：建立豆包队列的主动发现基线。" },
+    { "id": "B10", "questionId": "Q12", "platform": "doubao", "rationale": "中文点名 LIMO PRO：观察参数和配置表述是否混淆。" },
+    { "id": "B11", "questionId": "Q11", "platform": "qwen", "rationale": "中文未点名选型：建立通义队列的主动发现基线。" },
+    { "id": "B12", "questionId": "Q12", "platform": "qwen", "rationale": "中文点名 LIMO PRO：核验官方入口与型号边界。" }
+  ],
+  "publications": [],
+  "samplingNote": "2026-11-05 已通过 Chrome 用户菜单和窗口工具栏核对 Xue，并确认本机目录为 Profile 11；Playwright 扩展的本地 OpenGEO public study 连接授权待用户确认。本轮尚未提交 AI 平台问题。公开来源为 HTTP 或搜索读取片段，不是 AI 回答样本。"
+}

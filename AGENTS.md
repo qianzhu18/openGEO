@@ -23,7 +23,7 @@ OpenGEO 是一个**个人可用的开源 GEO 工作台**：用本机的浏览器
 ### 要做
 
 - 本地单用户、CLI + 本地 Web
-- 复用本机 Chrome 专用 profile（`data/browser-profile`）
+- 复用用户明确选择的本机 Chrome 用户 Xue；本机选择保存在忽略提交的 `code/data/browser-config.json`
 - API 采集与浏览器采集并存，明确标注
 - 证据三件套：回答原文、DOM、截图
 - 可导出、可给客户看的诊断报告（个人获客）
@@ -60,7 +60,7 @@ AGENTS.md    本文件
 
 ## 5. 浏览器采集规则
 
-- 只用**专用 profile**（`data/browser-profile`），不要碰用户日常 Chrome；
+- 真实 AI 网页采样只使用 **Xue**，运行前核对实际窗口或 profile；接不通标未采集，不回退到旧专用 profile、用户1或其他用户；
 - 首次登录/验证码由用户在有头窗口完成，**不绕过**；
 - 默认有头（`OPENGEO_BROWSER_HEADLESS=0`）；headless 只适合公开静态页；
 - 串行、限速、可中断；用户一操作就暂停；
@@ -68,22 +68,23 @@ AGENTS.md    本文件
 - 不保存密码、Cookie 原文、无关页面内容；
 - 平台 ToS 风险写进文档，不隐藏。
 
-### 账号政策（2026-11-03 定）
+### 账号政策（2026-11-05 同步当前用户指令）
 
-- 专用 profile 绑定**唯一指定的 Google 账号**；
-- 非 Claude 引擎（Perplexity / ChatGPT / Gemini 等）一律用该 Google 账号 SSO 登录；
-- Claude 不支持 Google SSO，暂不纳入浏览器采集；
-- 不在 profile 里加第二个账号，不重建 profile 绕过配额或风控；
-- 登录入口：`cd code && npm run browser:login`（默认 Perplexity，可传 `chatgpt`）。
+- 本机指定 Chrome 用户为 Xue，不复制、导出或读取 Cookie，不通过新 profile 绕过平台配额或风控；
+- 使用 Google SSO 的平台沿用指定账号；国内平台由用户按实际方式登录，不强制 Google SSO；Claude 暂不纳入网页采样；
+- 旧 `session.ts` 与 Playwright engine 仅留作历史实现，不得用于真实采样或判断 Xue 登录态；当前 `browser:probe/check/ask/batch` 走本机 Kimi 扩展脚本桥接，提交前必须核验 Xue，具体见 [17 脚本化网页采集](docs/17-脚本化网页采集.md)；
+- Xue 自动化须连接已有浏览器或扩展并核对实际 profile；验证码和登录由用户本人处理。用户名或采集器 signed_in 标记本身不能证明认证状态；
+- 登录墙、验证、失败页面保留原因，不计入有效回答。只有记录而没有真实发布与后测，不能称 GEO 效果闭环。
 
 ## 6. 代码地图
 
 | 位置 | 作用 |
 | --- | --- |
+| `code/src/citekeel/campaign/` | 案例合约、来源、受众、布局、正文、真实采样导入与复查交付；CLI 为 `scripts/campaign.ts` |
 | `code/src/citekeel/server.ts` | 本地 HTTP 服务、页面与 API |
 | `code/src/citekeel/onboarding.ts` | 官网研究、抽取、回退、模板 |
 | `code/src/citekeel/research-service.ts` | 研究任务生命周期与建档 |
-| `code/src/citekeel/browser/` | 专用 profile、ChatGPT adapter、证据、CLI |
+| `code/src/citekeel/browser/` | Xue 核验、脚本采集桥接、ChatGPT adapter、证据、CLI；旧专用 profile 实现仅供历史参考 |
 | `code/src/citekeel/prompts.ts` | 问题库、主题、表设置 |
 | `code/src/citekeel/recordings.ts` | URL 池与候选问题 |
 | `code/src/citekeel/brand-metrics.ts` | 品牌归一化与指标 |
@@ -96,13 +97,14 @@ AGENTS.md    本文件
 ```bash
 cd code
 npm run build
-npm test                 # 60 项
-npm run test:browser     # 11 项
+npm test
+npm run test:browser
 npm start                # http://127.0.0.1:8847
 
-npm run browser:probe    # 验证浏览器可启动
-npm run browser:check    # 有头窗口，引导登录 ChatGPT
+npm run browser:probe    # 验证本机扩展实际连接 Xue；不提交问题
+npm run browser:check    # 核验 Xue 与 ChatGPT 有效会话；登录由用户处理
 npm run browser:ask -- "你的问题"
+npm run browser:batch -- --file questions.jsonl
 ```
 
 ## 8. 文档规则

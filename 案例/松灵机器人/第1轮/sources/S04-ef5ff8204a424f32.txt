@@ -1,0 +1,109 @@
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+【28†EN / ZH†www.agilex.ai】
+
+[Input: Search products (TRACER, SCOUT, PIKA), news, documents...]
+
+【29†AGILEX】
+
+Robotics
+
+Mobile Robots
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+Robotic Arms
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+Embodied AI
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+Education Kits
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+Developer Kits
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+Solutions
+
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+Resources
+
+【30†Blogs】【31†Documentation】【32†Tutorials†www.youtube.com】
+
+Community
+
+【33†GitHub†github.com】【34†Robotics Research†research.agilex.ai】【35†Events】
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Key Challenges We Address
+
+### Limited Data Diversity
+
+Public and simulated datasets rarely capture the diverse objects, environments, and contact-rich interactions required for robust real-world robot learning.
+
+### High Setup Cost
+
+Building a complete data-collection workflow requires significant investment in robots, sensors, teleoperation systems, software, and task environments.
+### Poor Task Alignment
+
+Off-the-shelf datasets often fail to match the target tasks, operating conditions, sensor configurations, or data formats required for application-specific training.
+
+### Difficult to Scale
+
+Maintaining consistent data quality across operators, environments, and collection sites becomes increasingly challenging as dataset volume and task complexity grow.
+## Data Collection Solution
+
+AgileX Robotics provides a complete data production workflow for capturing, processing, managing, and delivering multimodal robot learning data. It supports multiple methods for robot learning data collection, including teleoperation, UMI-based gripper manipulation capture, and egocentric data collection.
+
+【39†Image: End-to-End Data Collection Workflow】
+
+【40†Image: Flexible Collection Methods & Multimodal Data】
+
+【41†Image: Standardized Platforms, Real-World Scenarios】
+【42†Image: Visualized Data Management and Delivery】
+
+FEATURE 01
+### End-to-End Data Collection Workflow
+
+Cover the complete path from task design, human demonstration capture to data review, management, and delivery. Reduce the operational complexity of building robot learning datasets from scratch.
+
+FEATURE 02
+### Flexible Collection Methods & Multimodal Data
+
+Support master-follower teleoperation, VR teleoperation, UMI-based gripper manipulation capture, egocentric first-person data collection, and custom-built collection systems for specialized & multimodal data requirements.
+
+FEATURE 03
+### Standardized Platforms, Real-World Scenarios
+
+Dedicated, standardized data collection facilities and configurable real-world task environments support data collection from industrial workspaces and household settings to tabletop and mobile manipulation scenarios.
+
+FEATURE 04
+### Visualized Data Management and Delivery
+
+Manage collection progress, data assets, and dataset status through a visualized workflow. Data can be reviewed, organized, and delivered according to customer requirements for robot learning, imitation learning, and VLA model development.
+
+## Core Capability Data
+
+4 +
+
+Scenarios
+
+10K +
+
+Hours
+
+1M +
+
+Data Records
+
+## How The Solution Works
+
+【43†Image: Define Tasks and Configure the Workflow】

@@ -1,0 +1,132 @@
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+【28†EN / ZH†www.agilex.ai】
+
+[Input: Search products (TRACER, SCOUT, PIKA), news, documents...]
+
+【29†AGILEX】
+
+Robotics
+
+Mobile Robots
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+Robotic Arms
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+Embodied AI
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+Education Kits
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+Developer Kits
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+Solutions
+
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+Resources
+
+【30†Blogs】【31†Documentation】【32†Tutorials†www.youtube.com】
+
+Community
+
+【33†GitHub†github.com】【34†Robotics Research†research.agilex.ai】【35†Events】
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Core Performance Metrics
+
+4.2 kg
+
+### Weight
+
+1.5 kg
+
+### Payload
+
+626 mm
+
+### Reach
+
+±0.1 mm
+
+### Repeatability
+
+## Lightweight, High Performance
+
+A lightweight 4.2kg desktop robotic arm with a 1.5 kg end-effector payload, making it easy to move and deploy for real-world tasks such as grasping and assembly.
+
+## 6-DoF Dexterity with Research-Grade Precision
+
+Repeatability of up to ±0.1 mm, PiPER supports complex motion research, algorithm validation, trajectory replay, and continuous iteration.
+## Open Ecosystem for Secondary Development
+
+Supports drag teaching, trajectory replay, and PC control. Compatible with Python, ROS 1/ROS 2, URDF, Gazebo, and Isaac Sim, taking robotics development from motion validation to sim-to-real development.
+
+## Stable Structure, Durable Robotic Arm Design
+
+An aluminum alloy frame and resin housing provide structural strength and resistance to interference. The integrated controller simplifies wiring for cleaner, more stable deployment.
+## See PiPER in Action
+
+【39†Image: Product video cover†img.youtube.com】
+
+YouTube
+
+## Who is Using PiPER
+
+Serve the scalable needs of robotics research, education, algorithm development, and agile real-world robot prototyping.
+
+### Universities & Robotics Labs
+
+For robotics education and demonstrations, manipulation and motion-control research, laboratory system integration.
+
+### Embodied AI Developers
+
+For VLA and world model training, deployment, and validation; real-world robot data collection.
+### Industry Partners
+
+For developing complete robotic solutions, including quadruped + arms, mobile robots + arms, and humanoid systems.
+
+### Individual Makers
+
+For cost-effective desktop robotic arm development, Python/ROS-based system integration, and rapid prototyping.
+
+## PiPER User Cases
+
+【40†Image: Robotics System Integration】
+### Robotics System Integration
+
+PiPER integrates with a mobile platform for object handling and task execution in dynamic environments.
+
+【41†Image: Scalable Robot Data Collection】
+
+### Scalable Robot Data Collection
+
+A dedicated environment for collecting real-world robot data, supporting physical AI training, robotics dataset development, and sim-to-real research.
+
+【42†Image: Physical AI Research】
+### Physical AI Research
+
+Working with vision systems, VLA models, PiPER autonomously completes real-world tasks, demonstrating embodied intelligence in action.
+
+## Complete Ecosystem
+
+Seamless integration with industry-standard hardware and software.
+### Components & Accessories
+
+Equip PiPER with multi-sensor perception, end effectors, and more development accessories.
+
+【43†Image: Dexterous Hand】
+
+Dexterous Hand
+
+【44†Image: Depth Camera & Vision System】

@@ -1,0 +1,340 @@
+{
+  "id": "agilex-public-pilot",
+  "name": "松灵机器人 · 公开研究",
+  "brand": "松灵机器人",
+  "aliases": [
+    "AgileX Robotics",
+    "AgileX",
+    "AGILE·X",
+    "松灵"
+  ],
+  "domain": "global.agilex.ai",
+  "industry": "机器人与具身智能",
+  "description": "用公开证据为英语科研和机器人开发者准备可核验的选型与开发内容，建立可重复的 GEO 测量流程。",
+  "origin": "manual",
+  "market": "international",
+  "language": "en",
+  "goal": "用公开证据为英语科研和机器人开发者准备可核验的选型与开发内容，建立可重复的 GEO 测量流程。",
+  "sources": [
+    {
+      "id": "S01",
+      "title": "松灵英文官网首页",
+      "url": "https://global.agilex.ai/",
+      "text": ""
+    },
+    {
+      "id": "S02",
+      "title": "PiPER 产品与 FAQ",
+      "url": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+      "text": "Universities & Robotics Labs\nEmbodied AI Developers\nCompatible with Python, ROS 1/ROS 2, URDF, Gazebo, and Isaac Sim\nPiPER-X"
+    },
+    {
+      "id": "S03",
+      "title": "LIMO PRO 产品与 FAQ",
+      "url": "https://global.agilex.ai/products/limo-pro",
+      "text": "Four Motion Modes\nrobotics education\nstandard configuration does not include a robotic arm\n4.8 kg ### Payload\n### weight 4.8 kg"
+    },
+    {
+      "id": "S04",
+      "title": "具身智能数据采集解决方案",
+      "url": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+      "text": "task design, human demonstration capture\ndata review, management, and delivery"
+    },
+    {
+      "id": "S05",
+      "title": "松灵技术文档中心",
+      "url": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+      "text": "Technical Document & CAD Catalog"
+    },
+    {
+      "id": "S06",
+      "title": "松灵官方 GitHub 项目入口",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+      "text": "Arm ROS2 driver"
+    },
+    {
+      "id": "S07",
+      "title": "PiPER Python SDK",
+      "url": "https://github.com/agilexrobotics/piper_sdk",
+      "text": "The new robotic arm SDK has been released."
+    },
+    {
+      "id": "S08",
+      "title": "LIMO ROS2 Humble 说明",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+      "text": "# Limo ROS2 Humble\nubuntu 22.04"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C01",
+      "label": "PiPER 受众",
+      "value": "PiPER 产品页把高校与机器人实验室列为受众。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S02"
+      ]
+    },
+    {
+      "id": "C02",
+      "label": "PiPER 受众",
+      "value": "PiPER 产品页也面向具身智能开发者；这不代表所有模型适配都已由我们实测。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S02"
+      ]
+    },
+    {
+      "id": "C03",
+      "label": "PiPER 软件生态，自述",
+      "value": "产品页列出了 Python、ROS 与仿真相关生态入口；实际可用版本须进一步核对。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S02"
+      ]
+    },
+    {
+      "id": "C04",
+      "label": "型号身份",
+      "value": "产品页另列 PiPER-X；不同型号的信息应分别核对。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S02"
+      ]
+    },
+    {
+      "id": "C05",
+      "label": "LIMO PRO 运动模式",
+      "value": "LIMO PRO 页面以多种运动配置介绍平台。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S03"
+      ]
+    },
+    {
+      "id": "C06",
+      "label": "教育受众",
+      "value": "LIMO PRO 官方页面明确涉及机器人教育方向。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S03"
+      ]
+    },
+    {
+      "id": "C07",
+      "label": "LIMO PRO 与 COBOT 的配置边界",
+      "value": "LIMO PRO 的 FAQ 表明其标准配置不含机械臂；不能与 LIMO COBOT 直接混为一款。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S03"
+      ]
+    },
+    {
+      "id": "C08",
+      "label": "待核对的指标标签",
+      "value": "读取文本的顶部指标把 4.8 kg 放在 Payload 标签下，需核对真实页面与手册。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S03"
+      ]
+    },
+    {
+      "id": "C09",
+      "label": "待核对的指标标签",
+      "value": "同页规格区又把 4.8 kg 放在 weight 下，未据此确定实际载荷。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S03"
+      ]
+    },
+    {
+      "id": "C10",
+      "label": "数据采集流程，自述",
+      "value": "数据采集解决方案以任务设计和示范采集开始描述流程。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S04"
+      ]
+    },
+    {
+      "id": "C11",
+      "label": "数据采集流程，自述",
+      "value": "同一方案包含数据审核、管理与交付描述；不等于我们验证了数据质量。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S04"
+      ]
+    },
+    {
+      "id": "C12",
+      "label": "现有内容",
+      "value": "官方文档中心已有技术文档与 CAD 目录入口，不能把它诊断为完全没有资料入口。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S05"
+      ]
+    },
+    {
+      "id": "C13",
+      "label": "官方开发索引",
+      "value": "官方 GitHub 项目索引为机械臂列出独立 ROS2 驱动入口，版本匹配需逐项核对。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S06"
+      ]
+    },
+    {
+      "id": "C14",
+      "label": "SDK 版本选择",
+      "value": "旧 piper_sdk 仓库正文提示已有新 SDK 并链接 pyAgxArm，教程需交代所用软件入口。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S07"
+      ]
+    },
+    {
+      "id": "C15",
+      "label": "ROS2 分支",
+      "value": "LIMO ROS2 仓库当前抓取的是 humble 分支，不能把它自动解释为所有发行版都兼容。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S08"
+      ]
+    },
+    {
+      "id": "C16",
+      "label": "开发环境边界",
+      "value": "该分支 README 的环境段指定 Ubuntu 22.04，实际课程环境应明确版本。",
+      "status": "unconfirmed",
+      "sourceIds": [
+        "S08"
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q01",
+      "text": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "branded": false,
+      "intent": "discovery",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q02",
+      "text": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "branded": false,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q03",
+      "text": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "branded": true,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q04",
+      "text": "What evidence should a robot demonstration dataset include before policy training?",
+      "branded": false,
+      "intent": "implementation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q05",
+      "text": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "branded": false,
+      "intent": "discovery",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q06",
+      "text": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "branded": false,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q07",
+      "text": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "branded": true,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q08",
+      "text": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "branded": true,
+      "intent": "implementation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q09",
+      "text": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "branded": true,
+      "intent": "implementation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q10",
+      "text": "Which public evidence matters when comparing robot arm integration options?",
+      "branded": false,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "en",
+      "status": "suggested"
+    },
+    {
+      "id": "Q11",
+      "text": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "branded": false,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "zh",
+      "status": "suggested"
+    },
+    {
+      "id": "Q12",
+      "text": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "branded": true,
+      "intent": "evaluation",
+      "origin": "editorial-hypothesis",
+      "revision": 1,
+      "language": "zh",
+      "status": "suggested"
+    }
+  ],
+  "queryVersion": 1,
+  "samples": [],
+  "createdAt": "2026-11-05",
+  "updatedAt": "2026-11-05"
+}

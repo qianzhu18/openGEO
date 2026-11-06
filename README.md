@@ -4,7 +4,7 @@
 
 **个人开源版**：不做 SaaS、不设商业化版本；用你自己的浏览器登录态、API Key 和文件，在本机完成采集与证据留存。企业/团队/多租户需求由 Topify 结构的云端产品承接。协作约定见 [AGENTS.md](AGENTS.md)。
 
-当前是 `0.2.0` 本地原型：URL-first 建档、可选模型研究、英文诊断工作台、Recording URL 池、CLI 回放。**还没有**每日调度、浏览器采集 adapter、Competitors 实体、发布与复测闭环——这些是 [OpenGEO 计划](docs/13-产品计划.md) 的 P0–P4。
+当前是 `0.2.0` 本地原型：URL-first 建档、可选模型研究、英文诊断工作台、Recording URL 池、CLI 回放。新增 [ChatGPT 网页脚本采集](docs/17-脚本化网页采集.md)，CLI 与工作台复用本机 Kimi 扩展，提交前核验 Xue；离线测试已通过，真实平台待验收。**还没有**每日调度、多平台连续采样、Competitors 实体、发布与复测闭环——这些是 [OpenGEO 计划](docs/13-产品计划.md) 的 P0–P4。
 
 ## 目录
 
@@ -29,11 +29,13 @@ npm start          # http://127.0.0.1:8847
 其他命令：
 
 ```bash
-npm test                 # 56 项核心测试
-npm run test:browser     # 10 项浏览器测试（需要本机 Chrome）
+npm test
+npm run test:browser     # 需要本机 Chrome
 npm run build            # TypeScript 编译
 npm run opengeo -- demo  # CLI 回放演示
 npm run opengeo -- skills
+npm run --silent browser:probe
+npm run --silent browser:ask -- "What is GEO?"
 ```
 
 模型 ID 用自己账号可用的值；API key 只在当前请求内存中使用，不写入项目或浏览器存储。

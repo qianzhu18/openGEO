@@ -1,0 +1,1187 @@
+{
+  "schemaVersion": "opengeo-campaign-run/v1",
+  "id": "agilex-public-pilot-round-1",
+  "specHash": "f5af946c51024ec13db9b0ca6335396dab3618ee6d9f719acec05ff5bcf4babd",
+  "brandScopeHash": "bb9f1947911458f60d84aaeaa47c15517ec304188b639e33ff93704452933cd3",
+  "asOf": "2026-11-05",
+  "readiness": {
+    "sourceAudit": "ready",
+    "aiBaseline": "not-collected",
+    "content": "review-drafts",
+    "publication": "not-recorded",
+    "effect": "unknown"
+  },
+  "stages": [
+    {
+      "id": "ground",
+      "label": "来源与声明核验",
+      "executor": "deterministic",
+      "status": "ready",
+      "inputHash": "20f9941b986eaee45858d626eaf338ba51350c7e072c141f09513910a8dfe5f8",
+      "outputHash": "a9c827629bb38895b3c549e8bdf3f93b2411e90ecebbf8815859dbed1b01dda1",
+      "note": "只验证引文与归档一致，不把企业自述认定为独立产品实测"
+    },
+    {
+      "id": "audience",
+      "label": "目标用户与决策任务",
+      "executor": "editorial-input",
+      "status": "ready",
+      "inputHash": "a9c827629bb38895b3c549e8bdf3f93b2411e90ecebbf8815859dbed1b01dda1",
+      "outputHash": "ebca824e0e6c62bee9bdccf39f070f9af7b118c05cae668b95251e5217a12e7d",
+      "note": "受众来自本轮研究策划；未做真实客户访谈"
+    },
+    {
+      "id": "queries",
+      "label": "问题与测量设计",
+      "executor": "editorial-input",
+      "status": "ready",
+      "inputHash": "ebca824e0e6c62bee9bdccf39f070f9af7b118c05cae668b95251e5217a12e7d",
+      "outputHash": "4bb35ab935761b2d2dd3bee340e426467469cb74e645194b66939748e44a6294",
+      "note": "候选不是搜索量，问题版本保留"
+    },
+    {
+      "id": "audit",
+      "label": "AI 回答诊断",
+      "executor": "deterministic",
+      "status": "pending",
+      "inputHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "outputHash": "2e56bbbfefd79bf9adc42cfda3d3349cd983ed6e401b02fb41cd1a9512c71b67",
+      "note": "2026-11-05 已通过 Chrome 用户菜单和窗口工具栏核对 Xue，并确认本机目录为 Profile 11；Playwright 扩展的本地 OpenGEO public study 连接授权待用户确认。本轮尚未提交 AI 平台问题。公开来源为 HTTP 或搜索读取片段，不是 AI 回答样本。"
+    },
+    {
+      "id": "layout",
+      "label": "内容布局",
+      "executor": "editorial-input",
+      "status": "ready",
+      "inputHash": "dc4119e9e663abce32e861ef5f6904c18ef8b4a236f33cc77bb65535eeb22672",
+      "outputHash": "34243b1aa160e3b4e538184e1727991331c291ec29d067799c5cf5271791b950",
+      "note": "内容与受众、问题、已有页面和互链建立映射；建议路径尚未发布"
+    },
+    {
+      "id": "content",
+      "label": "内容草稿",
+      "executor": "editorial-input",
+      "status": "ready",
+      "inputHash": "be92cef17fd2ade0b9d4ef7853e65cc4d0418a6f1527918afe2cb7c2145f0115",
+      "outputHash": "875320bd990a807c28bf7f4b0d7a4bd4434f45aff7faf2e9825e5eb2be356adc",
+      "note": "策划由 Agent 阅读来源后撰写，运行器不新增模型调用；全部待品牌方与技术复核"
+    },
+    {
+      "id": "monitor",
+      "label": "复查与效果边界",
+      "executor": "deterministic",
+      "status": "pending",
+      "inputHash": "755bcc10847fe4728f8254431cfd52649dcd78f234d7c3ea709b3c61be9c7237",
+      "outputHash": "65576706356ca5cca1fb49fb6516bdf8059e2b754b2a4b82c9439820e758e48e",
+      "note": "无内部分析权限、发布验证和可比后测；不计算提升"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S01",
+      "url": "https://global.agilex.ai/",
+      "title": "松灵英文官网首页",
+      "kind": "official-site",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:21:53.024174+00:00",
+      "finalUrl": "https://global.agilex.ai/",
+      "contentType": "text/plain",
+      "textFile": "sources/S01-1c81e516526bb191.txt",
+      "sha256": "1c81e516526bb19139eb78caa68782e973c176bb3d9f70d71d29374d350c93c6",
+      "captureMethod": "native-web-excerpt",
+      "coverage": "excerpt",
+      "previousAttempts": [
+        {
+          "status": "failed",
+          "error": "公开页面未返回可读内容",
+          "method": "http",
+          "retrievedAt": "2026-11-05T11:17:24.807Z"
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "url": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+      "title": "PiPER 产品与 FAQ",
+      "kind": "official-site",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:21:53.024358+00:00",
+      "finalUrl": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+      "contentType": "text/plain",
+      "textFile": "sources/S02-0feb96c582e5e6e3.txt",
+      "sha256": "0feb96c582e5e6e34e5ab3f5b22828426e16af7fb689ee13baadc4abf6a80930",
+      "captureMethod": "native-web-excerpt",
+      "coverage": "excerpt",
+      "previousAttempts": [
+        {
+          "status": "failed",
+          "error": "公开页面未返回可读内容",
+          "method": "http",
+          "retrievedAt": "2026-11-05T11:17:25.838Z"
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "url": "https://global.agilex.ai/products/limo-pro",
+      "title": "LIMO PRO 产品与 FAQ",
+      "kind": "official-site",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:21:53.024429+00:00",
+      "finalUrl": "https://global.agilex.ai/products/limo-pro",
+      "contentType": "text/plain",
+      "textFile": "sources/S03-21f1c81db7775535.txt",
+      "sha256": "21f1c81db777553581c94a37ba1c6854033678381ab6f564e5320af229bc5e8c",
+      "captureMethod": "native-web-excerpt",
+      "coverage": "excerpt",
+      "previousAttempts": [
+        {
+          "status": "failed",
+          "error": "公开页面未返回可读内容",
+          "method": "http",
+          "retrievedAt": "2026-11-05T11:17:26.596Z"
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "url": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+      "title": "具身智能数据采集解决方案",
+      "kind": "official-site",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:21:53.024493+00:00",
+      "finalUrl": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+      "contentType": "text/plain",
+      "textFile": "sources/S04-ef5ff8204a424f32.txt",
+      "sha256": "ef5ff8204a424f329daeda1a27298ea95b223ad2014c6e4cc832898e952e43db",
+      "captureMethod": "native-web-excerpt",
+      "coverage": "excerpt",
+      "previousAttempts": [
+        {
+          "status": "failed",
+          "error": "公开页面未返回可读内容",
+          "method": "http",
+          "retrievedAt": "2026-11-05T11:17:27.374Z"
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "url": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+      "title": "松灵技术文档中心",
+      "kind": "official-site",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:21:53.024581+00:00",
+      "finalUrl": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+      "contentType": "text/plain",
+      "textFile": "sources/S05-dce8542ecbef2b8d.txt",
+      "sha256": "dce8542ecbef2b8d2f10917c30508cb9390abfa9f9a415f4cc6e6d60fc67676e",
+      "captureMethod": "native-web-excerpt",
+      "coverage": "excerpt",
+      "previousAttempts": [
+        {
+          "status": "failed",
+          "error": "公开页面未返回可读内容",
+          "method": "http",
+          "retrievedAt": "2026-11-05T11:17:29.648Z"
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+      "title": "松灵官方 GitHub 项目入口",
+      "kind": "official-repository",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:17:31.160Z",
+      "finalUrl": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+      "contentType": "text/plain; charset=utf-8",
+      "textFile": "sources/S06-a4687553603c0f1a.txt",
+      "sha256": "a4687553603c0f1a9f1e03cbf9f6ffc3a5855cb73cfc0194a780303ca5d97b43",
+      "captureMethod": "http",
+      "coverage": "page-text"
+    },
+    {
+      "id": "S07",
+      "url": "https://github.com/agilexrobotics/piper_sdk",
+      "title": "PiPER Python SDK",
+      "kind": "official-repository",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:17:32.131Z",
+      "finalUrl": "https://github.com/agilexrobotics/piper_sdk",
+      "contentType": "text/html; charset=utf-8",
+      "textFile": "sources/S07-fc1493a6bf6a0008.txt",
+      "sha256": "fc1493a6bf6a0008baf62b1af76857c662dc34409f683479bca98d31247f328f",
+      "captureMethod": "http",
+      "coverage": "page-text"
+    },
+    {
+      "id": "S08",
+      "url": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+      "title": "LIMO ROS2 Humble 说明",
+      "kind": "official-repository",
+      "status": "collected",
+      "retrievedAt": "2026-11-05T11:17:33.828Z",
+      "finalUrl": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+      "contentType": "text/plain; charset=utf-8",
+      "textFile": "sources/S08-67308a8ff6b044a0.txt",
+      "sha256": "67308a8ff6b044a0e51fd34723ef46eb8e16b37e280a6ca25b82bae56fea4ea2",
+      "captureMethod": "http",
+      "coverage": "page-text"
+    }
+  ],
+  "claims": [
+    {
+      "id": "C01",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C02",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C03",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C04",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C05",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C06",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C07",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C08",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C09",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C10",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C11",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C12",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C13",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C14",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C15",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    },
+    {
+      "id": "C16",
+      "verifiedQuote": true,
+      "publishableAsFact": false
+    }
+  ],
+  "attempts": [],
+  "metrics": [
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q01",
+      "question": "Which robot arms should a university lab evaluate for imitation-learning data collection?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q02",
+      "question": "How should a research lab evaluate a robot arm for repeatable manipulation experiments?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q03",
+      "question": "What should I verify before choosing AgileX PiPER for a robotics research project?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q04",
+      "question": "What evidence should a robot demonstration dataset include before policy training?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q05",
+      "question": "Which ROS 2 mobile robot platforms should a university compare for navigation courses?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q06",
+      "question": "How should a university choose between a mobile navigation robot and a mobile manipulator?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q07",
+      "question": "Does AgileX LIMO PRO include a robotic arm, and how does it differ from LIMO COBOT?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q08",
+      "question": "What software versions should I confirm before using an AgileX LIMO ROS 2 package?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q09",
+      "question": "Where should a developer start with AgileX PiPER Python SDK and ROS 2 documentation?",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q10",
+      "question": "Which public evidence matters when comparing robot arm integration options?",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q11",
+      "question": "科研实验室选择模仿学习数据采集机械臂时应该核验哪些资料？",
+      "questionRevision": 1,
+      "branded": false,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "chatgpt",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "perplexity",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "gemini",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "deepseek",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "doubao",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    },
+    {
+      "questionId": "Q12",
+      "question": "松灵机器人 LIMO PRO 的标准配置包含机械臂吗？",
+      "questionRevision": 1,
+      "branded": true,
+      "platform": "qwen",
+      "protocol": null,
+      "numerator": 0,
+      "denominator": 0,
+      "value": null,
+      "attemptIds": []
+    }
+  ],
+  "warnings": [
+    "公开网页、官方文档和仓库内容仍是来源陈述，不是独立实测。",
+    "人工或 Agent 策划保存在输入中；确定性运行只校验与生成交付文件。",
+    "品牌提及规则只识别名称；推荐措辞需要人工核对，不报告 Top1/Top3。"
+  ]
+}

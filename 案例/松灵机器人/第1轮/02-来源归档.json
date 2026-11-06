@@ -1,0 +1,154 @@
+[
+  {
+    "id": "S01",
+    "url": "https://global.agilex.ai/",
+    "title": "松灵英文官网首页",
+    "kind": "official-site",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:21:53.024174+00:00",
+    "finalUrl": "https://global.agilex.ai/",
+    "contentType": "text/plain",
+    "textFile": "sources/S01-1c81e516526bb191.txt",
+    "sha256": "1c81e516526bb19139eb78caa68782e973c176bb3d9f70d71d29374d350c93c6",
+    "captureMethod": "native-web-excerpt",
+    "coverage": "excerpt",
+    "previousAttempts": [
+      {
+        "status": "failed",
+        "error": "公开页面未返回可读内容",
+        "method": "http",
+        "retrievedAt": "2026-11-05T11:17:24.807Z"
+      }
+    ]
+  },
+  {
+    "id": "S02",
+    "url": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+    "title": "PiPER 产品与 FAQ",
+    "kind": "official-site",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:21:53.024358+00:00",
+    "finalUrl": "https://global.agilex.ai/products/piper-6-dof-robotic-arm",
+    "contentType": "text/plain",
+    "textFile": "sources/S02-0feb96c582e5e6e3.txt",
+    "sha256": "0feb96c582e5e6e34e5ab3f5b22828426e16af7fb689ee13baadc4abf6a80930",
+    "captureMethod": "native-web-excerpt",
+    "coverage": "excerpt",
+    "previousAttempts": [
+      {
+        "status": "failed",
+        "error": "公开页面未返回可读内容",
+        "method": "http",
+        "retrievedAt": "2026-11-05T11:17:25.838Z"
+      }
+    ]
+  },
+  {
+    "id": "S03",
+    "url": "https://global.agilex.ai/products/limo-pro",
+    "title": "LIMO PRO 产品与 FAQ",
+    "kind": "official-site",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:21:53.024429+00:00",
+    "finalUrl": "https://global.agilex.ai/products/limo-pro",
+    "contentType": "text/plain",
+    "textFile": "sources/S03-21f1c81db7775535.txt",
+    "sha256": "21f1c81db777553581c94a37ba1c6854033678381ab6f564e5320af229bc5e8c",
+    "captureMethod": "native-web-excerpt",
+    "coverage": "excerpt",
+    "previousAttempts": [
+      {
+        "status": "failed",
+        "error": "公开页面未返回可读内容",
+        "method": "http",
+        "retrievedAt": "2026-11-05T11:17:26.596Z"
+      }
+    ]
+  },
+  {
+    "id": "S04",
+    "url": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+    "title": "具身智能数据采集解决方案",
+    "kind": "official-site",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:21:53.024493+00:00",
+    "finalUrl": "https://global.agilex.ai/pages/agilex-embodied-ai-data-collection-solution",
+    "contentType": "text/plain",
+    "textFile": "sources/S04-ef5ff8204a424f32.txt",
+    "sha256": "ef5ff8204a424f329daeda1a27298ea95b223ad2014c6e4cc832898e952e43db",
+    "captureMethod": "native-web-excerpt",
+    "coverage": "excerpt",
+    "previousAttempts": [
+      {
+        "status": "failed",
+        "error": "公开页面未返回可读内容",
+        "method": "http",
+        "retrievedAt": "2026-11-05T11:17:27.374Z"
+      }
+    ]
+  },
+  {
+    "id": "S05",
+    "url": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+    "title": "松灵技术文档中心",
+    "kind": "official-site",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:21:53.024581+00:00",
+    "finalUrl": "https://global.agilex.ai/pages/agilex-robotics-document-center",
+    "contentType": "text/plain",
+    "textFile": "sources/S05-dce8542ecbef2b8d.txt",
+    "sha256": "dce8542ecbef2b8d2f10917c30508cb9390abfa9f9a415f4cc6e6d60fc67676e",
+    "captureMethod": "native-web-excerpt",
+    "coverage": "excerpt",
+    "previousAttempts": [
+      {
+        "status": "failed",
+        "error": "公开页面未返回可读内容",
+        "method": "http",
+        "retrievedAt": "2026-11-05T11:17:29.648Z"
+      }
+    ]
+  },
+  {
+    "id": "S06",
+    "url": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+    "title": "松灵官方 GitHub 项目入口",
+    "kind": "official-repository",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:17:31.160Z",
+    "finalUrl": "https://raw.githubusercontent.com/agilexrobotics/agilexrobotics/master/README.md",
+    "contentType": "text/plain; charset=utf-8",
+    "textFile": "sources/S06-a4687553603c0f1a.txt",
+    "sha256": "a4687553603c0f1a9f1e03cbf9f6ffc3a5855cb73cfc0194a780303ca5d97b43",
+    "captureMethod": "http",
+    "coverage": "page-text"
+  },
+  {
+    "id": "S07",
+    "url": "https://github.com/agilexrobotics/piper_sdk",
+    "title": "PiPER Python SDK",
+    "kind": "official-repository",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:17:32.131Z",
+    "finalUrl": "https://github.com/agilexrobotics/piper_sdk",
+    "contentType": "text/html; charset=utf-8",
+    "textFile": "sources/S07-fc1493a6bf6a0008.txt",
+    "sha256": "fc1493a6bf6a0008baf62b1af76857c662dc34409f683479bca98d31247f328f",
+    "captureMethod": "http",
+    "coverage": "page-text"
+  },
+  {
+    "id": "S08",
+    "url": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+    "title": "LIMO ROS2 Humble 说明",
+    "kind": "official-repository",
+    "status": "collected",
+    "retrievedAt": "2026-11-05T11:17:33.828Z",
+    "finalUrl": "https://raw.githubusercontent.com/agilexrobotics/limo_ros2/humble/Readme.md",
+    "contentType": "text/plain; charset=utf-8",
+    "textFile": "sources/S08-67308a8ff6b044a0.txt",
+    "sha256": "67308a8ff6b044a0e51fd34723ef46eb8e16b37e280a6ca25b82bae56fea4ea2",
+    "captureMethod": "http",
+    "coverage": "page-text"
+  }
+]

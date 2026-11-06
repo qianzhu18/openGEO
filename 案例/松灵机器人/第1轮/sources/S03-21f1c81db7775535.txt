@@ -1,0 +1,489 @@
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+【28†EN / ZH†www.agilex.ai】
+
+[Input: Search products (TRACER, SCOUT, PIKA), news, documents...]
+
+【29†AGILEX】
+
+Robotics
+
+Mobile Robots
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+Robotic Arms
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+Embodied AI
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+Education Kits
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+Developer Kits
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+Solutions
+
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+Resources
+
+【30†Blogs】【31†Documentation】【32†Tutorials†www.youtube.com】
+
+Community
+
+【33†GitHub†github.com】【34†Robotics Research†research.agilex.ai】【35†Events】
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Core Performance Metrics
+
+4
+
+### Motion Mode
+
+4.8 kg
+
+### Payload
+
+4 hours
+
+### Runtime
+
+45°
+
+### Max Climb (Track Mode)
+
+## Four Motion Modes, One Customizable Platform
+
+Supports interchangeable mobility configurations, including Ackermann steering, differential drive, Mecanum wheels, and tracked mobility.
+## Integrated AI Computing and Perception System
+
+Integrated NVIDIA Jetson Orin Nano, an EAI T-mini Pro LiDAR, Orbbec DaBai depth camera, and HI226 IMU provide an onboard foundation for real-time mapping, perception, object recognition, and autonomous robot development.
+## Open ROS Environment, From SLAM to Navigation
+
+LIMO PRO provides ROS resources, C++ and Python interfaces, source code, simulation models, and hands-on tutorials. Developers can develop localization, obstacle avoidance, route planning, and autonomous inspection workflows with ROS navigation tools.
+
+## Who is Using LIMO PRO
+
+Built for robotics education, autonomous-driving research, AI algorithm development, and rapid mobile robot prototyping.
+### Universities & Robotics Labs
+
+For ROS education, mobile robot research, kinematics experiments, and autonomous-navigation development.
+
+### Robotics and AI Educators
+
+For teaching Python, C++, SLAM, perception, path planning, and robot-control fundamentals through hands-on projects.
+
+### Student Competition Teams
+
+For robotics competitions, capstone projects, and rapid prototyping that require adaptable mobility and onboard perception.
+### Developers & Product Prototyping Teams
+
+For validating mobile robot algorithms, sensor configurations, and application concepts before custom hardware development.
+
+## LIMO PRO User Cases
+
+【39†Image: Object Detection & Recognition】
+
+### Object Detection & Recognition
+
+【40†Image: Robotics Education】
+
+### Robotics Education
+
+【41†Image: Visual SLAM Mapping】
+
+### Visual SLAM Mapping
+
+【42†Image: Robotics Conference & Competition】
+
+### Robotics Conference & Competition
+## Complete Ecosystem
+
+Seamless integration with industry-standard hardware and software.
+
+### Components & Accessories
+
+Configure LIMO PRO with multiple mobility modes and scenario-based training arenas.
+
+【43†Image: Tracks】
+
+Tracks
+
+【44†Image: Mecanum Wheels】
+
+Mecanum Wheels
+
+【45†Image: Onboard Computing】
+
+Onboard Computing
+
+【46†Image: Sand Table】
+
+Sand Table
+
+### Software & Algorithms
+
+Develop with ROS, SDKs, simulation tools, and resources for SLAM, navigation, perception, and robot control.
+#### ROS 1 / ROS 2
+
+#### Phython & C++ SDK
+
+#### Gmapping / Cartographer / RTAB-Map
+
+#### DWA / TEB Navigation
+
+[Additional captured section]
+
+【0†Robotics】
+
+Mobile Robots Robotic Arms Embodied AI Education Kits Developer Kits
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+【0†Solutions】
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+【28†EN / ZH†www.agilex.ai】
+
+[Input: Search products (TRACER, SCOUT, PIKA), news, documents...]
+
+【29†AGILEX】
+
+Robotics
+
+Mobile Robots
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+Robotic Arms
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+Embodied AI
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+Education Kits
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+Developer Kits
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+Solutions
+
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+Resources
+
+【30†Blogs】【31†Documentation】【32†Tutorials†www.youtube.com】
+
+Community
+
+【33†GitHub†github.com】【34†Robotics Research†research.agilex.ai】【35†Events】
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Core Performance Metrics
+
+4
+
+### Motion Mode
+
+4.8 kg
+
+### Payload
+
+4 hours
+
+### Runtime
+
+45°
+
+### Max Climb (Track Mode)
+
+## Four Motion Modes, One Customizable Platform
+
+Supports interchangeable mobility configurations, including Ackermann steering, differential drive, Mecanum wheels, and tracked mobility.
+## Integrated AI Computing and Perception System
+
+Integrated NVIDIA Jetson Orin Nano, an EAI T-mini Pro LiDAR, Orbbec DaBai depth camera, and HI226 IMU provide an onboard foundation for real-time mapping, perception, object recognition, and autonomous robot development.
+## Open ROS Environment, From SLAM to Navigation
+
+LIMO PRO provides ROS resources, C++ and Python interfaces, source code, simulation models, and hands-on tutorials. Developers can develop localization, obstacle avoidance, route planning, and autonomous inspection workflows with ROS navigation tools.
+
+## Who is Using LIMO PRO
+
+Built for robotics education, autonomous-driving research, AI algorithm development, and rapid mobile robot prototyping.
+### Universities & Robotics Labs
+
+For ROS education, mobile robot research, kinematics experiments, and autonomous-navigation development.
+
+### Robotics and AI Educators
+
+For teaching Python, C++, SLAM, perception, path planning, and robot-control fundamentals through hands-on projects.
+
+### Student Competition Teams
+
+For robotics competitions, capstone projects, and rapid prototyping that require adaptable mobility and onboard perception.
+### Developers & Product Prototyping Teams
+
+For validating mobile robot algorithms, sensor configurations, and application concepts before custom hardware development.
+
+## LIMO PRO User Cases
+
+【39†Image: Object Detection & Recognition】
+
+### Object Detection & Recognition
+
+【40†Image: Robotics Education】
+
+### Robotics Education
+
+【41†Image: Visual SLAM Mapping】
+
+### Visual SLAM Mapping
+
+【42†Image: Robotics Conference & Competition】
+
+### Robotics Conference & Competition
+## Complete Ecosystem
+
+Seamless integration with industry-standard hardware and software.
+
+### Components & Accessories
+
+Configure LIMO PRO with multiple mobility modes and scenario-based training arenas.
+
+【43†Image: Tracks】
+
+Tracks
+
+【44†Image: Mecanum Wheels】
+
+Mecanum Wheels
+
+【45†Image: Onboard Computing】
+
+Onboard Computing
+
+【46†Image: Sand Table】
+
+Sand Table
+
+### Software & Algorithms
+
+Develop with ROS, SDKs, simulation tools, and resources for SLAM, navigation, perception, and robot control.
+#### ROS 1 / ROS 2
+
+#### Phython & C++ SDK
+
+#### Gmapping / Cartographer / RTAB-Map
+
+#### DWA / TEB Navigation
+## FAQ
+
+What is LIMO PRO?
+
+LIMO PRO is a four-mode ROS robot development platform for education, research, and mobile robotics prototyping. It supports Ackermann, differential, Mecanum-wheel, and tracked motion configurations.
+
+How is LIMO PRO different from LIMO COBOT?
+LIMO PRO is an open, reconfigurable platform focused on mobile-robot learning and development. Its standard configuration does not include a robotic arm. LIMO COBOT is a more integrated ROS 2 mobile manipulation platform that combines the mobile base, 6-DoF arm, perception hardware, and ready-to-use grasping workflows.
+
+What can users develop with LIMO PRO?
+Users can develop SLAM, autonomous navigation, obstacle avoidance, visual recognition, line following, voice interaction, AI inference, and optional mobile-manipulation applications.
+
+Which navigation algorithms does LIMO PRO support?
+LIMO PRO supports commonly used ROS navigation and mapping algorithms, including Gmapping, Cartographer, RTAB-Map, AMCL localization, DWA local planning, and TEB local planning. With its onboard LiDAR, depth camera, IMU, and Jetson computing, developers can build and evaluate laser SLAM, visual SLAM, autonomous navigation, obstacle avoidance, and multi-point patrol applications.
+
+Which drive mode should I use?
+Use Ackermann mode for car-like steering, differential drive for standard indoor mobile robotics, Mecanum mode for omnidirectional movement, and tracked mode for improved terrain adaptability.
+## Technical Specifications
+
+Download Full Specs
+
+LIMO PRO LIMO COBOT
+
+### dimensions (mm)
+
+322*220*251
+
+### weight
+
+4.8 kg
+
+### Max climb (Track Mode)
+
+45°
+
+### runtime
+
+4 hours
+
+### LiDAR
+
+2D LiDAR
+
+### Depth Camera
+
+Orbbec DaBai
+
+### Onboard PC
+
+Orin Nano
+
+### Obstacle Clearance
+
+24 mm
+
+### dimensions (mm)
+
+322*220*251
+
+### weight
+
+5.6 kg
+
+### Max climb (Track Mode)
+
+45°
+
+### runtime
+
+2.5 hours
+
+### Obstacle Clearance
+
+24 mm
+
+### Precision (Robotic Arm)
+
+±0.5 mm
+
+### Payload (Robotic Arm)
+
+250 g
+### working radius
+
+280 mm
+
+Specifications & Technical Documents
+### Download Documentation
+
+Please provide your details below.
+
+[Input][Input][Input] [Input] [Input] [Input]
+
+Full Name * [Input: Enter your full name]
+
+Work Email *
+
+[Input: name@company.com]
+
+Please enter a valid work email address (e.g., name@company.com).
+
+Company / Institution * [Input: Enter the full name of your company or institution]
+
+Phone Number (Optional) [Input: Optional — so our technical advisor can contact you]
+
+[Input] I have read and agree to the Privacy Policy.
+After your first submission, you can download other documents during this visit without completing the form again.
+
+Subscribe & Download
+### AgileX Robotics Privacy Policy
+
+Please review the following privacy terms carefully
+
+AGILEX ROBOTICS CO., LIMITED is a limited liability company incorporated under the laws of the People's Republic of China. We respect your privacy and are committed to protecting your personal information. This Privacy Policy applies to all AgileX products and services.
+
+1 How We Collect and Use Personal Information
+
+Information You Provide
+  * Registration and sign in. Your mobile phone number, email address, username, password, and optional profile information such as your profile photo, gender, and industry.
+  * Transaction information. Your name, delivery address, and payment information, which may include an identification number, bank card number, or third-party payment account details.
+  * Interactive content. Customer service conversations, survey responses, and text or images that you submit in comment areas.
+Information Collected Automatically
+
+  * Device and network logs. Device model, operating system, browser type, IP address, access time, pages visited, and usage logs.
+  * Location information. Approximate location derived from your IP address, GPS, or similar technologies.
+  * Usage information. Feature interactions, error logs, and performance diagnostics.
+
+Information from Third Parties or Public Sources
+  * Social sign in. A third-party OpenID, nickname, and profile photo, where you authorize the transfer.
+  * Public information. Personal information that you choose to upload or publish through public channels.
+
+2 Purposes of Processing and Legal Bases
+We collect and use personal information only for specific and lawful purposes. The table below identifies the purposes described in this Policy and the corresponding legal bases under Article 13 of the Personal Information Protection Law of the People's Republic of China (PIPL).
+
+Purpose: Account and security
+How We Use Information: Verify identity, prevent fraud, and protect account security
+Legal Basis: Necessary to perform a contract (PIPL Article 13)
+Purpose: Service delivery
+How We Use Information: Process orders, arrange delivery, and provide customer support
+Legal Basis: Necessary to perform a contract (PIPL Article 13)
+
+Purpose: Product improvement
+How We Use Information: Analyze usage, update features, and improve performance
+Legal Basis: Legitimate interests, to the extent permitted by applicable law (PIPL Article 13)
+Purpose: Marketing and recommendations
+How We Use Information: Send product updates and personalized advertising
+Legal Basis: Your consent (PIPL Article 13)
+
+Purpose: Security and compliance
+How We Use Information: Monitor anomalies and investigate suspected unlawful activity
+Legal Basis: Legitimate interests, to the extent permitted by applicable law (PIPL Article 13)
+We will not use your personal information for a purpose outside this table without obtaining your consent, unless otherwise permitted by applicable law.
+
+3 Cookies and Similar Technologies
+
+This website uses cookies, local storage, pixel tags, and similar technologies for identity verification, personalized display, traffic analytics, and security.
+You can manage or delete cookies through your browser settings. Disabling or deleting cookies may affect the availability or operation of certain website features.
+
+4 Sharing Transfers and Public Disclosure
+
+We do not provide your personal information to third parties except in the following circumstances:
+  * With your authorization or consent.
+  * Legal requirements. To comply with applicable laws, regulations, court orders, or requests from judicial authorities.
+  * Affiliates and service providers. To provide necessary services, subject to appropriate obligations consistent with this Policy.
+  * Business transactions. In connection with a reorganization, merger, or acquisition, where personal information transfers with the business and remains subject to this Policy.
+  * Protection of lawful rights and interests. For example, to investigate fraud or respond to a security incident.
+When we share or disclose personal information, we maintain records of the recipient, the information involved, the time of disclosure, and the reason for the disclosure.
+
+5 Cross Border Transfers
+
+If a cross-border transfer of personal information is necessary for our business, we will comply with Article 38 of the PIPL. As applicable, we will complete a security assessment or use the standard contract issued by the relevant authority, and we will provide notice to you or obtain your authorization.
+6 Information Storage and Security
+  * Storage location. Personal information is generally stored on servers located in China. Where overseas storage is necessary, we will complete security assessments as required by applicable law.
+  * Security measures. We use measures such as SSL/TLS encryption, access controls, log audits, intrusion detection, and periodic risk assessments.
+  * Incident response. If a data breach or other security incident occurs, we will notify affected individuals and report the incident to the relevant regulatory authority as required by law.
+7 Your Rights
+
+Subject to the PIPL, including Chapter IV, the Cybersecurity Law of the People's Republic of China, and other applicable laws, you may exercise the rights below through www.agilex.ai/contact or by emailing sales@agilex.ai.
+  * Access and correction. View, download, or correct your personal information.
+  * Deletion. Request deletion when the processing purpose has been achieved or when you withdraw consent.
+  * Withdrawal of consent. Withdraw authorization for a specific processing activity at any time.
+  * Restriction or objection. Request that we restrict or stop unnecessary processing or processing conducted without consent.
+  * Data portability. Obtain a copy of your personal information and request its transfer to another service provider, where applicable.
+  * Complaints and remedies. Submit a complaint to us or to the relevant regulatory authority.
+We will respond to reasonable requests within 30 days. If we cannot fulfill a request because of legal restrictions or legitimate operational reasons, we will notify you and explain the reason.
+
+8 Children's Privacy

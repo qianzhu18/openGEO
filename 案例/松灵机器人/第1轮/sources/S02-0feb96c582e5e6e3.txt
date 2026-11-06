@@ -1,0 +1,497 @@
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+【28†EN / ZH†www.agilex.ai】
+
+[Input: Search products (TRACER, SCOUT, PIKA), news, documents...]
+
+【29†AGILEX】
+
+Robotics
+
+Mobile Robots
+
+【1†SCOUT MINI】 【2†SCOUT 2.0】 【3†TRACER 2.0】 【4†UMR】 【5†RANGER】 【6†RANGER MINI 3.0】 【7†RANGER AIR】 【8†BUNKER MINI】 【9†BUNKER PRO】 【10†HUNTER SE】
+
+Robotic Arms
+
+【11†PiPER】 【12†PiPER-X】 【13†NERO】
+
+Embodied AI
+【14†COBOT MAGIC】 【15†Modular ALOHA】 【16†Pika Pro】 【17†Universal Master Arm】 【18†OPEN NERO】 【19†OPEN PiPER】
+
+Education Kits
+
+【20†LIMO COBOT】 【21†LIMO PRO】
+
+Developer Kits
+
+【22†SCOUT MINI COBOT】 【23†SCOUT MINI R&D Kit】
+
+Solutions
+
+【24†Industrial Inspection】【25†Autonomous Intralogistics】【26†Robot Data Collection】【27†NAVIS Autonomous Navigation】
+
+Resources
+
+【30†Blogs】【31†Documentation】【32†Tutorials†www.youtube.com】
+
+Community
+
+【33†GitHub†github.com】【34†Robotics Research†research.agilex.ai】【35†Events】
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Core Performance Metrics
+
+4.2 kg
+
+### Weight
+
+1.5 kg
+
+### Payload
+
+626 mm
+
+### Reach
+
+±0.1 mm
+
+### Repeatability
+
+## Lightweight, High Performance
+
+A lightweight 4.2kg desktop robotic arm with a 1.5 kg end-effector payload, making it easy to move and deploy for real-world tasks such as grasping and assembly.
+
+## 6-DoF Dexterity with Research-Grade Precision
+
+Repeatability of up to ±0.1 mm, PiPER supports complex motion research, algorithm validation, trajectory replay, and continuous iteration.
+## Open Ecosystem for Secondary Development
+
+Supports drag teaching, trajectory replay, and PC control. Compatible with Python, ROS 1/ROS 2, URDF, Gazebo, and Isaac Sim, taking robotics development from motion validation to sim-to-real development.
+
+## Stable Structure, Durable Robotic Arm Design
+
+An aluminum alloy frame and resin housing provide structural strength and resistance to interference. The integrated controller simplifies wiring for cleaner, more stable deployment.
+## See PiPER in Action
+
+【39†Image: Product video cover†img.youtube.com】
+
+YouTube
+
+## Who is Using PiPER
+
+Serve the scalable needs of robotics research, education, algorithm development, and agile real-world robot prototyping.
+
+### Universities & Robotics Labs
+
+For robotics education and demonstrations, manipulation and motion-control research, laboratory system integration.
+
+### Embodied AI Developers
+
+For VLA and world model training, deployment, and validation; real-world robot data collection.
+### Industry Partners
+
+For developing complete robotic solutions, including quadruped + arms, mobile robots + arms, and humanoid systems.
+
+### Individual Makers
+
+For cost-effective desktop robotic arm development, Python/ROS-based system integration, and rapid prototyping.
+
+## PiPER User Cases
+
+【40†Image: Robotics System Integration】
+### Robotics System Integration
+
+PiPER integrates with a mobile platform for object handling and task execution in dynamic environments.
+
+【41†Image: Scalable Robot Data Collection】
+
+### Scalable Robot Data Collection
+
+A dedicated environment for collecting real-world robot data, supporting physical AI training, robotics dataset development, and sim-to-real research.
+
+【42†Image: Physical AI Research】
+### Physical AI Research
+
+Working with vision systems, VLA models, PiPER autonomously completes real-world tasks, demonstrating embodied intelligence in action.
+
+## Complete Ecosystem
+
+Seamless integration with industry-standard hardware and software.
+### Components & Accessories
+
+Equip PiPER with multi-sensor perception, end effectors, and more development accessories.
+
+【43†Image: Dexterous Hand】
+
+Dexterous Hand
+
+【44†Image: Depth Camera & Vision System】
+
+
+[Additional captured section]
+
+About AgileX
+
+【36†About Us】【37†Support & Service】【38†Contact Us】
+
+【28†EN / ZH†www.agilex.ai】 【29†Store】
+## Core Performance Metrics
+
+4.2 kg
+
+### Weight
+
+1.5 kg
+
+### Payload
+
+626 mm
+
+### Reach
+
+±0.1 mm
+
+### Repeatability
+
+## Lightweight, High Performance
+
+A lightweight 4.2kg desktop robotic arm with a 1.5 kg end-effector payload, making it easy to move and deploy for real-world tasks such as grasping and assembly.
+
+## 6-DoF Dexterity with Research-Grade Precision
+
+Repeatability of up to ±0.1 mm, PiPER supports complex motion research, algorithm validation, trajectory replay, and continuous iteration.
+## Open Ecosystem for Secondary Development
+
+Supports drag teaching, trajectory replay, and PC control. Compatible with Python, ROS 1/ROS 2, URDF, Gazebo, and Isaac Sim, taking robotics development from motion validation to sim-to-real development.
+
+## Stable Structure, Durable Robotic Arm Design
+
+An aluminum alloy frame and resin housing provide structural strength and resistance to interference. The integrated controller simplifies wiring for cleaner, more stable deployment.
+## See PiPER in Action
+
+【39†Image: Product video cover†img.youtube.com】
+
+YouTube
+
+## Who is Using PiPER
+
+Serve the scalable needs of robotics research, education, algorithm development, and agile real-world robot prototyping.
+
+### Universities & Robotics Labs
+
+For robotics education and demonstrations, manipulation and motion-control research, laboratory system integration.
+
+### Embodied AI Developers
+
+For VLA and world model training, deployment, and validation; real-world robot data collection.
+### Industry Partners
+
+For developing complete robotic solutions, including quadruped + arms, mobile robots + arms, and humanoid systems.
+
+### Individual Makers
+
+For cost-effective desktop robotic arm development, Python/ROS-based system integration, and rapid prototyping.
+
+## PiPER User Cases
+
+【40†Image: Robotics System Integration】
+### Robotics System Integration
+
+PiPER integrates with a mobile platform for object handling and task execution in dynamic environments.
+
+【41†Image: Scalable Robot Data Collection】
+
+### Scalable Robot Data Collection
+
+A dedicated environment for collecting real-world robot data, supporting physical AI training, robotics dataset development, and sim-to-real research.
+
+【42†Image: Physical AI Research】
+### Physical AI Research
+
+Working with vision systems, VLA models, PiPER autonomously completes real-world tasks, demonstrating embodied intelligence in action.
+
+## Complete Ecosystem
+
+Seamless integration with industry-standard hardware and software.
+### Components & Accessories
+
+Equip PiPER with multi-sensor perception, end effectors, and more development accessories.
+
+【43†Image: Dexterous Hand】
+
+Dexterous Hand
+
+【44†Image: Depth Camera & Vision System】
+
+Depth Camera & Vision System
+
+【45†Image: Gripper & Teach Pendant】
+
+Gripper & Teach Pendant
+
+【46†Image: Desktop Fixture】
+
+Desktop Fixture
+
+【47†Image: Emergency Stop】
+
+Emergency Stop
+
+【48†Image: Desktop Stand】
+
+Desktop Stand
+### Software & Algorithms
+
+Build and validate desktop robotic arm applications with integrated control tools, open SDKs, and simulation support.
+
+#### ArmRobotTool PC Control
+
+#### ROS 1 / ROS 2
+
+#### Python SDK
+
+#### URDF & Gazebo / Isaac Sim
+
+## Related Solutions
+
+Extend PiPER from a desktop robotic arm into complete robotic systems for mobile manipulation, physical AI research, and real-world applications.
+
+【49†Image: Mobile Manipulation】
+### Mobile Manipulation
+
+SCOUT MINI COBOT is a ready-to-deploy robotics platform for mobile manipulation research, combining a PiPER 6-DoF robotic arm with the SCOUT MINI mobile robot.
+
+【22†Learn More】
+
+【50†Image: Embodied Intelligence】
+
+### Embodied Intelligence
+
+Four PiPER arms combined with a mobile base, computing units, and depth cameras for robotics research, intuitive bimanual teleoperation, and robot data collection in dynamic environments.
+
+【14†Learn More】
+## FAQ
+
+What is PiPER and what can it be used for?
+
+PiPER is a lightweight 6-DoF robotic arm for robotics research, education, physical AI development, and light manipulation & automation applications. With the right end-effector, PiPER can support grasping, assembly, object sorting, and robot data collection.
+
+What are PiPER’s key specifications?
+
+The standard PiPER provides a 1.5kg payload, a 626mm working reach, ±0.1mm repeatability, and a 4.2kg arm body.
+Does PiPER support Python, ROS, and robotic arm simulation?
+
+Yes. PiPER supports Python SDKs, ROS 1, ROS 2, and URDF models for Gazebo and Isaac Sim, ideal for robotic arm development, algorithm validation, and sim-to-real research.
+
+How to use PiPER robotic arm?
+
+PiPER supports drag teaching, offline trajectory recording and replay, PC-based control, and programmed robotic arm motion.
+
+Can I Run VLA or World Models on PiPER?
+Yes. PiPER can be integrated with VLA models such as π0/π0.5, OpenVLA, SmolVLA, NVIDIA Isaac GR00T, and Gemini Robotics to execute AI-generated actions on a real robotic arm. It can also work with world-model platforms such as NVIDIA Cosmos and Google Genie for simulation, prediction, data generation, and policy evaluation.AI agents such as Jev and GPT 6 can also serve as the decision-making layer, sending tasks and action commands to PiPER.
+Integration is supported through PiPER’s Python and ROS interfaces, with model adaptation for camera inputs, action mapping, calibration, end-effectors, and robot control.
+Can PiPER be integrated with other robotics platforms?
+
+Yes. PiPER can be integrated with mobile robot bases, quadruped robots, and other platforms to build complete systems including mobile manipulation.
+
+What must be completed before using PiPER?
+Before operating PiPER, securely mount the arm, verify the power and CAN connections, calibrate the joint zero positions, and set the J6 zero point after installing an end-effector. Users should also confirm that the workspace is clear and complete a safety assessment. PiPER does not include automatic obstacle avoidance or sensing.
+## Technical Specifications
+
+Integrated with a sphere wrist joint for more agile manipulation in constrained spaces.
+
+Download Full Specs
+
+PiPER PiPER-X
+
+### DoF
+
+6
+
+### Payload
+
+1.5 kg
+
+### Weight
+
+4.2 kg
+
+### Repeatability
+
+±0.1 mm
+
+### Reach
+
+626 mm
+
+### Voltage
+
+DC 24V
+
+### Interface
+
+CAN
+
+### Temperature
+
+-20~50℃
+
+### Humidity
+
+25~85%
+
+### Mounting Dimensions
+
+70*70 mm
+
+### J5 Joint Range
+
+±75°
+
+### J5 Joint Speed
+
+225°/s
+
+### DoF
+
+6
+
+### Payload
+
+1.5 kg
+
+### Weight
+
+4.5 kg
+### Repeatability
+
+±0.1 mm
+
+### Reach
+
+669 mm
+
+### Voltage
+
+DC 24V
+
+### Interface
+
+CAN
+
+### Temperature
+
+-20~50℃
+
+### Humidity
+
+25~85%
+
+### Mounting Dimensions
+
+70*70 mm
+
+### J5 Joint Range
+
+±90°
+
+### J5 Joint Speed
+
+225°/s
+
+Specifications & Technical Documents
+### Download Documentation
+
+Please provide your details below.
+
+[Input][Input][Input] [Input] [Input] [Input]
+
+Full Name * [Input: Enter your full name]
+
+Work Email *
+
+[Input: name@company.com]
+
+Please enter a valid work email address (e.g., name@company.com).
+
+Company / Institution * [Input: Enter the full name of your company or institution]
+
+Phone Number (Optional) [Input: Optional — so our technical advisor can contact you]
+
+[Input] I have read and agree to the Privacy Policy.
+After your first submission, you can download other documents during this visit without completing the form again.
+
+Subscribe & Download
+### AgileX Robotics Privacy Policy
+
+Please review the following privacy terms carefully
+
+AGILEX ROBOTICS CO., LIMITED is a limited liability company incorporated under the laws of the People's Republic of China. We respect your privacy and are committed to protecting your personal information. This Privacy Policy applies to all AgileX products and services.
+
+1 How We Collect and Use Personal Information
+
+Information You Provide
+  * Registration and sign in. Your mobile phone number, email address, username, password, and optional profile information such as your profile photo, gender, and industry.
+  * Transaction information. Your name, delivery address, and payment information, which may include an identification number, bank card number, or third-party payment account details.
+  * Interactive content. Customer service conversations, survey responses, and text or images that you submit in comment areas.
+Information Collected Automatically
+
+  * Device and network logs. Device model, operating system, browser type, IP address, access time, pages visited, and usage logs.
+  * Location information. Approximate location derived from your IP address, GPS, or similar technologies.
+  * Usage information. Feature interactions, error logs, and performance diagnostics.
+
+Information from Third Parties or Public Sources
+  * Social sign in. A third-party OpenID, nickname, and profile photo, where you authorize the transfer.
+  * Public information. Personal information that you choose to upload or publish through public channels.
+
+2 Purposes of Processing and Legal Bases
+We collect and use personal information only for specific and lawful purposes. The table below identifies the purposes described in this Policy and the corresponding legal bases under Article 13 of the Personal Information Protection Law of the People's Republic of China (PIPL).
+
+Purpose: Account and security
+How We Use Information: Verify identity, prevent fraud, and protect account security
+Legal Basis: Necessary to perform a contract (PIPL Article 13)
+Purpose: Service delivery
+How We Use Information: Process orders, arrange delivery, and provide customer support
+Legal Basis: Necessary to perform a contract (PIPL Article 13)
+
+Purpose: Product improvement
+How We Use Information: Analyze usage, update features, and improve performance
+Legal Basis: Legitimate interests, to the extent permitted by applicable law (PIPL Article 13)
+Purpose: Marketing and recommendations
+How We Use Information: Send product updates and personalized advertising
+Legal Basis: Your consent (PIPL Article 13)
+
+Purpose: Security and compliance
+How We Use Information: Monitor anomalies and investigate suspected unlawful activity
+Legal Basis: Legitimate interests, to the extent permitted by applicable law (PIPL Article 13)
+We will not use your personal information for a purpose outside this table without obtaining your consent, unless otherwise permitted by applicable law.
+
+3 Cookies and Similar Technologies
+
+This website uses cookies, local storage, pixel tags, and similar technologies for identity verification, personalized display, traffic analytics, and security.
+You can manage or delete cookies through your browser settings. Disabling or deleting cookies may affect the availability or operation of certain website features.
+
+4 Sharing Transfers and Public Disclosure
+
+We do not provide your personal information to third parties except in the following circumstances:
+  * With your authorization or consent.
+  * Legal requirements. To comply with applicable laws, regulations, court orders, or requests from judicial authorities.
+  * Affiliates and service providers. To provide necessary services, subject to appropriate obligations consistent with this Policy.
+  * Business transactions. In connection with a reorganization, merger, or acquisition, where personal information transfers with the business and remains subject to this Policy.
+  * Protection of lawful rights and interests. For example, to investigate fraud or respond to a security incident.
+When we share or disclose personal information, we maintain records of the recipient, the information involved, the time of disclosure, and the reason for the disclosure.
+
+5 Cross Border Transfers
+
+If a cross-border transfer of personal information is necessary for our business, we will comply with Article 38 of the PIPL. As applicable, we will complete a security assessment or use the standard contract issued by the relevant authority, and we will provide notice to you or obtain your authorization.
+6 Information Storage and Security
+  * Storage location. Personal information is generally stored on servers located in China. Where overseas storage is necessary, we will complete security assessments as required by applicable law.
+  * Security measures. We use measures such as SSL/TLS encryption, access controls, log audits, intrusion detection, and periodic risk assessments.
+  * Incident response. If a data breach or other security incident occurs, we will notify affected individuals and report the incident to the relevant regulatory authority as required by law.
+7 Your Rights
+
+Subject to the PIPL, including Chapter IV, the Cybersecurity Law of the People's Republic of China, and other applicable laws, you may exercise the rights below through www.agilex.ai/contact or by emailing sales@agilex.ai.
