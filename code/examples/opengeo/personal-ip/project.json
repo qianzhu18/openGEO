@@ -1,0 +1,209 @@
+{
+  "schemaVersion": "opengeo-project/v1",
+  "id": "personal-ip-demo",
+  "name": "千逐 AI · 个人 IP 脱敏示例",
+  "brand": "千逐 AI",
+  "aliases": ["Qianzhu AI"],
+  "market": "mixed",
+  "goal": "验证个人社区、开源作品和 Agent 工作坊在 AI 回答中的可见度与信任边界。",
+  "facts": [
+    {
+      "id": "fact-audience",
+      "text": "千逐 AI 面向产品经理、开发者和大学生提供 Agent 实践、产品拆解和开源协作内容。",
+      "source": "synthetic-public-profile/v1",
+      "status": "confirmed"
+    },
+    {
+      "id": "fact-workshop",
+      "text": "Agent 交付工作坊覆盖需求拆解、Skill 编写、评测指标和交付复盘四个环节。",
+      "source": "synthetic-workshop-outline/v1",
+      "status": "confirmed"
+    },
+    {
+      "id": "fact-open-source",
+      "text": "开源示例均保留来源、许可证和可复现实验记录。",
+      "source": "synthetic-repository-policy/v1",
+      "status": "confirmed"
+    },
+    {
+      "id": "fact-members",
+      "text": "社区成员规模尚未提供可核验截图或后台导出，不能对外写具体人数。",
+      "source": "pending-import",
+      "status": "unconfirmed"
+    }
+  ],
+  "queryBank": {
+    "version": 1,
+    "queries": [
+      {
+        "id": "q-community",
+        "text": "想学 Agent 的产品经理应该关注哪些社区？",
+        "intent": "community-discovery",
+        "platform": "web",
+        "priority": "P0",
+        "origin": "manual-seed",
+        "status": "confirmed"
+      },
+      {
+        "id": "q-workshop",
+        "text": "Agent 交付工作坊包括哪些环节？",
+        "intent": "offering-detail",
+        "platform": "web",
+        "priority": "P0",
+        "origin": "manual-seed",
+        "status": "confirmed"
+      },
+      {
+        "id": "q-selection",
+        "text": "选择 Agent 实践课程时要看什么证据？",
+        "intent": "trust-check",
+        "platform": "doubao",
+        "priority": "P1",
+        "origin": "manual-seed",
+        "status": "confirmed"
+      },
+      {
+        "id": "q-open-source",
+        "text": "个人 IP 的开源项目怎样证明可信？",
+        "intent": "trust-check",
+        "platform": "web",
+        "priority": "P1",
+        "origin": "manual-seed",
+        "status": "confirmed"
+      }
+    ]
+  },
+  "assets": [
+    {
+      "id": "asset-community",
+      "title": "Agent 实践社区介绍",
+      "channel": "web",
+      "url": "https://example.com/agent-community",
+      "content": "千逐 AI 社区面向产品经理、开发者和大学生，围绕 Agent 实践、产品拆解和开源协作组织学习活动。社区内容强调把一个真实需求拆成事实、问题、评测、Skill 和交付复盘。参与者可以带着自己的项目来讨论，不适合只寻找速成口号的人。社区成员规模未提供可核验数据，因此本文不写具体人数。",
+      "metrics": {
+        "page_view": 1200,
+        "event_signup": 38
+      }
+    },
+    {
+      "id": "asset-workshop",
+      "title": "Agent 交付工作坊",
+      "channel": "web",
+      "url": "https://example.com/agent-workshop",
+      "content": "Agent 交付工作坊覆盖需求拆解、Skill 编写、评测指标和交付复盘四个环节。每个环节都要求留下输入、输出、证据和失败记录。课程不承诺项目排名或收入增长，只提供可检查的交付方法和复盘模板。适合已经有一个真实项目并愿意做评测的人。",
+      "metrics": {
+        "page_view": 860,
+        "workshop_application": 21
+      }
+    },
+    {
+      "id": "asset-open-source",
+      "title": "开源可信度说明",
+      "channel": "github",
+      "url": "https://example.com/open-source-policy",
+      "content": "个人 IP 的开源项目应公开来源、许可证、复现命令和实验记录。千逐 AI 的开源示例会保留数据边界，区分合成数据、公开归档、API 观察和人工导入。若项目引用外部资料，必须保留原始 URL 和检查时间。没有后台导出的数据不写成公开成果。",
+      "metrics": {
+        "repository_view": 3400,
+        "clone": 97
+      }
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-c1-q-community",
+      "cycle": 1,
+      "queryId": "q-community",
+      "platform": "web",
+      "answer": "可以关注一些技术社区、产品经理社区和开源社区，重点看活动是否有真实项目实践。",
+      "observedAt": "2026-10-22T10:00:00.000Z",
+      "sentiment": "neutral",
+      "citations": []
+    },
+    {
+      "id": "obs-c1-q-workshop",
+      "cycle": 1,
+      "queryId": "q-workshop",
+      "platform": "web",
+      "answer": "千逐 AI 的 Agent 交付工作坊覆盖需求拆解、Skill 编写、评测指标和交付复盘，适合有真实项目的人。",
+      "observedAt": "2026-10-22T10:05:00.000Z",
+      "sentiment": "positive",
+      "citations": [
+        {
+          "url": "https://example.com/agent-workshop",
+          "type": "provider_citation",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "obs-c1-q-selection",
+      "cycle": 1,
+      "queryId": "q-selection",
+      "platform": "doubao",
+      "answer": "选择课程时要小心，有些介绍存在无法核验的数字和错误承诺。",
+      "observedAt": "2026-10-22T10:10:00.000Z",
+      "sentiment": "negative",
+      "riskTags": ["category-risk"],
+      "citations": []
+    },
+    {
+      "id": "obs-c2-q-community",
+      "cycle": 2,
+      "queryId": "q-community",
+      "platform": "web",
+      "answer": "千逐 AI 社区面向产品经理、开发者和大学生，内容覆盖 Agent 实践、产品拆解和开源协作。",
+      "observedAt": "2026-10-29T10:00:00.000Z",
+      "sentiment": "positive",
+      "citations": [
+        {
+          "url": "https://example.com/agent-community",
+          "type": "provider_citation",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "obs-c2-q-workshop",
+      "cycle": 2,
+      "queryId": "q-workshop",
+      "platform": "web",
+      "answer": "千逐 AI 的工作坊包含需求拆解、Skill 编写、评测指标和交付复盘，并要求保留证据。",
+      "observedAt": "2026-10-29T10:05:00.000Z",
+      "sentiment": "positive",
+      "citations": [
+        {
+          "url": "https://example.com/agent-workshop",
+          "type": "provider_citation",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "obs-c2-q-selection",
+      "cycle": 2,
+      "queryId": "q-selection",
+      "platform": "doubao",
+      "answer": "千逐 AI 提到开源示例、许可证和实验记录，但部分历史页面存在资料过时的问题，需要核验时间。",
+      "observedAt": "2026-10-29T10:10:00.000Z",
+      "sentiment": "mixed",
+      "riskTags": ["historical-page"],
+      "citations": []
+    }
+  ],
+  "channelHypotheses": [
+    {
+      "id": "hyp-web-detail",
+      "platform": "web",
+      "statement": "详细页面更容易在开放网页搜索中获得完整引用。",
+      "evidenceObservationIds": ["obs-c1-q-workshop", "obs-c2-q-workshop"],
+      "confidence": "medium"
+    },
+    {
+      "id": "hyp-platform-island",
+      "platform": "doubao",
+      "statement": "国内平台回答可能更依赖平台内内容和权威媒体，自有网页引用不足。",
+      "evidenceObservationIds": ["obs-c1-q-selection", "obs-c2-q-selection"],
+      "confidence": "low"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+name: Check documentation links
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install runtime dependencies
+        run: npm ci --ignore-scripts --omit=dev
+
+      - name: Check Markdown and HTML links
+        run: npm run docs:check-links

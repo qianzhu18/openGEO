@@ -1,0 +1,23 @@
+node_modules/
+dist/
+data/
+.env
+.env.*
+!.env.example
+test-results/
+playwright-report/
+artifacts/
+code/vendor/niubigeo/dist/
+.DS_Store
+*.log
+
+# Local vault state and temporary research captures
+.obsidian/
+*.har
+*.saz
+*.pem
+*.key
+
+# Private case directories and local browser evidence
+/案例/
+*.png
