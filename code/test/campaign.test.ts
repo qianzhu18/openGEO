@@ -110,6 +110,8 @@ test('campaign measurements exclude wrong profiles, login walls, bad hashes, mis
     assert.equal(rows.length, 2);
     assert.deepEqual(rows.map(row => row.denominator), [1, 1]);
     assert.deepEqual(rows.map(row => row.value), [1, 0]);
+    assert.deepEqual(rows.map(row => row.appearance.value), [1, 0]);
+    assert.ok(rows.every(row => row.top1.denominator === 0 && row.top1.value === null && row.top3.value === null));
     assert.equal(run.metrics.find(row => row.platform === 'gemini')!.value, null);
     assert.ok(run.attempts.filter(row => !row.eligible).every(row => row.mentioned === null));
     const changedRetry = { ...valid, id: 'bad-retry', questionRevision: 2 };
@@ -179,6 +181,38 @@ test('two campaign rounds compare only known matching protocols, question versio
     assert.equal(compareCampaigns(before, changedAfter).find(row => row.platform === 'chatgpt')!.comparable, false);
     const alias = structuredClone(afterSpec); alias.aliases.push('Another company');
     await assert.rejects(async () => compareCampaigns(before, await runCampaign(f.root, alias, f.sources, [afterAttempt])), /别名/);
+  } finally { await f.cleanup(); }
+});
+
+test('api campaign answers keep channel api and rank only an enumerated list', async () => {
+  const f = await fixture();
+  try {
+    const rankedAnswer = 'Labs can compare a few arms:\n1. Franka Research 3 for torque control.\n2. Alpha Robotics PiPER for capture.\n3. UR5e for teaching.';
+    const ranked = await f.attempt('api-ranked', rankedAnswer);
+    ranked.protocol = { ...ranked.protocol, channel: 'api', profile: null, loginState: null, session: 'fresh', model: 'openrouter/openai/gpt-5-nano' };
+    const prose = await f.attempt('api-prose', 'Alpha is mentioned here without listing options.');
+    prose.protocol = { ...ranked.protocol };
+    const refusal = await f.attempt('api-refusal', '抱歉，我无法回答这个问题。');
+    refusal.protocol = { ...ranked.protocol };
+    const run = await runCampaign(f.root, f.spec, f.sources, [ranked, prose, refusal]);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-ranked')!.rank, 2);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-ranked')!.top3, true);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-prose')!.mentioned, true);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-prose')!.top1, null);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-refusal')!.eligible, false);
+    assert.equal(run.attempts.find(row => row.attempt.id === 'api-refusal')!.mentioned, null);
+    const metric = run.metrics.find(row => row.platform === 'chatgpt' && row.protocol?.channel === 'api')!;
+    assert.equal(metric.numerator, 2);
+    assert.equal(metric.denominator, 2);
+    assert.equal(metric.appearance.numerator, 2);
+    assert.equal(metric.top1.denominator, 1);
+    assert.equal(metric.top1.numerator, 0);
+    assert.equal(metric.top3.numerator, 1);
+    assert.equal(metric.top3.denominator, 1);
+    const report = renderCampaign(f.spec, run)['06-监测方案与基线.md']!;
+    assert.ok(report.includes('出现率 = 提及率'));
+    assert.ok(report.includes('| api |'));
+    assert.ok(!report.includes('六个平台合计'));
   } finally { await f.cleanup(); }
 });
 

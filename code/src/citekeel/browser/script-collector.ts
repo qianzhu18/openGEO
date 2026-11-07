@@ -17,8 +17,8 @@ export interface ScriptOptions {
 const messages: Record<string, string> = {
   unexpected_page: '采集标签离开了 ChatGPT，已停止。', challenge: '页面出现验证，需要用户本人处理。',
   not_logged_in: '需要在 Xue 中登录 ChatGPT。', composer_missing: '未找到输入框，可能尚未登录或页面结构已变化。',
-  not_fresh_chat: '页面不是空白新对话，未覆盖用户内容。', user_interrupted: '用户操作了采集标签，已停止；不会自动续发。',
-  send_unavailable: '发送按钮未就绪，未提交问题。', inject_failed: '问题未写入输入框，未提交。',
+  not_fresh_chat: '页面不是空白新对话，未覆盖用户内容。', inject_failed: '问题没有写进输入框，未提交。',
+  user_interrupted: '用户操作了采集标签，已停止；不会自动续发。',
   page_reloaded: '采集页已重新加载，无法确认本次状态。', rate_limited: '平台限制本次请求，请稍后手动重新运行。',
   stale_answer: '回答不属于本次问题，已排除。',
 };
@@ -39,7 +39,9 @@ export async function createScriptCollector(engine: string, options: ScriptOptio
     engine: 'chatgpt' as const,
     async probe() {
       if (closed) throw new CollectionError('collector_closed', '采集器已关闭。');
-      return (options.verify || (bridge => verifyProfile(bridge, { configPath: options.configPath, signal: options.signal })))(bridge);
+      return (options.verify || (bridge => verifyProfile(bridge, {
+        configPath: options.configPath, signal: options.signal, timeoutMs: Math.min(20_000, timeout),
+      })))(bridge);
     },
     async check() {
       const profile = await this.probe();
@@ -63,14 +65,15 @@ export async function createScriptCollector(engine: string, options: ScriptOptio
         if (previousPrompt) checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('read', { prompt: previousPrompt })));
         const checked = await this.check();
         profile = checked.profile;
+        checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('clear-draft')));
         const readyDeadline = Date.now() + 15_000;
         while (true) {
-          const ready = await bridge.evaluate<PageAnswer>(chatgptScript('prepare'));
+          const ready = await bridge.evaluate<PageAnswer>(chatgptScript('prepare', { prompt }));
           if (ready.error !== 'composer_missing' || Date.now() >= readyDeadline) { checkPage(ready); break; }
           await pause(500, options.signal);
         }
         checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('inject', { prompt })));
-        // Re-check trusted input immediately before submission, as well as while polling.
+        // The send control replaces the voice button only after the editor accepts the text.
         const sendDeadline = Date.now() + 5_000;
         while (true) {
           const ready = checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('read', { prompt })));
@@ -79,7 +82,19 @@ export async function createScriptCollector(engine: string, options: ScriptOptio
           await pause(100, options.signal);
         }
         submission = 'attempted';
-        checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('submit', { prompt })));
+        const send = async () => {
+          checkPage(await bridge.evaluate<PageAnswer>(chatgptScript('arm')));
+          try {
+            await bridge.command('mouse_click', { selector: '[data-opengeo-send="1"], button[aria-label="发送"], button[aria-label="发送提示"], button[aria-label="Send"], button[aria-label="Send prompt"], [data-testid="send-button"]', focus_emulation: true });
+            await pause(1000, options.signal);
+          } finally {
+            await bridge.evaluate<PageAnswer>(chatgptScript('disarm')).catch(() => undefined);
+          }
+        };
+        await send();
+        let primed = await bridge.evaluate<PageAnswer>(chatgptScript('read', { prompt })).catch(() => undefined);
+        if (primed?.sendReady) await send();
+        await bridge.command('cdp', { method: 'Emulation.setFocusEmulationEnabled', params: { enabled: false } }).catch(() => undefined);
         const deadline = Date.now() + timeout;
         let stable = '', stableCount = 0, result: PageAnswer | undefined;
         while (Date.now() < deadline) {
@@ -114,14 +129,13 @@ export async function createScriptCollector(engine: string, options: ScriptOptio
           answerPath, domPath, screenshotPath, evidencePath,
         };
         await writeFile(evidencePath, JSON.stringify(record, null, 2), { mode: 0o600 });
-        return { engine, answer: final.answer!, citations: record.citations, url: final.url, evidenceId: id, latencyMs: durationMs, evidencePath, protocolId: 'browser-ui/v3;engine=chatgpt;transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN' };
+        return { engine, answer: final.answer!, citations: record.citations, url: final.url, evidenceId: id, latencyMs: durationMs, evidencePath, protocolId: 'browser-ui/v2;engine=chatgpt;transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN' };
       } catch (error) {
         stopped = true;
         const failure = error instanceof CollectionError ? error : new CollectionError(options.signal?.aborted ? 'interrupted' : 'collection_failed', options.signal?.aborted ? '采集已中断；不会自动重试。' : '采集未完成，未记录为有效回答。');
         await mkdir(dir, { recursive: true, mode: 0o700 });
         await writeFile(evidencePath, JSON.stringify({ schemaVersion: 'opengeo-browser-script/v1', id, engine, prompt, status: 'failed', channel: 'web-ui', transport: 'kimi-webbridge', capturedAt: new Date().toISOString(), profile: profile || null, submission, answer: '', partialAnswer: partial, failureReason: failure.code, error: failure.message }, null, 2), { mode: 0o600 });
         failure.evidencePath = evidencePath;
-        failure.evidenceId = id;
         throw failure;
       } finally { busy = false; lastFinished = Date.now(); previousPrompt = prompt; }
     },

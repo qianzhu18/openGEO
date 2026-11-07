@@ -143,6 +143,112 @@ test('live transport uses upstream provider, isolates measurement prompts, valid
   } finally { globalThis.fetch = original; await cleanup(); }
 });
 
+test('diagnosis runs platforms concurrently, keeps web failures separate and adopts one result per unit', async () => {
+  const { store, cleanup } = await temporaryStore(); const originalFetch = globalThis.fetch;
+  let active = 0, maxActive = 0;
+  globalThis.fetch = async (_url: unknown, init: any) => {
+    active++; maxActive = Math.max(maxActive, active);
+    await new Promise(resolve => setTimeout(resolve, 25));
+    try {
+      const payload = JSON.parse(init.body), prompt = payload.messages[0].content;
+      const content = prompt.startsWith('你是 GEO') ? '{"actions":[]}'
+        : prompt.startsWith('请写一份') ? '本地诊断草稿。'
+        : `可考虑衡川传感，回答来自 ${payload.model}。`;
+      return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content } }], model: payload.model,
+        usage: { cost: 0.001 }, citations: [{ url: 'https://example.com/source', source: 'provider_annotation', providerPayloadPath: 'citations[0].url' }] }),
+        { status: 200, headers: { 'content-type': 'application/json' } });
+    } finally { active--; }
+  };
+  try {
+    const project = syntheticProject(); project.queries = project.queries.slice(0, 2);
+    const targets = [
+      { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'deepseek', model: 'mock-chatgpt-api', webSearch: true },
+      { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'deepseek', model: 'mock-deepseek', webSearch: false },
+    ];
+    const browser = {
+      engine: 'chatgpt',
+      ask: async (prompt: string) => {
+        if (prompt === project.queries[0]!.text) throw new Error('Cloudflare challenge hit ChatGPT.');
+        return { engine: 'chatgpt', answer: '可考虑衡川传感，网页回答有效。', citations: [], url: 'https://chatgpt.com/c/mock', evidenceId: 'browser-evidence', latencyMs: 10, protocolId: 'browser-ui/v2;engine=chatgpt' };
+      },
+    };
+    const run = await executeRun(createRun(project, 'live', project.goal, undefined, targets), store, undefined, undefined,
+      { targets, apiKeys: { deepseek: 'test-deepseek-key' }, browser });
+    assert.equal(run.measurementUnits?.length, 4);
+    assert.equal(run.audit?.plannedUnits, 4);
+    assert.equal(run.audit?.attemptCount, 5);
+    assert.equal(run.samples.filter(sample => sample.selected).length, 4);
+    assert.ok(maxActive >= 2, 'API platform tasks should overlap');
+    const fallbackUnit = run.measurementUnits!.find(unit => unit.queryId === project.queries[0]!.id && unit.targetId === 'chatgpt')!;
+    assert.deepEqual(fallbackUnit.attempts.map(attempt => attempt.channel), ['web', 'api']);
+    assert.equal(fallbackUnit.selectedChannel, 'api');
+    assert.equal(fallbackUnit.attempts[0].status, 'failed');
+    assert.equal(fallbackUnit.attempts[1].status, 'completed');
+    const webUnit = run.measurementUnits!.find(unit => unit.queryId === project.queries[1]!.id && unit.targetId === 'chatgpt')!;
+    assert.equal(webUnit.selectedChannel, 'web'); assert.equal(webUnit.attempts.length, 1);
+    assert.equal(run.audit?.mention.denominator, 4);
+    assert.equal(run.samples.filter(sample => sample.fallback).length, 1);
+  } finally { globalThis.fetch = originalFetch; await cleanup(); }
+});
+
+test('web diagnosis asks the browser even when no API fallback is configured', async () => {
+  const { store, cleanup } = await temporaryStore();
+  try {
+    const project = syntheticProject(); project.queries = project.queries.slice(0, 2);
+    const target = { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const };
+    const asked: string[] = [];
+    const run = await executeRun(createRun(project, 'live', project.goal, undefined, [target]), store, undefined, undefined, {
+      targets: [target], apiKeys: {},
+      browser: { engine: 'chatgpt', ask: async prompt => {
+        asked.push(prompt);
+        if (prompt === project.queries[0]!.text) throw new Error('ChatGPT web timed out.');
+        return { engine: 'chatgpt', answer: '可考虑衡川传感，网页回答有效。', citations: [], url: 'https://chatgpt.com/c/mock', evidenceId: 'web-only', latencyMs: 8, protocolId: 'browser-ui/v2;engine=chatgpt' };
+      } },
+    });
+    assert.deepEqual(asked, project.queries.map(query => query.text));
+    assert.equal(run.samples.filter(sample => sample.origin === 'api').length, 0);
+    assert.equal(run.measurementUnits?.[0]?.attempts.length, 1);
+    assert.equal(run.measurementUnits?.[0]?.status, 'failed');
+    assert.equal(run.measurementUnits?.[1]?.selectedChannel, 'web');
+    assert.equal(run.audit?.collected, 1);
+    assert.equal(run.audit?.mention.denominator, 1);
+  } finally { await cleanup(); }
+});
+
+test('diagnosis HTTP route accepts a platform matrix without persisting temporary keys', async () => {
+  const { store, cleanup } = await temporaryStore(); const originalFetch = globalThis.fetch; const key = 'diagnosis-route-key-not-a-real-credential';
+  globalThis.fetch = async (url: RequestInfo | URL, init: any) => {
+    if (!init?.body?.includes?.('"messages"')) return originalFetch(url, init);
+    const payload = JSON.parse(init.body), prompt = payload.messages[0].content;
+    const content = prompt.startsWith('你是 GEO') ? '{"actions":[]}' : prompt.startsWith('请写一份') ? '本地诊断草稿。' : '可考虑衡川传感，API 回答有效。';
+    return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content } }], model: payload.model, usage: { cost: 0.001 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  const { server } = await createApp(store);
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address() as import('node:net').AddressInfo, base = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = syntheticProject(); project.queries = project.queries.slice(0, 1); await store.save('projects', project);
+    const response = await fetch(`${base}/api/runs`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
+      projectId: project.id, mode: 'live', diagnosis: true, queryIds: project.queries.map(query => query.id), maxQuestions: 1,
+      targets: [{ id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api', provider: 'deepseek', model: 'mock-model', webSearch: false }],
+      apiKeys: { deepseek: key },
+    }) });
+    assert.equal(response.status, 202); const started = await response.json() as { id: string };
+    let run: AgentRun;
+    for (let index = 0; ; index++) {
+      run = await (await fetch(`${base}/api/runs/${started.id}`)).json() as AgentRun;
+      if (!['queued', 'running'].includes(run.status)) break;
+      assert.ok(index < 100); await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    assert.equal(run.measurementUnits?.length, 1); assert.equal(run.audit?.attemptCount, 1);
+    assert.equal(run.samples[0]?.model, 'deepseek/mock-model');
+    const saved = await readFile(join(store.root, 'runs', `${run.id}.json`), 'utf8');
+    assert.ok(!saved.includes(key)); assert.ok(saved.includes('"measurementUnits"'));
+  } finally {
+    globalThis.fetch = originalFetch; server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await cleanup();
+  }
+});
+
 test('local HTTP flow creates a project, imports answers, runs and exports a report', async () => {
   const { store, cleanup } = await temporaryStore(); const { server } = await createApp(store);
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));

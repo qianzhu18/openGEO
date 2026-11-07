@@ -1,7 +1,7 @@
 const $ = s => document.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? esc(u.toString()) : '#'; } catch { return '#'; } };
-const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKey: '', settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false };
+const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false };
 try { state.settings = JSON.parse(localStorage.getItem('citekeel-model') || '{}'); } catch {}
 const NAV = [['overview', '工作概览'], ['queries', '问题空间'], ['evidence', '回答与信源'], ['sources', '信源分析'], ['actions', '策略任务'], ['content', '内容与交付'], ['facts', '品牌事实'], ['flow', 'Agent 思路与历史']];
 const LABELS = { queued: '等待执行', running: '执行中', completed: '已完成', needs_review: '待处理', failed: '执行失败', interrupted: '已中断', pending: '待执行', blocked: '等待确认', confirmed: '已确认', unconfirmed: '待确认', conflict: '口径冲突', draft: '草稿', reviewed: '已审核' };
@@ -31,16 +31,18 @@ function downloadActions() { return state.run ? `<a class="btn small" href="/api
 function originBanner() {
   const samples = state.run?.samples || state.project.samples;
   const apiArchive = state.run?.mode !== 'live' && samples.length > 0 && samples.every(s => s.origin === 'api');
+  const mixedLive = state.run?.mode === 'live' && samples.some(s => s.origin === 'browser') && samples.some(s => s.origin === 'api');
   const origin = state.run?.mode === 'live' || apiArchive ? 'api' : state.project.origin;
   const note = apiArchive ? '回放 2026-10-29 保存的实际 API 回答，本次不发起模型调用。未联网基线与公开搜索结果分别解释。' : origin === 'synthetic' ? '资料和回答均为虚构样例，用来检验工作流；不代表真实客户或优化效果。' : origin === 'archive' ? '原始回答来自 niubigeo 于 2026-09-08 的公开测量。本次回放不会调用模型。' : origin === 'api' ? '这是新取得的 API 回答。模型、搜索和消费级网页的结果需要分别观察。' : '使用你在本地提供的品牌资料与原始回答。';
-  return `<div class="source-banner">${badge(apiArchive ? 'API 观察回放' : ORIGINS[origin], origin)}<p>${esc(note)}</p></div>`;
+  const displayNote = mixedLive ? '本轮同时取得网页与 API 回答；通道、平台、模型和降级原因分开查看，不合并成同一种结果。' : note;
+  return `<div class="source-banner">${badge(mixedLive ? '网页 + API' : apiArchive ? 'API 观察回放' : ORIGINS[origin], origin)}<p>${esc(displayNote)}</p></div>`;
 }
 function runBox() {
-  return `<div class="goal-box"><label>本轮目标<textarea id="goal" rows="2" aria-label="本轮目标">${esc(state.run?.goal || state.project.goal)}</textarea></label><div class="actions"><button class="btn primary" data-run ${running() ? 'disabled' : ''}>${running() ? '执行中…' : '▷ 运行 Agent'}</button><button class="btn" data-live ${running() ? 'disabled' : ''}>用模型实测</button></div></div>`;
+  return `<div class="goal-box"><label>本轮目标<textarea id="goal" rows="2" aria-label="本轮目标">${esc(state.run?.goal || state.project.goal)}</textarea></label><div class="actions"><button class="btn primary" data-diagnosis ${running() ? 'disabled' : ''}>${running() ? '执行中…' : '⇶ 运行品牌诊断'}</button><button class="btn" data-live ${running() ? 'disabled' : ''}>单模型实测</button><button class="btn quiet" data-run ${running() ? 'disabled' : ''}>仅回放</button></div></div>`;
 }
 function metricStrip() {
   const a = state.run?.audit;
-  return `<div class="metric-strip"><div class="metric"><div class="metric-label">取得回答原文</div><div class="metric-value">${a ? a.collected : '·'}<span>/ ${a ? a.planned : '·'} 条</span></div><small>${a ? `采集失败 ${a.collectionFailed}，分析待处理 ${a.analysisFailed}` : '运行后查看本轮覆盖'}</small></div><div class="metric"><div class="metric-label">品牌字面提及</div><div class="metric-value">${pct(a?.mention)}</div><small>${a ? `${a.mention.numerator} / ${a.mention.denominator} 条可判定原文` : '保留原文定位与人工复核'}</small></div><div class="metric"><div class="metric-label">Provider 引用</div><div class="metric-value">${a ? a.providerCitations : '·'}<span>项</span></div><small>与正文链接分开统计</small></div><div class="metric"><div class="metric-label">策略任务</div><div class="metric-value">${state.run ? state.run.actions.length : '·'}<span>项</span></div><small>${state.run ? `${state.run.actions.filter(a => a.status === 'done').length} 项已完成` : '每个任务保留依据'}</small></div></div>`;
+  return `<div class="metric-strip"><div class="metric"><div class="metric-label">取得回答原文</div><div class="metric-value">${a ? a.collected : '·'}<span>/ ${a ? a.plannedUnits || a.planned : '·'} 个单元</span></div><small>${a ? `执行 ${a.attemptCount || a.planned} 次尝试；采纳后失败 ${a.collectionFailed}，分析待处理 ${a.analysisFailed}` : '运行后查看本轮覆盖'}</small></div><div class="metric"><div class="metric-label">品牌字面提及</div><div class="metric-value">${pct(a?.mention)}</div><small>${a ? `${a.mention.numerator} / ${a.mention.denominator} 个可判定单元` : '保留原文定位与人工复核'}</small></div><div class="metric"><div class="metric-label">Provider 引用</div><div class="metric-value">${a ? a.providerCitations : '·'}<span>项</span></div><small>与正文链接分开统计</small></div><div class="metric"><div class="metric-label">策略任务</div><div class="metric-value">${state.run ? state.run.actions.length : '·'}<span>项</span></div><small>${state.run ? `${state.run.actions.filter(a => a.status === 'done').length} 项已完成` : '每个任务保留依据'}</small></div></div>`;
 }
 function trace() {
   const steps = state.run?.steps || state.status.skills.map(([id, label, skill]) => ({ id, label, skill, status: 'pending', executor: 'rules', summary: '' }));
@@ -53,7 +55,7 @@ function findings() {
 function dashboardSamples() {
   const samples = state.run?.samples || state.project.samples;
   const cutoff = state.rangeFilter === 'all' ? 0 : Date.now() - Number(state.rangeFilter) * 86400000;
-  return samples.filter(s => (state.modelFilter === 'all' || s.model === state.modelFilter) && (!cutoff || Date.parse(s.observedAt) >= cutoff));
+  return samples.filter(s => s.selected !== false && (state.modelFilter === 'all' || s.model === state.modelFilter) && (!cutoff || Date.parse(s.observedAt) >= cutoff));
 }
 function observedMention(sample) {
   const judgment = state.run?.audit?.judgments.find(j => j.sampleId === sample.id);
@@ -125,8 +127,14 @@ function sampleRows(samples) {
   return samples.map(sample => {
     const j = state.run?.audit?.judgments.find(j => j.sampleId === sample.id);
     const label = sample.collectionStatus === 'failed' ? '采集失败' : sample.analysisStatus !== 'completed' ? '分析未完成' : j?.mentioned === true ? '已提及' : j?.mentioned === false ? '未提及' : '未判定';
-    return `<tr class="${state.selectedSample === sample.id ? 'active' : ''}"><td class="question"><button class="row-button" data-sample="${esc(sample.id)}">${esc(sample.question)}<small>${esc(sample.intent)} · ${sample.branded ? '品牌问题' : '非品牌问题'}</small></button></td><td><small>${esc(sample.model)}</small><div class="subtle">${esc(fmtTime(sample.observedAt))}</div></td><td>${badge(label, label === '已提及' ? 'ok' : label.includes('失败') || label.includes('未完成') ? 'warn' : '')}</td><td class="right num">${sample.citations.filter(c => c.kind === 'provider_citation').length}</td></tr>`;
+    return `<tr class="${state.selectedSample === sample.id ? 'active' : ''}"><td class="question"><button class="row-button" data-sample="${esc(sample.id)}">${esc(sample.question)}<small>${esc(sample.intent)} · ${sample.branded ? '品牌问题' : '非品牌问题'}${sample.selected ? ' · 已采纳' : sample.selected === false ? ' · 未采纳尝试' : ''}</small></button></td><td><small>${esc(sample.model)}</small><div class="subtle">${esc(sample.origin === 'browser' ? '网页' : 'API')} · ${esc(fmtTime(sample.observedAt))}</div></td><td>${badge(label, label === '已提及' ? 'ok' : label.includes('失败') || label.includes('未完成') ? 'warn' : '')}</td><td class="right num">${sample.citations.filter(c => c.kind === 'provider_citation').length}</td></tr>`;
   }).join('');
+}
+function measurementMatrix() {
+  const units = state.run?.measurementUnits;
+  if (!units?.length) return '';
+  const attemptRows = units.flatMap(unit => unit.attempts.map(attempt => `<tr><td class="question"><button class="row-button" data-prompt="${esc(unit.queryId)}">${esc(unit.question)}</button><small>${esc(unit.platform)} · ${esc(unit.id)}</small></td><td>${badge(attempt.channel === 'web' ? '网页' : 'API', attempt.channel === 'web' ? '' : 'api')}</td><td>${attempt.fallback ? '是' : '否'}</td><td>${statusBadge(attempt.status === 'completed' ? 'completed' : attempt.status === 'skipped' ? 'blocked' : 'failed')}${attempt.sampleId === unit.selectedSampleId ? badge('采纳', 'ok') : ''}</td><td><small>${esc(attempt.provider && attempt.model ? `${attempt.provider}/${attempt.model}` : attempt.provider || 'Xue + Kimi')}</small>${attempt.reason ? `<div class="subtle">${esc(attempt.reason)}</div>` : ''}</td></tr>`));
+  return `<div class="panel section-gap"><div class="panel-head"><h2>逐题通道核对</h2>${badge(`${units.length} 个计划单元`)}</div><div class="table-scroll"><table class="data-table"><thead><tr><th>问题 × 平台</th><th>通道</th><th>降级</th><th>状态</th><th>实际身份 / 失败原因</th></tr></thead><tbody>${attemptRows}</tbody></table></div><div class="panel-foot">指标只采纳每个问题×平台单元的一条终局结果；网页失败和 API 降级尝试保留在这里，不额外进入有效分母。</div></div>`;
 }
 function inspector() {
   const sample = state.run?.samples.find(s => s.id === state.selectedSample);
@@ -139,7 +147,7 @@ function evidencePage() {
   const samples = state.run?.samples || [];
   const filtered = samples.filter(s => `${s.question} ${s.answer} ${s.model}`.toLowerCase().includes(state.filter.toLowerCase()));
   return pageHeader('回答、判定与信源', '从每条记录返回原文。请求失败、分析失败和品牌未提及分别展示。', downloadActions()) + originBanner() +
-    `<div class="filters"><input id="sample-filter" placeholder="筛选问题、回答或模型" aria-label="筛选回答" value="${esc(state.filter)}"><div class="actions"><button class="btn small" data-import>导入回答 JSON</button><button class="btn quiet small" data-import-template>下载导入格式</button></div></div><div class="evidence-layout"><div class="panel table-scroll"><table class="data-table"><thead><tr><th>问题 / 意图</th><th>模型 / 时间</th><th>判定</th><th class="right">引用</th></tr></thead><tbody>${filtered.length ? sampleRows(filtered) : `<tr><td colspan="4"><div class="empty">${state.run ? '当前没有匹配的回答。可以导入原文，或用模型执行新测量。' : '先运行 Agent，再查看回答证据。'}</div></td></tr>`}</tbody></table></div>${inspector()}</div>${state.run?.audit ? `<div class="panel section-gap"><div class="panel-head"><h2>分组覆盖</h2>${badge('不同条件不混作趋势')}</div><div class="table-scroll"><table class="data-table"><thead><tr><th>来源 · 模型 · 问题类型 · 批次</th><th class="right">原文</th><th class="right">提及 / 可判定</th></tr></thead><tbody>${state.run.audit.strata.map(s => `<tr><td class="mono">${esc(s.label)}</td><td class="right num">${s.collected}/${s.count}</td><td class="right num">${s.mentioned}/${s.denominator}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<input type="file" id="sample-file" accept="application/json,.json" hidden>`;
+    `${measurementMatrix()}<div class="filters"><input id="sample-filter" placeholder="筛选问题、回答或模型" aria-label="筛选回答" value="${esc(state.filter)}"><div class="actions"><button class="btn small" data-import>导入回答 JSON</button><button class="btn quiet small" data-import-template>下载导入格式</button></div></div><div class="evidence-layout"><div class="panel table-scroll"><table class="data-table"><thead><tr><th>问题 / 意图</th><th>模型 / 时间</th><th>判定</th><th class="right">引用</th></tr></thead><tbody>${filtered.length ? sampleRows(filtered) : `<tr><td colspan="4"><div class="empty">${state.run ? '当前没有匹配的回答。可以导入原文，或用模型执行新测量。' : '先运行 Agent，再查看回答证据。'}</div></td></tr>`}</tbody></table></div>${inspector()}</div>${state.run?.audit ? `<div class="panel section-gap"><div class="panel-head"><h2>分组覆盖</h2>${badge('不同条件不混作趋势')}</div><div class="table-scroll"><table class="data-table"><thead><tr><th>来源 · 模型 · 问题类型 · 批次</th><th class="right">原文</th><th class="right">提及 / 可判定</th></tr></thead><tbody>${state.run.audit.strata.map(s => `<tr><td class="mono">${esc(s.label)}</td><td class="right num">${s.collected}/${s.count}</td><td class="right num">${s.mentioned}/${s.denominator}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<input type="file" id="sample-file" accept="application/json,.json" hidden>`;
 }
 function actionsPage() {
   return pageHeader('有依据的策略任务', '任务保留目标问题、样本与事实 ID，执行状态可以在本地更新。') +
@@ -186,6 +194,7 @@ async function startRun(input = {}) {
 }
 function showDialog(title, description, fields, submitLabel, onSubmit) {
   const dialog = $('#dialog'); if (dialog.open) dialog.close();
+  dialog.classList.remove('wide');
   dialog.innerHTML = `<button class="dialog-close" data-close aria-label="关闭">×</button><h2 id="dialog-title">${esc(title)}</h2><p class="subtle">${esc(description)}</p><form id="dialog-form"><div class="form-grid">${fields}</div><p class="dialog-error" role="alert"></p><div class="dialog-actions"><button class="btn" data-close type="button">取消</button><button class="btn primary" type="submit">${esc(submitLabel)}</button></div></form>`;
   dialog.onsubmit = async event => {
     event.preventDefault(); const button = dialog.querySelector('[type=submit]'); button.disabled = true;
@@ -195,6 +204,46 @@ function showDialog(title, description, fields, submitLabel, onSubmit) {
   };
   dialog.showModal();
 }
+function diagnosisDialog() {
+  const defaults = state.settings;
+  const templates = state.status?.diagnosisTargets || [];
+  const activeQueries = state.project.queries.filter(q => !q.status || q.status === 'active').slice(0, 10);
+  const fallbackProvider = defaults.provider || 'openrouter';
+  const fallbackModel = defaults.model || templates.find(target => target.id === 'chatgpt')?.model || '';
+  const questionFields = activeQueries.map((query, index) => `<label class="check-label question-option"><input type="checkbox" name="queryIds" value="${esc(query.id)}" ${index < 5 ? 'checked' : ''}><span><strong>${esc(query.branded ? '品牌核验' : '供应商发现')}</strong><small>${esc(query.text)}</small></span></label>`).join('');
+  const providerOptions = provider => state.status.providers.map(item => `<option value="${esc(item.id)}" ${item.id === provider ? 'selected' : ''}>${esc(item.id)}${item.configured ? '（已配置）' : ''}</option>`).join('');
+  const targetFields = templates.map(target => {
+    const isWeb = target.preferredChannel === 'web';
+    const enabled = isWeb || (target.configured && target.model);
+    const model = isWeb ? fallbackModel : target.model || '';
+    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : 'API 通道'}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
+  }).join('');
+  const keyFields = state.status.providers.map(provider => {
+    return `<label>${esc(provider.id)} API Key（本页内存）<input type="password" name="key-${esc(provider.id)}" autocomplete="off" placeholder="${provider.configured ? '本地环境已配置，可留空' : '未配置时填写'}"></label>`;
+  }).join('');
+  showDialog('运行一轮品牌诊断', '一轮冻结问题版本和平台矩阵。网页端通过 Xue + Kimi 串行提交；API 平台并行执行；网页失败只对当前题、当前平台做 API 降级。',
+    `<section><h3>本轮问题集</h3><p class="dialog-note">默认勾选前 5 条 active 问题，最多 10 条。同一问题会在所有启用平台各形成一个计划单元。</p><div class="question-list">${questionFields || '<p class="dialog-note">没有 active 问题，请先保存问题集。</p>'}</div></section><section><h3>平台矩阵</h3><div class="target-grid">${targetFields}</div><p class="dialog-note">ChatGPT 是当前唯一正式网页适配器；其他平台先按 API 通道执行，不冒充网页结果。API Key 只留在本页内存，环境变量由本地服务端解析。</p><div class="form-row api-key-grid">${keyFields}</div></section><p class="dialog-note">并发规则：平台任务同时启动；同一个 API 平台内部按题串行，网页采集全局串行并保留平台限速。每个单元最多采纳一条有效回答，失败尝试不进分母。</p>`,
+    '确认问题并运行', async form => {
+      const queryIds = form.getAll('queryIds').map(String);
+      if (!queryIds.length || queryIds.length > 10) throw new Error('请选择 1–10 个问题');
+      const selectedIds = form.getAll('targetIds').map(String);
+      if (!selectedIds.length || selectedIds.length > 6) throw new Error('请选择 1–6 个平台');
+      const apiKeys = {};
+      const targets = templates.filter(target => selectedIds.includes(target.id)).map(target => {
+        const provider = target.preferredChannel === 'web' ? String(form.get(`provider-${target.id}`) || '') : target.provider ? String(form.get(`provider-${target.id}`) || target.provider) : undefined;
+        let model = target.preferredChannel === 'web' ? String(form.get(`model-${target.id}`) || '').trim() : String(form.get(`model-${target.id}`) || '').trim();
+        if (provider) {
+          const key = String(form.get(`key-${provider}`) || '').trim();
+          if (key) apiKeys[provider] = key;
+        }
+        if (target.preferredChannel !== 'web' && !model) throw new Error(`${target.platform} 需要模型 ID`);
+        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on' };
+      });
+      state.apiKeys = { ...state.apiKeys, ...apiKeys };
+      await startRun({ mode: 'live', diagnosis: true, queryIds, maxQuestions: queryIds.length, targets, apiKeys });
+    });
+  $('#dialog').classList.add('wide');
+}
 function modelDialog(live) {
   const defaults = state.settings;
   const neutral = state.project.queries.filter(q => !q.branded).slice(0, 2), branded = state.project.queries.filter(q => q.branded).slice(0, 1);
@@ -203,15 +252,15 @@ function modelDialog(live) {
     `<div class="form-row"><label>Provider<select name="provider">${state.status.providers.map(p => `<option value="${p.id}" ${p.id === (defaults.provider || 'openrouter') ? 'selected' : ''}>${p.id}${p.configured ? '（已有环境配置）' : ''}</option>`).join('')}</select></label><label>模型 ID<input name="model" placeholder="填写账号当前可用的模型 ID" value="${esc(defaults.model || ((!defaults.provider || defaults.provider === 'openrouter') ? 'qwen/qwen3.5-flash-02-23' : ''))}" required></label></div><label>API Key<input name="apiKey" id="api-key" type="password" autocomplete="off" placeholder="已有环境变量时可以留空"></label><label class="check-label"><input name="webSearch" type="checkbox" ${defaults.webSearch ? 'checked' : ''}>请求 Provider 支持的搜索能力</label>${live ? `<label>确认本轮问题（每行一条，最多 5 条）<textarea name="questions" rows="5" required>${esc(qs.map(q => q.text).join('\n'))}</textarea></label><p class="dialog-note">最多 5 次采样，另有策略和内容调用，总计最多 8 次请求。搜索是否实际执行以返回证据为准；费用未知时暂停后续调用。公开案例用于回放，模型实测适合你的真实品牌。</p>` : `<p class="dialog-note">只保存 Provider、模型 ID 和搜索偏好。API Key 留在当前页面内存，刷新后清除。</p>`}`,
     live ? '确认问题并实测' : '保存设置', async form => {
       const config = { provider: String(form.get('provider')), model: String(form.get('model')).trim(), webSearch: form.get('webSearch') === 'on' };
-      state.settings = config; state.apiKey = String(form.get('apiKey') || '').trim() || state.apiKey;
+      state.settings = config; state.apiKeys[config.provider] = String(form.get('apiKey') || '').trim() || state.apiKeys[config.provider] || '';
       localStorage.setItem('citekeel-model', JSON.stringify(config));
       if (live) {
         const questions = String(form.get('questions')).split('\n').map(x => x.trim()).filter(Boolean);
         if (questions.length < 1 || questions.length > 5) throw new Error('请确认 1–5 个采样问题');
-        await startRun({ mode: 'live', ...config, apiKey: state.apiKey, maxQuestions: questions.length, questions });
+        await startRun({ mode: 'live', ...config, apiKey: state.apiKeys[config.provider] || '', maxQuestions: questions.length, questions });
       } else toast('模型偏好已保存，密钥仅保留在本页面内存');
     });
-  $('#api-key').value = state.apiKey;
+  $('#api-key').value = state.apiKeys[defaults.provider || 'openrouter'] || '';
 }
 function newProjectDialog() {
   showDialog('新建一个自己的项目', '输入品牌与产品资料，再逐项确认事实。新项目不会自动生成或伪造回答数据。',
@@ -230,6 +279,8 @@ document.addEventListener('click', async event => {
   try {
     if (button.hasAttribute('data-close')) { $('#dialog').close(); return; }
     if (button.dataset.nav) { state.view = button.dataset.nav; render(); return; }
+    if (button.dataset.prompt) { state.view = 'queries'; render(); return; }
+    if (button.hasAttribute('data-diagnosis')) { button.disabled = true; diagnosisDialog(); return; }
     if (button.hasAttribute('data-run')) { button.disabled = true; await startRun(); return; }
     if (button.hasAttribute('data-live')) { modelDialog(true); return; }
     if (button.hasAttribute('data-settings')) { modelDialog(false); return; }

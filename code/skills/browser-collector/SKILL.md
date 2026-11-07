@@ -5,7 +5,7 @@ description: 在 OpenGEO 中用已核验的 Xue Chrome 脚本采集 ChatGPT 网�
 
 # 网页脚本采集
 
-先读仓库 `AGENTS.md` 和 `docs/17-脚本化网页采集.md`。本 skill 只描述调用，不宣称真实平台验收已经完成。
+先读仓库 `AGENTS.md` 和 `docs/采集.md`。本 skill 只描述调用，不宣称真实平台验收已经完成。
 
 在仓库 `code/` 下运行（本机路径 `code/`）：
 

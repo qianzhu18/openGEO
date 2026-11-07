@@ -1,12 +1,13 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { BrowserAskResult } from './collector.js';
 import { CollectionError } from './bridge.js';
+import { isBrowserEngine, onEngineOrigin, type BrowserEngine } from './platforms.js';
 
 export type HostTask = { id: string; expiresAt: number } & (
-  { kind: 'probe' | 'check' } | { kind: 'batch'; prompts: string[] }
+  { kind: 'probe' | 'check' } | { kind: 'batch'; prompts: string[]; engine?: BrowserEngine }
 );
-type TaskInput = { kind: 'probe' | 'check' } | { kind: 'batch'; prompts: string[] };
-export type HostRow = { ok: true; data: BrowserAskResult } | { ok: false; error: string; evidenceId?: string };
+type TaskInput = { kind: 'probe' | 'check' } | { kind: 'batch'; prompts: string[]; engine?: BrowserEngine };
+export type HostRow = { ok: true; data: BrowserAskResult } | { ok: false; error: string; evidenceId?: string; code?: string };
 type HostReply = { ok: true; rows?: HostRow[] } | { ok: false; error: string };
 
 export function workerProof(token: string, phase: 'request' | 'response', action: string, nonce: string, payload: unknown) {
@@ -24,15 +25,15 @@ export function validBrowserPrompts(value: unknown): value is string[] {
     value.every(text => typeof text === 'string' && !!text.trim() && text.length <= 8000);
 }
 
-function validRow(value: unknown): value is HostRow {
+function validRow(value: unknown, engine: BrowserEngine): value is HostRow {
   if (!value || typeof value !== 'object') return false;
   const row = value as HostRow;
-  if (row.ok === false) return typeof row.error === 'string' && row.error.length <= 500 &&
+  if (row.ok === false) return typeof row.error === 'string' && row.error.length <= 500 && (row.code === undefined || /^[a-z_]{1,60}$/.test(row.code)) &&
     (row.evidenceId === undefined || /^[\p{L}\p{N}_-]{1,100}$/u.test(row.evidenceId));
   const data = row.ok === true ? row.data : null;
-  return !!data && data.engine === 'chatgpt' && typeof data.answer === 'string' && !!data.answer.trim() &&
+  return !!data && data.engine === engine && typeof data.answer === 'string' && !!data.answer.trim() &&
     data.answer.length <= 200_000 && Array.isArray(data.citations) && data.citations.every(x => typeof x === 'string') &&
-    typeof data.url === 'string' && /^https:\/\/chatgpt\.com\//.test(data.url) &&
+    onEngineOrigin(engine, data.url) &&
     typeof data.evidenceId === 'string' && /^[\p{L}\p{N}_-]{1,100}$/u.test(data.evidenceId) &&
     typeof data.latencyMs === 'number' && Number.isFinite(data.latencyMs) &&
     typeof data.protocolId === 'string' && data.evidencePath === undefined;
@@ -77,10 +78,11 @@ export class HostBrowserMailbox {
     const job = this.pending;
     if (!job || !this.alive(id) || !reply || typeof reply !== 'object') return false;
     const result = reply as HostReply;
+    const engine = job.task.kind === 'batch' ? job.task.engine || 'chatgpt' : 'chatgpt';
     if (result.ok === false) {
       if (typeof result.error !== 'string' || result.error.length > 500) return false;
     } else if (result.ok === true) {
-      if (job.task.kind === 'batch' && (!Array.isArray(result.rows) || result.rows.length !== job.task.prompts.length || !result.rows.every(validRow))) return false;
+      if (job.task.kind === 'batch' && (!Array.isArray(result.rows) || result.rows.length !== job.task.prompts.length || !result.rows.every(row => validRow(row, engine)))) return false;
     } else return false;
     job.settle(result);
     return true;
@@ -89,7 +91,7 @@ export class HostBrowserMailbox {
   async submit(input: TaskInput): Promise<HostReply> {
     if (this.pending) throw new CollectionError('worker_busy', '本机浏览器 worker 正在执行任务。');
     if (Date.now() - this.lastPoll > this.timings.onlineMs) throw new CollectionError('worker_offline', '本机浏览器 worker 未连接。请在宿主机启动 npm run browser:worker。');
-    if (input.kind === 'batch' && !validBrowserPrompts(input.prompts)) throw new CollectionError('invalid_prompts', '网页采样每批只接受 1–3 条有效问题。');
+    if (input.kind === 'batch' && (!validBrowserPrompts(input.prompts) || (input.engine !== undefined && !isBrowserEngine(input.engine)))) throw new CollectionError('invalid_prompts', '网页采样每批只接受 1–3 条有效问题。');
     const duration = input.kind === 'batch' ? this.timings.batchMs : this.timings.checkMs;
     const task: HostTask = { ...input, id: randomUUID(), expiresAt: Date.now() + duration };
     return new Promise(done => {
@@ -105,19 +107,26 @@ export class HostBrowserMailbox {
     });
   }
 
-  collector(prompts: string[]) {
+  async batch(engine: BrowserEngine, prompts: string[]): Promise<HostRow[]> {
+    const result = await this.submit({ kind: 'batch', engine, prompts });
+    if (!result.ok) throw new CollectionError('worker_failed', result.error);
+    if (!result.rows) throw new CollectionError('worker_failed', '宿主机没有返回采样记录。');
+    return result.rows;
+  }
+
+  collector(prompts: string[], engine: BrowserEngine = 'chatgpt') {
     let index = 0;
     let batch: Promise<HostReply> | undefined;
-    return { engine: 'chatgpt', ask: async (prompt: string) => {
+    return { engine, ask: async (prompt: string) => {
       if (prompts[index] !== prompt) throw new Error('采样问题与计划不一致。');
       const slot = index++;
-      batch ??= this.submit({ kind: 'batch', prompts });
+      batch ??= this.submit({ kind: 'batch', engine, prompts });
       const reply = await batch;
       if (!reply.ok) throw new Error(reply.error);
       const row = reply.rows?.[slot];
       if (!row) throw new Error('宿主机没有返回该题的采样记录。');
       if (!row.ok) {
-        const error = new CollectionError('host_collection_failed', row.error);
+        const error = new CollectionError(row.code || 'host_collection_failed', row.error);
         if (row.evidenceId) error.evidenceId = row.evidenceId;
         throw error;
       }

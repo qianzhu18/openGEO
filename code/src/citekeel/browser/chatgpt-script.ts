@@ -1,5 +1,5 @@
 /** Plain page-context JS; no Playwright, cookies, bearer-token extraction, or private API replay. */
-export function chatgptScript(action: 'auth' | 'prepare' | 'inject' | 'submit' | 'read', input: { prompt?: string; marker?: string } = {}): string {
+export function chatgptScript(action: 'auth' | 'prepare' | 'inject' | 'read' | 'clear-draft' | 'arm' | 'disarm', input: { prompt?: string; marker?: string } = {}): string {
   return String.raw`(async () => {
     const action = ${JSON.stringify(action)}, input = ${JSON.stringify(input)};
     const visible = el => !!el && !!(el.getClientRects().length) && getComputedStyle(el).visibility !== 'hidden';
@@ -13,59 +13,105 @@ export function chatgptScript(action: 'auth' | 'prepare' | 'inject' | 'submit' |
     if (action === 'auth') {
       try {
         // Only return a boolean; identity, tokens and the response body never leave this page.
-        const response = await fetch('/api/auth/session', {signal:AbortSignal.timeout(8000), redirect:'error'});
+        const response = await fetch('/api/auth/session', {signal:AbortSignal.timeout(12000), redirect:'error'});
         if (!response.ok) return output({authenticated:false});
         const session = await response.json();
-        return output({authenticated:!!session.user && !session.error && Date.parse(session.expires) > Date.now()});
+        const expires = session.expires == null ? null : Date.parse(session.expires);
+        const fresh = expires === null || expires > Date.now();
+        return output({authenticated:!!session.user && !session.error && fresh});
       } catch { return output({authenticated:false}); }
     }
-    const messages = [...document.querySelectorAll('[data-message-author-role="assistant"]')];
-    const user = [...document.querySelectorAll('[data-message-author-role="user"]')].at(-1);
-    const composer = first('#prompt-textarea, [role="textbox"][contenteditable="true"], textarea[data-id]');
-    const send = first('[data-testid="send-button"], button[aria-label="Send prompt"], button[aria-label="Send"], button[aria-label="发送提示"], button[aria-label="发送"]');
+    const normalize = value => String(value || '').replace(/\s+/g,' ').trim();
+    const user = [...document.querySelectorAll('[data-message-author-role="user"], [class*="group/user-message"]')].at(-1);
+    const messages = [...document.querySelectorAll('[data-message-author-role="assistant"], [class*="MarkdownRoot"]')].filter(el => !el.closest('[class*="group/user-message"]') && normalize(el.innerText) && normalize(el.innerText) !== normalize(user?.innerText));
+    // 2026-11-06 Xue: the composer is a ProseMirror textbox, not #prompt-textarea. Old selectors stay as fallback.
+    const composer = first('[role="textbox"][contenteditable="true"], #prompt-textarea, textarea[data-id]');
+    const sendButton = () => {
+      const send = first('[data-testid="send-button"], button[aria-label="发送"], button[aria-label="发送提示"], button[aria-label="Send"], button[aria-label="Send prompt"]');
+      if (send) send.setAttribute('data-opengeo-send', '1');
+      return send;
+    };
     if (action === 'prepare') {
       if (!composer) return output({error:'composer_missing'});
-      if ((composer.innerText || composer.value || '').trim() || messages.length || user) return output({error:'not_fresh_chat'});
+      if (messages.length || user) return output({error:'not_fresh_chat'});
+      const draft = normalize(composer.innerText || composer.value);
+      if (draft && draft !== normalize(input.prompt || '')) return output({error:'not_fresh_chat'});
       const guard = {interrupted:false};
       window.__opengeoGuard = guard;
       for (const event of ['pointerdown','keydown','wheel','paste']) {
-        document.addEventListener(event, e => { if (e.isTrusted) guard.interrupted = true; }, {capture:true, once:false});
+        document.addEventListener(event, e => {
+          if (!e.isTrusted || guard.sending) return;
+          const target = e.target && e.target.closest ? e.target.closest('[data-opengeo-send], button[aria-label="发送"], button[aria-label="发送提示"], button[aria-label="Send"], button[aria-label="Send prompt"]') : null;
+          if (target) return;
+          guard.interrupted = true;
+        }, {capture:true, once:false});
       }
       return output({ready:true});
+    }
+    if (action === 'clear-draft') {
+      if (messages.length || user) return output({error:'not_fresh_chat'});
+      if (composer) {
+        composer.focus();
+        const selection = getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(composer);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand('delete', false, null);
+      }
+      return output({cleared:true});
+    }
+    if (action === 'arm' || action === 'disarm') {
+      if (!window.__opengeoGuard) return output({error:'page_reloaded'});
+      window.__opengeoGuard.sending = action === 'arm';
+      return output({sending: action === 'arm'});
     }
     if (window.__opengeoGuard?.interrupted) return output({error:'user_interrupted'});
     if (!window.__opengeoGuard) return output({error:'page_reloaded'});
     const alerts = [...document.querySelectorAll('[role="alert"], [data-testid*="error"]')].filter(visible);
     if (alerts.some(el => /limit|try again later|too many|限制|稍后重试|达到上限/i.test(el.innerText))) return output({error:'rate_limited'});
-    const normalize = value => String(value || '').replace(/\s+/g,' ').trim();
     if (action === 'inject') {
       if (!composer) return output({error:'composer_missing'});
-      if (messages.length || user || normalize(composer.innerText || composer.value)) return output({error:'not_fresh_chat'});
+      const prompt = String(input.prompt || '');
       composer.focus();
       if (composer.tagName === 'TEXTAREA') {
-        Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(composer, input.prompt);
-        composer.dispatchEvent(new InputEvent('input', {bubbles:true, inputType:'insertText', data:input.prompt}));
+        const set = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+        set?.call(composer, prompt);
+        composer.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: prompt }));
       } else {
-        document.execCommand('insertText', false, input.prompt);
+        const selection = getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(composer);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.execCommand('insertText', false, prompt);
       }
-      return normalize(composer.innerText || composer.value) === normalize(input.prompt) ? output({inserted:true}) : output({error:'inject_failed'});
+      const inserted = normalize(composer.innerText || composer.value) === normalize(prompt);
+      if (!inserted) return output({error:'inject_failed'});
+      const send = sendButton();
+      return output({inserted:true, sendReady:!!send && !send.disabled});
     }
-    const sendReady = !user && !messages.length && !!send && !send.disabled &&
-      normalize(composer?.innerText || composer?.value) === normalize(input.prompt);
-    if (action === 'submit') {
-      if (!sendReady) return output({error:'send_unavailable'});
-      send.click();
-      return output({dispatched:true});
+    if (!user || normalize(user.innerText) !== normalize(input.prompt)) {
+      const send = sendButton();
+      return output({answer:'', complete:false, sendReady:!!send && !send.disabled && normalize(composer?.innerText || composer?.value) === normalize(input.prompt)});
     }
-    if (!user || normalize(user.innerText) !== normalize(input.prompt)) return output({answer:'', complete:false, sendReady});
     const last = messages.at(-1);
     if (!last) return output({answer:'', complete:false});
     // The assistant must follow this exact user message in DOM order.
     if (!(user.compareDocumentPosition(last) & Node.DOCUMENT_POSITION_FOLLOWING)) return output({error:'stale_answer'});
     const answer = last.innerText.trim();
-    const turn = last.closest('[data-testid^="conversation-turn-"], article') || last.parentElement;
-    const busy = !!first('[data-testid="stop-button"], button[aria-label*="Stop generating" i], button[aria-label*="停止生成"]');
-    const complete = !!answer && !busy && !![...turn.querySelectorAll('[data-testid="copy-turn-action-button"], button[aria-label="Copy"], button[aria-label="复制"]')].find(visible);
+    // 2026-11-06 Xue: assistant「复制」sits beside MarkdownRoot. Their common parent also
+    // contains the user turn, so walking ancestors never isolates it. Take a visible
+    // copy control that follows this answer and is outside the user message. A hidden
+    // control still does not count; a page with no copy control can finish on stop-gone.
+    const copySelector = '[data-testid="copy-turn-action-button"], button[aria-label="Copy"], button[aria-label="复制"], button[aria-label="复制回答"]';
+    const assistantCopy = [...document.querySelectorAll(copySelector)].filter(visible).find(button => {
+      if (button.closest('[class*="group/user-message"], [data-message-author-role="user"]')) return false;
+      return !!(last.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    const busy = !!first('[data-testid="stop-button"], button[aria-label="停止"], button[aria-label*="Stop generating" i], button[aria-label*="停止生成"]');
+    const noCopyControl = !document.querySelector(copySelector);
+    const complete = !!answer && !busy && (!!assistantCopy || noCopyControl);
     const safeUrl = value => {
       try {
         const url = new URL(value);

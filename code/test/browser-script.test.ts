@@ -51,6 +51,10 @@ test('profile proof queries exactly one task URL in the selected Xue history, an
     assert.ok(navigations.every(url => /^http:\/\/127\.0\.0\.1:\d+\/opengeo-profile-check\//.test(url)));
     await writeFile(f.configPath, JSON.stringify({ profileName: '用户1' }));
     await assert.rejects(selectedHistory(f.configPath), isCode('wrong_profile'));
+    const holder = new DatabaseSync(f.history);
+    holder.exec('BEGIN IMMEDIATE');
+    try { assert.equal(await historyContains(f.history, 'https://unrelated.invalid/'), true); }
+    finally { holder.close(); }
   } finally { await f.cleanup(); }
 });
 
@@ -80,14 +84,13 @@ function scriptedBridge(options: { incomplete?: boolean; interrupt?: boolean; sc
   const bridge: BrowserBridge = {
     async command<T>(action: string, args: any = {}): Promise<T> {
       commands.push(action);
+      if (action === 'mouse_click') clicked = true;
       if (action === 'screenshot' && !options.screenshotMissing) await writeFile(args.path, Buffer.from([137,80,78,71,13,10,26,10,0]));
       return {} as T;
     },
     async evaluate<T>(code: string): Promise<T> {
       if (code.includes('const action = "auth"')) return { authenticated: options.auth !== false } as T;
       if (code.includes('const action = "prepare"')) return { ready: true } as T;
-      if (code.includes('const action = "inject"')) return { inserted: true } as T;
-      if (code.includes('const action = "submit"')) { commands.push('click'); clicked = true; return { dispatched: true } as T; }
       if (!clicked) return { sendReady: true } as T;
       if (options.interrupt) return { error: 'user_interrupted' } as T;
       return { answer: 'A full fixture answer.', complete: !options.incomplete, citations: ['https://source.example/'], url: 'https://chatgpt.com/c/fixture', html: '<article>A full fixture answer.</article>' } as T;
@@ -112,14 +115,14 @@ test('script collector returns full evidence and excludes incomplete or interrup
           assert.equal(await readFile(record.answerPath, 'utf8'), answer.answer);
           await access(record.screenshotPath); await access(record.domPath);
           assert.match(answer.protocolId!, /profile=Xue;session=fresh/);
-          assert.equal(fake.commands.filter(action => action === 'click').length, 1);
+          assert.equal(fake.commands.filter(action => action === 'mouse_click').length, 1);
         } else {
           const expected = { timeout: 'answer_timeout', interrupt: 'user_interrupted', screenshot: 'screenshot_missing', auth: 'not_logged_in', profile: 'profile_unverified' }[scenario];
           let failure: CollectionError | undefined;
           await assert.rejects(collector.ask('Question?'), error => { if (error instanceof CollectionError) failure = error; return isCode(expected)(error); });
           const record = JSON.parse(await readFile(failure!.evidencePath!, 'utf8'));
           assert.equal(record.status, 'failed'); assert.equal(record.answer, '');
-          assert.equal(fake.commands.includes('click'), !['auth','profile'].includes(scenario));
+          assert.equal(fake.commands.includes('mouse_click'), !['auth','profile'].includes(scenario));
           const before = fake.commands.length;
           await assert.rejects(collector.ask('Next question?'), isCode('collector_stopped'));
           assert.equal(fake.commands.length, before);

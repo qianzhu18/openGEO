@@ -18,3 +18,5 @@
 
 /* Keep all navigation actions reachable on short desktop viewports. */
 .sidebar{overflow-y:auto}.sidebar .nav,.sidebar .side-bottom{flex-shrink:0}
+dialog.wide{width:min(880px,calc(100vw - 32px))}.question-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.question-option{align-items:flex-start;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fafafa}.question-option small{display:block;color:#8a8580;font-weight:400;margin-top:3px;line-height:1.6}.target-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}.target-card{display:grid;gap:11px;border:1px solid var(--line);border-radius:10px;padding:13px;background:#fff}.target-card .check-label span small{display:block;color:#8a8580;font-weight:400;margin-top:3px}.panel-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:11px;color:#8a8580}
+@media(max-width:720px){dialog.wide{width:calc(100vw - 20px)}.question-list,.target-grid{grid-template-columns:1fr}}

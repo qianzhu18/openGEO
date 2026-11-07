@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { findMention, judgeSample } from '../analysis.js';
+import { judgeGeoAnswer, rateFromFlags } from '../geo-rates.js';
 import { compact, digest, publicUrl, readEvidence } from './evidence.js';
 import type { CampaignAttempt, CampaignMetric, CampaignProtocol, CampaignRun, CampaignSpec, EvaluatedAttempt, SourceRecord } from './model.js';
 import { renderCampaign } from './render.js';
@@ -84,7 +85,7 @@ export function comparableProtocol(protocol: CampaignProtocol | null): boolean {
 export function protocolKey(protocol: CampaignProtocol): string { return JSON.stringify(protocol); }
 
 async function evaluateAttempt(root: string, spec: CampaignSpec, attempt: CampaignAttempt): Promise<EvaluatedAttempt> {
-  const result: EvaluatedAttempt = { attempt, eligible: false, exclusion: null, answer: '', mentioned: null, recommendation: null, mentionQuote: null, visibleUrls: [], citationExtraction: 'unknown' };
+  const result: EvaluatedAttempt = { attempt, eligible: false, exclusion: null, answer: '', mentioned: null, recommendation: null, mentionQuote: null, top1: null, top3: null, rank: null, visibleUrls: [], citationExtraction: 'unknown' };
   const exclude = (reason: string) => ({ ...result, exclusion: reason });
   const question = spec.questions.find(q => q.id === attempt.questionId);
   const protocol = attempt.protocol;
@@ -111,11 +112,12 @@ async function evaluateAttempt(root: string, spec: CampaignSpec, attempt: Campai
       }))];
       result.citationExtraction = metadata.citationStatus === 'completed' ? 'complete' : metadata.citationStatus === 'partial' ? 'partial' : 'unknown';
     }
-    if (result.answer.length < 1500 && /^(?:sign in|log in|please sign in|登录后|请先登录|just a moment|verify you are human|验证码)/i.test(result.answer.trim())) return exclude('登录或验证页面不是有效回答');
+    const geo = judgeGeoAnswer(result.answer, [spec.brand, ...spec.aliases]);
+    if (!geo.eligible) return exclude(geo.exclusion || '回答不能进入分母');
     const judged = judgeSample({ id: attempt.id, queryId: question.id, question: question.text, intent: question.stage, branded: question.branded,
       origin: protocol.channel === 'api' ? 'api' : protocol.channel === 'web-ui' ? 'browser' : 'manual', model: protocol.model || 'UNKNOWN',
       observedAt: attempt.capturedAt, runGroup: spec.id, protocolId: protocolKey(protocol), collectionStatus: 'completed', analysisStatus: 'completed', answer: result.answer, citations: [] }, spec);
-    return { ...result, eligible: true, mentioned: judged.mentioned, recommendation: judged.recommended, mentionQuote: judged.evidence };
+    return { ...result, eligible: true, mentioned: geo.mentioned, recommendation: judged.recommended, mentionQuote: judged.evidence, top1: geo.top1, top3: geo.top3, rank: geo.rank };
   } catch { return exclude('证据读取或路径校验失败'); }
 }
 
@@ -154,7 +156,7 @@ export async function runCampaign(root: string, spec: CampaignSpec, sources: Sou
     const row = await evaluateAttempt(root, spec, attempt);
     if (row.eligible) {
       const previous = evaluated.find(item => item.eligible && item.attempt.jobId === attempt.jobId);
-      if (previous) { row.eligible = false; row.exclusion = '同一任务的重复采样，不增加分母'; row.mentioned = null; row.recommendation = null; row.mentionQuote = null; }
+      if (previous) { row.eligible = false; row.exclusion = '同一任务的重复采样，不增加分母'; row.mentioned = null; row.recommendation = null; row.mentionQuote = null; row.top1 = null; row.top3 = null; row.rank = null; }
     }
     evaluated.push(row);
   }
@@ -166,10 +168,12 @@ export async function runCampaign(root: string, spec: CampaignSpec, sources: Sou
   for (const question of spec.questions) for (const platform of spec.platforms) {
     const valid = evaluated.filter(row => row.eligible && row.attempt.questionId === question.id && row.attempt.protocol.platform === platform);
     const keys = [...new Set(valid.map(row => protocolKey(row.attempt.protocol)))];
-    if (!keys.length) metrics.push({ questionId: question.id, question: question.text, questionRevision: question.revision, branded: question.branded, platform, protocol: null, numerator: 0, denominator: 0, value: null, attemptIds: [] });
+    const blank = { numerator: 0, denominator: 0, value: null };
+    if (!keys.length) metrics.push({ questionId: question.id, question: question.text, questionRevision: question.revision, branded: question.branded, platform, protocol: null, ...blank, attemptIds: [], appearance: { ...blank }, top1: { ...blank }, top3: { ...blank } });
     for (const key of keys) {
-      const group = valid.filter(row => protocolKey(row.attempt.protocol) === key), numerator = group.filter(row => row.mentioned).length;
-      metrics.push({ questionId: question.id, question: question.text, questionRevision: question.revision, branded: question.branded, platform, protocol: group[0]!.attempt.protocol, numerator, denominator: group.length, value: numerator / group.length, attemptIds: group.map(row => row.attempt.id) });
+      const group = valid.filter(row => protocolKey(row.attempt.protocol) === key);
+      const mention = rateFromFlags(group.map(row => row.mentioned));
+      metrics.push({ questionId: question.id, question: question.text, questionRevision: question.revision, branded: question.branded, platform, protocol: group[0]!.attempt.protocol, numerator: mention.numerator, denominator: mention.denominator, value: mention.value, attemptIds: group.map(row => row.attempt.id), appearance: rateFromFlags(group.map(row => row.mentioned)), top1: rateFromFlags(group.map(row => row.top1)), top3: rateFromFlags(group.map(row => row.top3)) });
     }
   }
   const eligible = evaluated.filter(row => row.eligible);
@@ -185,7 +189,7 @@ export async function runCampaign(root: string, spec: CampaignSpec, sources: Sou
       stage('layout', '内容布局', 'editorial-input', 'ready', [spec.audiences, spec.questions], spec.assets.map(({ sections, ...asset }) => asset), '内容与受众、问题、已有页面和互链建立映射；建议路径尚未发布'),
       stage('content', '内容草稿', 'editorial-input', readyAssets.length === spec.assets.length ? 'ready' : readyAssets.length ? 'partial' : 'pending', [claims, spec.assets], readyAssets.map(asset => asset.id), '策划由 Agent 阅读来源后撰写，运行器不新增模型调用；全部待品牌方与技术复核'),
       stage('monitor', '复查与效果边界', 'deterministic', 'pending', [metrics, spec.publications], { effect: null }, '无内部分析权限、发布验证和可比后测；不计算提升')],
-    sources, claims, attempts: evaluated, metrics, warnings: ['公开网页、官方文档和仓库内容仍是来源陈述，不是独立实测。', '人工或 Agent 策划保存在输入中；确定性运行只校验与生成交付文件。', '品牌提及规则只识别名称；推荐措辞需要人工核对，不报告 Top1/Top3。'] };
+    sources, claims, attempts: evaluated, metrics, warnings: ['公开网页、官方文档和仓库内容仍是来源陈述，不是独立实测。', '人工或 Agent 策划保存在输入中；确定性运行只校验与生成交付文件。', '提及率与出现率是同一名称规则。Top1/Top3 只在回答实际枚举选项时计算；没有名次时为 null，不记为否，也不进入这两个分母。推荐措辞仍需人工核对。品牌指标模块里的首次出现名次是另一套口径，不在这里使用。'] };
 }
 
 export function compareCampaigns(before: CampaignRun, after: CampaignRun) {

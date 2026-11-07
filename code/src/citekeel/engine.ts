@@ -1,24 +1,34 @@
 import { CollectionError } from './browser/bridge.js';
 import { internationalContentPrompt } from './international.js';
 import { randomUUID } from 'node:crypto';
-import type { Action, AgentRun, LiveConfig, Project, Query, Sample } from './types.js';
+import type { Action, AgentRun, LiveConfig, MeasurementAttemptRecord, MeasurementTarget, Project, Query, Sample } from './types.js';
 import type { BrowserAsk } from './browser/collector.js';
 import { SKILLS } from './types.js';
 import { answerTruncated, auditSamples, normalizeCitation } from './analysis.js';
 import { Store } from './storage.js';
 import { ModelSession, makeDraft, parseObject, planActions, strategyPrompt, validateDraft, validateModelActions } from './skills.js';
 
-export function createRun(project: Project, mode: 'replay' | 'live', goal = project.goal, config?: LiveConfig): AgentRun {
+export interface MeasurementRuntime {
+  targets: MeasurementTarget[];
+  apiKeys: Record<string, string>;
+  browser?: { ask: BrowserAsk; engine: string };
+}
+
+export function createRun(project: Project, mode: 'replay' | 'live', goal = project.goal, config?: LiveConfig, measurementTargets?: MeasurementTarget[]): AgentRun {
   return { id: randomUUID(), projectId: project.id, projectSnapshot: structuredClone(project), mode, goal,
     status: 'queued', createdAt: new Date().toISOString(), queries: [], samples: [], actions: [], calls: [], publications: [],
     steps: SKILLS.map(([id, label, skill]) => ({ id, label, skill, status: 'pending', evidenceIds: [], executor: 'rules' })),
     limitations: ['推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。', '引用项存在不证明来源正确，也不证明导致了推荐。'], review: '',
-    ...(config ? { model: config.model, provider: config.provider } : {}) };
+    ...(config ? { model: config.model, provider: config.provider } : measurementTargets?.find(target => target.provider && target.model) ? { model: measurementTargets.find(target => target.model)!.model, provider: measurementTargets.find(target => target.provider)!.provider } : {}),
+    ...(measurementTargets?.length ? { measurementTargets } : {}) };
 }
-export async function executeRun(run: AgentRun, store: Store, config?: LiveConfig, browser?: { ask: BrowserAsk; engine: string }): Promise<AgentRun> {
+
+export async function executeRun(run: AgentRun, store: Store, config?: LiveConfig, browser?: { ask: BrowserAsk; engine: string }, measurement?: MeasurementRuntime): Promise<AgentRun> {
   const project = run.projectSnapshot;
   const persist = () => store.save('runs', run);
-  const session = config ? new ModelSession(config, run, persist) : null;
+  const primaryMeasurement = measurement?.targets.find(target => target.provider && target.model);
+  const analysisConfig = config || (primaryMeasurement ? { ...primaryMeasurement, apiKey: measurement!.apiKeys[primaryMeasurement.provider!] || '', maxQuestions: run.projectSnapshot.queries.length, webSearch: primaryMeasurement.webSearch !== false } : undefined);
+  const session = analysisConfig ? new ModelSession(analysisConfig as LiveConfig, run, persist) : null;
   const step = async (id: string, executor: 'rules' | 'archive' | 'llm' | 'browser', work: () => Promise<{ summary: string; ids?: string[]; blocked?: boolean }>) => {
     const current = run.steps.find(s => s.id === id)!;
     Object.assign(current, { status: 'running', startedAt: new Date().toISOString(), executor }); await persist();
@@ -34,7 +44,125 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
       if (config) run.queries = run.queries.slice(0, config.maxQuestions);
       return { summary: `采用问题集 v${project.queryVersion}，本轮 ${run.queries.length} 个问题。候选来自${project.origin === 'archive' ? '上游协议' : '本地问题模板与人工输入'}，不推断搜索量。`, ids: run.queries.map(q => q.id) };
     });
-    await step('audit', browser ? 'browser' : config ? 'llm' : 'archive', async () => {
+    await step('audit', measurement ? (measurement.targets.some(target => target.preferredChannel === 'web') ? 'browser' : 'llm') : browser ? 'browser' : config ? 'llm' : 'archive', async () => {
+      if (measurement) {
+        run.samples = [];
+        run.measurementUnits = run.queries.flatMap(query => measurement.targets.map(target => ({
+          id: `${query.id}--${target.id}`, queryId: query.id, question: query.text, targetId: target.id,
+          platform: target.platform, preferredChannel: target.preferredChannel, status: 'planned' as const, attempts: [],
+        })));
+        await persist();
+
+        const makeSample = (query: Query, target: MeasurementTarget, channel: 'web' | 'api', fallback: boolean): Sample => {
+          const sample: Sample = {
+            id: randomUUID(), queryId: query.id, question: query.text, intent: query.intent, branded: query.branded,
+            origin: channel === 'web' ? 'browser' : 'api', model: channel === 'web' ? `${target.platform} Web` : `${target.provider}/${target.model}`,
+            observedAt: new Date().toISOString(), runGroup: run.id,
+            protocolId: channel === 'web'
+              ? `browser-ui/v2;platform=${target.id};engine=${target.webEngine || 'unimplemented'};transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN`
+              : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};search=${target.webSearch === true}`,
+            collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [],
+            measurementUnitId: `${query.id}--${target.id}`, attemptId: randomUUID(), selected: false, fallback,
+          };
+          run.samples.push(sample);
+          return sample;
+        };
+        const makeAttempt = (sample: Sample, target: MeasurementTarget, channel: 'web' | 'api') => {
+          const unit = run.measurementUnits!.find(item => item.id === sample.measurementUnitId)!;
+          const attempt: MeasurementAttemptRecord = { id: sample.attemptId!, unitId: unit.id, targetId: target.id, platform: target.platform,
+            channel, ...(channel === 'api' ? { provider: target.provider, model: target.model } : {}),
+            status: 'failed' as 'completed' | 'failed' | 'skipped', sampleId: sample.id,
+            fallback: sample.fallback === true, startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() };
+          unit.attempts.push(attempt);
+          return attempt;
+        };
+        const select = (sample: Sample) => {
+          const unit = run.measurementUnits!.find(item => item.id === sample.measurementUnitId)!;
+          for (const item of run.samples) if (item.measurementUnitId === unit.id) item.selected = false;
+          sample.selected = true; unit.selectedSampleId = sample.id; unit.selectedChannel = sample.origin === 'browser' ? 'web' : 'api';
+        };
+        const finishUnit = (sample: Sample, completed: boolean) => {
+          const unit = run.measurementUnits!.find(item => item.id === sample.measurementUnitId)!;
+          unit.status = completed ? 'completed' : 'failed';
+        };
+        const collectApi = async (query: Query, target: MeasurementTarget, fallback: boolean) => {
+          const sample = makeSample(query, target, 'api', fallback);
+          await persist();
+          const attempt = makeAttempt(sample, target, 'api');
+          const apiConfig: LiveConfig = { provider: target.provider!, model: target.model!, apiKey: measurement.apiKeys[target.provider!] || '', maxQuestions: run.queries.length, webSearch: target.webSearch === true };
+          const targetSession = new ModelSession(apiConfig, run, persist);
+          try {
+            const answer = await targetSession.call('measurement', query.text, apiConfig.webSearch);
+            Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: answer.text,
+              rawResponse: answer.rawProviderResponse, observedAt: answer.createdAt, search: answer.search,
+              costUsd: answer.costUsd, latencyMs: answer.latencyMs,
+              citations: answer.citations.map(c => normalizeCitation(c, answer.rawProviderResponse)).filter(Boolean) });
+            if (answerTruncated(answer.rawProviderResponse)) {
+              sample.analysisStatus = 'failed'; sample.error = 'Provider 输出达到长度上限，原文已保留，本次不进入有效分析。';
+              attempt.status = 'failed'; attempt.reason = sample.error;
+            } else attempt.status = 'completed';
+            select(sample); finishUnit(sample, attempt.status === 'completed');
+          } catch (error) {
+            sample.error = error instanceof Error ? error.message : String(error);
+            attempt.status = 'failed'; attempt.reason = sample.error;
+            select(sample); finishUnit(sample, false);
+          }
+          attempt.finishedAt = new Date().toISOString(); await persist();
+          return { sample, completed: attempt.status === 'completed' };
+        };
+
+        await Promise.all(measurement.targets.map(async target => {
+          for (const query of run.queries) {
+            const unit = run.measurementUnits!.find(item => item.queryId === query.id && item.targetId === target.id)!;
+            const canApi = Boolean(target.provider && target.model);
+            const webUsable = target.preferredChannel === 'web' && target.webEngine === measurement.browser?.engine;
+            if (!webUsable && canApi) {
+              const result = await collectApi(query, target, target.preferredChannel === 'web');
+              if (!result.completed) unit.status = 'failed';
+              continue;
+            }
+            if (!webUsable) {
+              const channel = target.preferredChannel === 'web' ? 'web' : 'api';
+              const sample = makeSample(query, target, channel, false);
+              sample.error = target.preferredChannel === 'web'
+                ? `平台 ${target.platform} 的网页适配器当前不可用，且没有 API 降级配置。`
+                : `平台 ${target.platform} 没有可用的 API 配置。`;
+              const attempt = makeAttempt(sample, target, channel); attempt.status = 'skipped'; attempt.reason = sample.error;
+              select(sample); finishUnit(sample, false); await persist();
+              continue;
+            }
+
+            const sample = makeSample(query, target, 'web', false);
+            await persist();
+            const attempt = makeAttempt(sample, target, 'web');
+            try {
+              const result = await measurement.browser!.ask(query.text);
+              Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: result.answer,
+                observedAt: new Date().toISOString(), latencyMs: result.latencyMs, upstreamAttemptId: result.evidenceId,
+                protocolId: `${result.protocolId || `browser-ui/v2;engine=${target.webEngine}`};platform=${target.id}`,
+                citations: result.citations.map(url => ({ url, kind: 'search_result' as const, source: `browser-ui/${result.engine}`, integrity: 'unverified' as const })) });
+              attempt.status = 'completed'; select(sample); finishUnit(sample, true);
+            } catch (error) {
+              sample.error = error instanceof Error ? error.message : String(error);
+              attempt.status = 'failed'; attempt.reason = sample.error;
+              if (canApi) {
+                const fallback = await collectApi(query, target, true);
+                if (!fallback.completed) unit.status = 'failed';
+              } else { select(sample); finishUnit(sample, false); }
+            }
+            attempt.finishedAt = new Date().toISOString(); await persist();
+          }
+        }));
+
+        const selected = run.measurementUnits.map(unit => run.samples.find(sample => sample.id === unit.selectedSampleId)).filter(Boolean) as Sample[];
+        run.audit = auditSamples(selected, project);
+        run.audit.planned = run.measurementUnits.length;
+        run.audit.plannedUnits = run.measurementUnits.length;
+        run.audit.attemptCount = run.measurementUnits.reduce((count, unit) => count + unit.attempts.length, 0);
+        const channels = [...new Set(run.samples.map(sample => sample.origin === 'browser' ? 'web' : 'api'))];
+        return { summary: `计划 ${run.measurementUnits.length} 个问题×平台单元，执行 ${run.audit.attemptCount} 次尝试；采纳 ${run.audit.collected} 条有效原文。实际通道：${channels.join(' / ') || '无'}。`, ids: run.samples.map(s => s.id) };
+      }
+
       if (browser) {
         run.samples = [];
         for (const query of run.queries) {
@@ -116,32 +244,37 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
     });
     await step('monitor', 'rules', async () => {
       const groups = new Set(run.samples.map(s => s.runGroup));
-      run.limitations.push(browser ? '本轮为个人浏览器网页采样；地区和页面模型版本未独立核验，不等价于 API 结果。' : config ? 'API 回答不等价于消费级网页客户端结果。' : project.origin === 'synthetic' ? '全部回答为合成 fixture，只检验业务流程。' : '回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。');
+      const hasWeb = measurement ? run.samples.some(s => s.origin === 'browser') : Boolean(browser);
+      const hasApi = measurement ? run.samples.some(s => s.origin === 'api') : Boolean(config);
+      run.limitations.push(hasWeb && hasApi ? '本轮同时包含网页与 API 通道，结果按通道、平台、模型分开解释；API 降级不冒充网页结果。' : hasWeb ? '本轮为个人浏览器网页采样；地区和页面模型版本未独立核验，不等价于 API 结果。' : hasApi ? 'API 回答不等价于消费级网页客户端结果。' : project.origin === 'synthetic' ? '全部回答为合成 fixture，只检验业务流程。' : '回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。');
       return { summary: `保留 ${groups.size} 个原始采样批次，按模型、品牌词与非品牌词分组。没有干预对照，不输出提升结论。`, ids: [...groups] };
     });
     await step('review', 'rules', async () => {
       const conflicts = project.claims.filter(c => c.status === 'conflict');
-      run.review = `${run.mode === 'replay' ? '本轮完成案例回放。' : browser ? '本轮完成一次网页采样流程。' : '本轮完成一次 API 观察流程。'}计划 ${run.audit!.planned} 条，取得原文 ${run.audit!.collected} 条。${conflicts.length ? `先确认 ${conflicts.length} 项冲突，再生成可发布内容。` : '可继续审核内容与执行任务。'}下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。`;
+      const channelNote = measurement ? '本轮完成一次多平台品牌诊断。' : run.mode === 'replay' ? '本轮完成案例回放。' : browser ? '本轮完成一次网页采样流程。' : '本轮完成一次 API 观察流程。';
+      run.review = `${channelNote}计划 ${run.audit!.planned} 个单元，执行 ${run.audit!.attemptCount || 0} 次尝试，取得原文 ${run.audit!.collected} 条。${conflicts.length ? `先确认 ${conflicts.length} 项冲突，再生成可发布内容。` : '可继续审核内容与执行任务。'}下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。`;
       return { summary: run.review, ids: run.actions.map(a => a.id) };
     });
     run.status = (project.market === 'international' ? !run.audit?.analyzed : run.draft?.status === 'blocked') || run.samples.some(s => s.collectionStatus === 'failed') ? 'needs_review' : 'completed';
   } catch (error) { run.status = 'failed'; run.error = error instanceof Error ? error.message : String(error); }
   if (project.market === 'international') {
     const audit = run.audit;
+    const hasWeb = run.samples.some(s => s.origin === 'browser');
+    const hasApi = run.samples.some(s => s.origin === 'api');
     const labels: Record<string, string> = {ground:'Website profile',queries:'Prompt selection',audit:'Answer collection',sources:'Source analysis',strategy:'Actions',content:'Content draft',monitor:'Comparison protocol',review:'Diagnostic review'};
     const summaries: Record<string, string> = {
       ground: `${project.claims.length} source-backed website statements; ${project.claims.filter(c=>c.status==='confirmed').length} reviewed for publishing.`,
       queries: `Question set v${project.queryVersion}; ${run.queries.length} selected prompts.`,
-      audit: `${audit?.collected || 0} collected; ${audit?.analyzed || 0} analyzed; ${audit?.collectionFailed || 0} collection failures.`,
+      audit: `${audit?.plannedUnits || 0} planned units; ${audit?.attemptCount || 0} attempts; ${audit?.collected || 0} collected; ${audit?.analyzed || 0} analyzed; ${audit?.collectionFailed || 0} selected collection failures.`,
       sources: `${audit?.providerCitations || 0} provider citations; ${audit?.searchResults || 0} search results; ${audit?.groundings || 0} grounding items; ${audit?.answerUrls || 0} answer links.`,
       strategy: `${run.actions.length} evidence-linked actions saved.`,
       content: run.draft?.status==='blocked' ? 'Draft awaits review of source statements. Diagnosis does not require this publishing approval.' : 'Draft saved for review; no publishing performed.',
       monitor: 'Keep model, question text and search protocol fixed for repeat measurement.',
-      review: `${audit?.analyzed || 0} analyzable answers. A single run does not establish improvement.`,
+      review: `${audit?.analyzed || 0} analyzable adopted answers from ${audit?.plannedUnits || 0} planned units. A single run does not establish improvement.`,
     };
     for (const step of run.steps) { step.label = labels[step.id] || step.label; if (step.status !== 'failed') step.summary = summaries[step.id] || step.summary; }
     run.review = summaries.review;
-    run.limitations = ['Mention detection is a literal-name rule; recommendation wording is a heuristic requiring context review.', browser ? 'Personal consumer web-UI sampling; page model version is unknown. These are not API results.' : 'API answers do not represent consumer AI web interfaces.', 'Target country is requested metadata; regional routing is not enforced or independently verified.', 'Website statements have sources but are not independently verified facts.', 'No intervention control or causal improvement claim is available.',
+    run.limitations = ['Mention detection is a literal-name rule; recommendation wording is a heuristic requiring context review.', hasWeb && hasApi ? 'Web UI and API channels are both present and must be interpreted separately; API fallback is not a web observation.' : hasWeb ? 'Personal consumer web-UI sampling; page model version is unknown. These are not API results.' : 'API answers do not represent consumer AI web interfaces.', 'Target country is requested metadata; regional routing is not enforced or independently verified.', 'Website statements have sources but are not independently verified facts.', 'No intervention control or causal improvement claim is available.',
       ...run.limitations.filter(item=>item.includes('模型策略未采用')||item.includes('模型内容不可用')||item.includes('Provider'))];
   }
   run.finishedAt = new Date().toISOString(); await persist(); return run;
