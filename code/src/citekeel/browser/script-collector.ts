@@ -46,7 +46,7 @@ export async function createScriptCollector(engine: string, options: ScriptOptio
     async check() {
       const profile = await this.probe();
       // verifyProfile left its owned task tab selected. Reuse it; never borrow a user tab.
-      await bridge.command('navigate', { url: 'https://chatgpt.com/' });
+      await bridge.command('navigate', { url: 'https://chatgpt.com/?temporary-chat=true' });
       const auth = checkPage(await bridge.evaluate<{ authenticated?: boolean; error?: string }>(chatgptScript('auth')));
       if (auth.authenticated !== true) throw new CollectionError('not_logged_in', '未确认 ChatGPT 有效登录，请在 Xue 中手动登录后重试。');
       return { profile, authenticated: true, channel: 'web-ui' as const };

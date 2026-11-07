@@ -70,10 +70,10 @@ test('Docker browser mailbox accepts one authenticated claim and binds each resu
     let run;
     for (let i = 0; i < 40; i++) {
       run = await (await fetch('http://127.0.0.1:' + address.port + '/api/runs/' + runId)).json();
-      if (run.status === 'needs_review') break;
+      if (!['queued','running'].includes(run.status)) break;
       await new Promise(done => setTimeout(done, 10));
     }
-    assert.equal(run.status, 'needs_review');
+    assert.equal(run.status, 'completed');
     assert.equal(run.samples[0].collectionStatus, 'completed');
     assert.equal(run.samples[0].origin, 'browser');
     assert.equal(run.samples[0].upstreamAttemptId, fixture.evidenceId);

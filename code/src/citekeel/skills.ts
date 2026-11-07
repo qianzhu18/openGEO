@@ -13,10 +13,10 @@ export class ModelSession {
   private unknownCost = false;
   constructor(private config: LiveConfig, private run: AgentRun, private persist: () => Promise<void>) {}
   async call(purpose: string, prompt: string, search = false): Promise<AnswerResult> {
-    if (this.run.calls.length >= 8) throw new Error('已达到本轮 8 次请求上限');
+    if (this.run.calls.length >= 80) throw new Error('已达到本轮 80 次请求上限');
     if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
-    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.5-flash-02-23', 'qwen/qwen3-32b'].includes(this.config.model);
-    const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 1200;
+    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.5-flash-02-23', 'qwen/qwen3-32b', 'qwen/qwen3.8-flash', 'google/gemini-3.8-flash', 'deepseek/deepseek-v4.1-flash', 'bytedance-seed/seed-2-1-turbo', 'openai/gpt-6-luna'].includes(this.config.model);
+    const maxTokens = purpose === 'content' ? 2500 : purpose === 'strategy' ? 2200 : 2500;
     const call = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
       startedAt: new Date().toISOString(), status: 'running' as const,
       promptHash: createHash('sha256').update(prompt).digest('hex'),
@@ -67,7 +67,8 @@ export function planActions(project: Project, run: AgentRun): Action[] {
     rationale: `${conflicts.map(c => c.label).join('、')}存在不同来源的冲突，对外内容在确认前暂停。`,
     queryIds: run.queries.filter(q => q.branded).map(q => q.id), sampleIds: [], claimIds: conflicts.map(c => c.id),
     acceptance: '逐项选择有依据的事实值并记录来源，旧版本仍保留。' });
-  const failures = run.samples.filter(s => s.collectionStatus === 'failed' || s.analysisStatus !== 'completed');
+  const considered = run.samples.filter(s => s.selected !== false);
+  const failures = considered.filter(s => s.collectionStatus === 'failed' || s.analysisStatus !== 'completed');
   if (failures.length) add({ title: '复核失败样本，保留已有回答原文', priority: 'P0', kind: 'measurement',
     rationale: `${failures.length} 条记录采集或分析未完成，不能作为未提及统计。`,
     queryIds: [...new Set(failures.map(s => s.queryId))], sampleIds: failures.map(s => s.id), claimIds: [],
@@ -76,7 +77,13 @@ export function planActions(project: Project, run: AgentRun): Action[] {
   if (missing.length) add({ title: '补齐资质与关键声明的证据', priority: 'P1', kind: 'fact',
     rationale: missing.map(c => `${c.label}：${c.value}`).join('；'), queryIds: run.queries.filter(q => q.intent === '信任核验').map(q => q.id),
     sampleIds: [], claimIds: missing.map(c => c.id), acceptance: '提供可核对的原始文件与适用范围，缺失前不作确定性宣传。' });
-  const missed = run.samples.filter(s => !s.branded && run.audit?.judgments.find(j => j.sampleId === s.id)?.mentioned === false);
+  const completed = considered.filter(s => s.collectionStatus === 'completed' && s.analysisStatus === 'completed');
+  if (completed.length) add({ title: '整理已采纳回答，形成可复核的选型说明', priority: 'P1', kind: 'content',
+    rationale: `${completed.length} 条已采纳回答可以进入内容草稿；失败和未采纳尝试不进入结论。`,
+    queryIds: [...new Set(completed.map(s => s.queryId))].slice(0, 6), sampleIds: completed.slice(0, 6).map(s => s.id),
+    claimIds: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
+    acceptance: '产出一份可审核草稿。回答观察与已确认事实分开标注，不把未确认观察写成品牌事实。' });
+  const missed = considered.filter(s => !s.branded && run.audit?.judgments.find(j => j.sampleId === s.id)?.mentioned === false);
   if (missed.length) add({ title: '围绕非品牌采购问题补充选型说明', priority: 'P1', kind: 'content',
     rationale: `${missed.length} 条可判定的非品牌回答没有品牌名称；先补充适用场景、参数限制和选择依据。`,
     queryIds: [...new Set(missed.map(s => s.queryId))].slice(0, 6), sampleIds: missed.slice(0, 6).map(s => s.id),
@@ -120,8 +127,27 @@ export function makeDraft(project: Project, run: AgentRun): Draft {
   const conflicts = project.claims.filter(c => c.status === 'conflict');
   const facts = project.claims.filter(c => c.status === 'confirmed');
   const warnings = project.claims.filter(c => c.status !== 'confirmed').map(c => `${c.label}：${c.value}`);
-  if (conflicts.length || !facts.some(c => c.id !== 'c-domain')) return { title: '内容等待事实确认', markdown: '',
-    claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings: conflicts.length ? warnings : ['目前只有观察域名，请补充并确认产品事实后再生成品牌内容。'] };
+  if (conflicts.length) return { title: '内容等待事实确认', markdown: '', claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings };
+  if (!facts.some(c => c.id !== 'c-domain')) {
+    const answers = run.samples.filter(s => s.selected !== false && s.collectionStatus === 'completed' && s.answer.trim()).slice(0, 8);
+    if (!answers.length) return { title: '内容等待事实确认', markdown: '', claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings: ['目前只有观察域名，且本轮没有可采纳回答，请补充并确认产品事实后再生成品牌内容。'] };
+    const markdown = [
+      `# ${project.brand}：本轮诊断观察`,
+      '',
+      '> 观察稿，不是已确认事实，发布前必须人工审核。',
+      '',
+      ...answers.flatMap(sample => [
+        `### ${sample.question}`,
+        '',
+        `通道：${sample.origin === 'browser' ? '网页' : 'API'} · ${sample.model}`,
+        '',
+        sample.answer.slice(0, 900),
+        '',
+      ]),
+    ].join('\n');
+    return { title: `${project.brand}：诊断观察稿`, status: 'draft', generator: 'rules', claimIds: [],
+      warnings: ['项目还没有已确认的产品事实。以下只整理本轮已采纳回答，不能当作品牌事实或发布稿。'], markdown };
+  }
   const lines = facts.map(c => `- ${c.label}：${c.value}。〔${c.id}〕`).join('\n');
   const question = run.queries.find(q => !q.branded)?.text || `${project.brand}的产品适合哪些需求？`;
   return { title: `${project.brand}：选型与事实说明`, status: 'draft', generator: 'rules', claimIds: facts.map(c => c.id), warnings,

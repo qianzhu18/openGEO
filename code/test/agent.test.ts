@@ -187,10 +187,35 @@ test('diagnosis runs platforms concurrently, keeps web failures separate and ado
     const webUnit = run.measurementUnits!.find(unit => unit.queryId === project.queries[1]!.id && unit.targetId === 'chatgpt')!;
     assert.equal(webUnit.selectedChannel, 'web'); assert.equal(webUnit.attempts.length, 1);
     assert.equal(run.audit?.mention.denominator, 4);
-    assert.equal(run.samples.filter(sample => sample.fallback).length, 1);
+        assert.equal(run.samples.filter(sample => sample.fallback).length, 1);
+    assert.ok(run.actions.some(action => action.kind === 'content'));
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });
 
+
+test('an empty searched answer falls back once without search and does not block the diagnosis draft', async () => {
+  const { store, cleanup } = await temporaryStore(); const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url: unknown, init: any) => {
+    const payload = JSON.parse(init.body), prompt = payload.messages[0].content;
+    const searched = Boolean(payload.tools || payload.web_search_options);
+    const content = prompt.startsWith('你是 GEO') ? '{"actions":[]}'
+      : prompt.startsWith('请写一份') ? '本地诊断草稿。'
+      : searched ? '' : `可考虑衡川传感，回答来自 ${payload.model}。`;
+    return new Response(JSON.stringify({ choices: [{ finish_reason: searched ? 'length' : 'stop', message: { content } }], model: payload.model, usage: { cost: 0.001 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const project = syntheticProject(); project.queries = project.queries.slice(0, 1);
+    project.claims = project.claims.filter(claim => claim.id === 'c-domain');
+    const targets = [{ id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: 'google/gemini-3.8-flash', webSearch: true }];
+    const run = await executeRun(createRun(project, 'live', project.goal, undefined, targets), store, undefined, undefined, { targets, apiKeys: { openrouter: 'test-openrouter-key' } });
+    assert.equal(run.measurementUnits?.[0]?.attempts.length, 2);
+    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.status, 'failed');
+    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.status, 'completed');
+    assert.equal(run.measurementUnits?.[0]?.selectedChannel, 'api');
+    assert.equal(run.draft?.status, 'draft');
+    assert.match(run.draft?.markdown || '', /本轮诊断观察/);
+  } finally { globalThis.fetch = originalFetch; await cleanup(); }
+});
 test('web diagnosis asks the browser even when no API fallback is configured', async () => {
   const { store, cleanup } = await temporaryStore();
   try {

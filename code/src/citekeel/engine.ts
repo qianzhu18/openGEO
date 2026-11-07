@@ -27,7 +27,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
   const project = run.projectSnapshot;
   const persist = () => store.save('runs', run);
   const primaryMeasurement = measurement?.targets.find(target => target.provider && target.model);
-  const analysisConfig = config || (primaryMeasurement ? { ...primaryMeasurement, apiKey: measurement!.apiKeys[primaryMeasurement.provider!] || '', maxQuestions: run.projectSnapshot.queries.length, webSearch: primaryMeasurement.webSearch !== false } : undefined);
+  const analysisConfig = config || (primaryMeasurement ? { ...primaryMeasurement, apiKey: measurement!.apiKeys[primaryMeasurement.provider!] || '', maxQuestions: run.projectSnapshot.queries.length, webSearch: false } : undefined);
   const session = analysisConfig ? new ModelSession(analysisConfig as LiveConfig, run, persist) : null;
   const step = async (id: string, executor: 'rules' | 'archive' | 'llm' | 'browser', work: () => Promise<{ summary: string; ids?: string[]; blocked?: boolean }>) => {
     const current = run.steps.find(s => s.id === id)!;
@@ -105,7 +105,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           } catch (error) {
             sample.error = error instanceof Error ? error.message : String(error);
             attempt.status = 'failed'; attempt.reason = sample.error;
-            select(sample); finishUnit(sample, false);
+            if (fallback) { select(sample); finishUnit(sample, false); }
           }
           attempt.finishedAt = new Date().toISOString(); await persist();
           return { sample, completed: attempt.status === 'completed' };
@@ -117,7 +117,11 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             const canApi = Boolean(target.provider && target.model);
             const webUsable = target.preferredChannel === 'web' && target.webEngine === measurement.browser?.engine;
             if (!webUsable && canApi) {
-              const result = await collectApi(query, target, target.preferredChannel === 'web');
+              let result = await collectApi(query, target, target.preferredChannel === 'web');
+              if (!result.completed && target.webSearch === true) {
+                target.webSearch = false;
+                result = await collectApi(query, target, true);
+              }
               if (!result.completed) unit.status = 'failed';
               continue;
             }
@@ -146,7 +150,11 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
               sample.error = error instanceof Error ? error.message : String(error);
               attempt.status = 'failed'; attempt.reason = sample.error;
               if (canApi) {
-                const fallback = await collectApi(query, target, true);
+                let fallback = await collectApi(query, target, true);
+                if (!fallback.completed && target.webSearch === true) {
+                  target.webSearch = false;
+                  fallback = await collectApi(query, target, true);
+                }
                 if (!fallback.completed) unit.status = 'failed';
               } else { select(sample); finishUnit(sample, false); }
             }
