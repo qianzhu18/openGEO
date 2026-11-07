@@ -209,7 +209,7 @@ function diagnosisDialog() {
   const templates = state.status?.diagnosisTargets || [];
   const activeQueries = state.project.queries.filter(q => !q.status || q.status === 'active').slice(0, 10);
   const fallbackProvider = defaults.provider || 'openrouter';
-  const fallbackModel = defaults.model || templates.find(target => target.id === 'chatgpt')?.model || '';
+  const fallbackModel = templates.find(target => target.id === 'chatgpt')?.model || defaults.model || '';
   const questionFields = activeQueries.map((query, index) => `<label class="check-label question-option"><input type="checkbox" name="queryIds" value="${esc(query.id)}" ${index < 5 ? 'checked' : ''}><span><strong>${esc(query.branded ? '品牌核验' : '供应商发现')}</strong><small>${esc(query.text)}</small></span></label>`).join('');
   const providerOptions = provider => state.status.providers.map(item => `<option value="${esc(item.id)}" ${item.id === provider ? 'selected' : ''}>${esc(item.id)}${item.configured ? '（已配置）' : ''}</option>`).join('');
   const targetFields = templates.map(target => {
