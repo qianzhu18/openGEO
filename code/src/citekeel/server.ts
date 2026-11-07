@@ -26,8 +26,8 @@ const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
   deepseek: 'OPENGEO_DEEPSEEK_MODEL', qwen: 'OPENGEO_QWEN_MODEL', seed: 'OPENGEO_SEED_MODEL',
 };
 const OPENROUTER_DIAGNOSIS_MODELS = {
-  chatgpt: 'openai/gpt-4.1-mini', gemini: 'google/gemini-2.5-flash', perplexity: 'perplexity/sonar',
-  deepseek: 'deepseek/deepseek-chat', qwen: 'qwen/qwen3-32b', seed: 'bytedance-seed/seed-2.0-lite',
+  chatgpt: 'openai/gpt-6-luna', gemini: 'google/gemini-3.8-flash', perplexity: 'perplexity/sonar',
+  deepseek: 'deepseek/deepseek-v4.1-flash', qwen: 'qwen/qwen3.8-flash', seed: 'bytedance-seed/seed-2-1-turbo',
 } as const;
 async function body(req: IncomingMessage): Promise<any> {
   let size = 0; const chunks: Buffer[] = [];
