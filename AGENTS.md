@@ -1,13 +1,12 @@
 # AGENTS.md — 在这个仓库里工作
 
-本文件是给 AI Agent 与新贡献者的工作约定。产品方向、边界和验收以 [docs/13 产品计划](docs/13-产品计划.md) 与 [docs/15 本地浏览器与复刻策略](docs/15-本地浏览器与复刻策略.md) 为准。
+本文件是给 AI Agent 与新贡献者的工作约定。产品方向以 [docs/产品.md](docs/产品.md) 为准。
 
 ## 0. 先读什么
 
-1. [docs/13-产品计划.md](docs/13-产品计划.md)：定位、路线、反模式
-2. [docs/15-本地浏览器与复刻策略.md](docs/15-本地浏览器与复刻策略.md)：为什么本地浏览器是核心
-3. [docs/14-采集方式与差异.md](docs/14-采集方式与差异.md)：抓取链路与失败分类
-4. [docs/06-路线图.md](docs/06-路线图.md)：当前优先级
+1. [docs/产品.md](docs/产品.md)：定位、边界、现在有什么
+2. [docs/采集.md](docs/采集.md)：官网抓取与 AI 回答采样
+3. [docs/案例交付.md](docs/案例交付.md)：做案例时的合约与验收
 
 ## 1. 项目是什么
 
@@ -72,7 +71,7 @@ AGENTS.md    本文件
 
 - 本机指定 Chrome 用户为 Xue，不复制、导出或读取 Cookie，不通过新 profile 绕过平台配额或风控；
 - 使用 Google SSO 的平台沿用指定账号；国内平台由用户按实际方式登录，不强制 Google SSO；Claude 暂不纳入网页采样；
-- 旧 `session.ts` 与 Playwright engine 仅留作历史实现，不得用于真实采样或判断 Xue 登录态；当前 `browser:probe/check/ask/batch` 走本机 Kimi 扩展脚本桥接，提交前必须核验 Xue，具体见 [17 脚本化网页采集](docs/17-脚本化网页采集.md)；
+- 旧 `session.ts` 与 Playwright engine 仅留作历史实现，不得用于真实采样或判断 Xue 登录态；当前 `browser:probe/check/ask/batch` 走本机 Kimi 扩展脚本桥接，提交前必须核验 Xue，具体见 [采集](docs/采集.md)；
 - Xue 自动化须连接已有浏览器或扩展并核对实际 profile；验证码和登录由用户本人处理。用户名或采集器 signed_in 标记本身不能证明认证状态；
 - 登录墙、验证、失败页面保留原因，不计入有效回答。只有记录而没有真实发布与后测，不能称 GEO 效果闭环。
 
@@ -109,10 +108,10 @@ npm run browser:batch -- --file questions.jsonl
 
 ## 8. 文档规则
 
-- 文件名用中文 + 数字前缀；新增文档要登记到 [docs/文档索引.md](docs/文档索引.md)；
+- `docs/` 只保留仍在生效的三份：[产品](docs/产品.md)、[采集](docs/采集.md)、[案例交付](docs/案例交付.md)。竞品、行业和上游材料放 `references/`。不要为同一次结论再开路线图、索引或研究笔记；
 - 事实分级：UI / DOC / NET / JS / INFER / UNKNOWN，不要把推断写成事实；
 - 未实现的能力必须标"未实现"，不要写成已完成；
-- 改动行为时同步更新 `docs/13`、`docs/15` 或对应规格，不要让文档落后于代码。
+- 改动行为时同步更新对应的那一份，不要让文档落后于代码。
 
 ## 9. 提交与验证
 

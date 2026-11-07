@@ -18,6 +18,22 @@ export interface Sample {
   answer: string; rawResponse?: unknown; citations: Citation[]; error?: string;
   upstreamAttemptId?: string; search?: unknown; costUsd?: number; latencyMs?: number;
   recommendationEvidence?: string; sourceJudgment?: string;
+  measurementUnitId?: string; attemptId?: string; selected?: boolean; fallback?: boolean;
+}
+
+export interface MeasurementTarget {
+  id: string; platform: string; preferredChannel: 'web' | 'api';
+  webEngine?: 'chatgpt'; provider?: string; model?: string; webSearch?: boolean;
+}
+export interface MeasurementAttemptRecord {
+  id: string; unitId: string; targetId: string; platform: string; channel: 'web' | 'api';
+  provider?: string; model?: string; status: 'completed' | 'failed' | 'skipped';
+  sampleId?: string; fallback: boolean; reason?: string; startedAt: string; finishedAt: string;
+}
+export interface MeasurementUnit {
+  id: string; queryId: string; question: string; targetId: string; platform: string;
+  preferredChannel: 'web' | 'api'; status: 'planned' | 'completed' | 'failed';
+  attempts: MeasurementAttemptRecord[]; selectedSampleId?: string; selectedChannel?: 'web' | 'api';
 }
 export interface TrackedBrand { id: string; name: string; aliases: string[]; domains: string[]; status: 'active' | 'suggested' | 'inactive'; isOwn: boolean }
 export interface Project {
@@ -43,6 +59,7 @@ export interface Audit {
   mention: Metric; recommendation: Metric; judgments: Judgment[];
   providerCitations: number; searchResults: number; groundings: number; answerUrls: number;
   citationIntegrityFailures: number;
+  plannedUnits?: number; attemptCount?: number;
   strata: { label: string; count: number; collected: number; mentioned: number; denominator: number }[];
 }
 export interface Action {
@@ -72,6 +89,7 @@ export interface AgentRun {
   createdAt: string; finishedAt?: string; steps: Step[]; queries: Query[]; samples: Sample[];
   audit?: Audit; actions: Action[]; draft?: Draft; calls: ModelCall[]; publications: Publication[];
   limitations: string[]; review: string; error?: string; model?: string; provider?: string;
+  measurementTargets?: MeasurementTarget[]; measurementUnits?: MeasurementUnit[];
 }
 export interface LiveConfig { provider: string; model: string; apiKey: string; maxQuestions: number; webSearch: boolean }
 export const SKILLS = [

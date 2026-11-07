@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 
 export class CollectionError extends Error {
   evidencePath?: string;
+  evidenceId?: string;
   constructor(public code: string, message: string) { super(message); }
 }
 
@@ -31,7 +32,7 @@ export class KimiBridge implements BrowserBridge {
       const response = await fetch(`${this.url}/command`, {
         method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ action, args, session: 'opengeo-collector' }),
-        signal: AbortSignal.any([AbortSignal.timeout(15_000), ...(this.signal ? [this.signal] : [])]),
+        signal: AbortSignal.any([AbortSignal.timeout(30_000), ...(this.signal ? [this.signal] : [])]),
       });
       if (!response.ok) throw new Error();
       reply = await response.json();
@@ -97,12 +98,36 @@ export async function selectedHistory(configPath = 'data/browser-config.json'): 
   return join(base, matches[0][0], 'History');
 }
 
-export async function historyContains(history: string, url: string): Promise<boolean> {
-  // Load lazily: missing node:sqlite fails closed, and --help needs no SQLite/browser.
+function historyLocked(error: unknown): boolean {
+  const value = error as { errcode?: number; errstr?: string; message?: string };
+  return value.errcode === 5 || value.errcode === 6 || /database is locked|database schema is locked/i.test(`${value.errstr || ''} ${value.message || ''}`);
+}
+
+async function historyHasUrl(path: string, url: string, timeout = 0): Promise<boolean> {
   const { DatabaseSync } = await import('node:sqlite');
-  const db = new DatabaseSync(history, { readOnly: true });
+  const db = new DatabaseSync(path, timeout > 0 ? { readOnly: true, timeout } : { readOnly: true });
   try { return !!db.prepare('SELECT 1 FROM urls WHERE url = ? LIMIT 1').get(url); }
   finally { db.close(); }
+}
+
+export async function historyContains(history: string, url: string): Promise<boolean> {
+  // Load lazily: missing node:sqlite fails closed, and --help needs no SQLite/browser.
+  // Chrome keeps History open. A short busy wait covers a commit; a locked file is
+  // copied with its WAL and queried once, then the copy is deleted. No other rows are read.
+  try { return await historyHasUrl(history, url, 200); }
+  catch (error) {
+    if (!historyLocked(error)) throw error;
+    const { copyFile, mkdtemp, rm } = await import('node:fs/promises');
+    const { tmpdir } = await import('node:os');
+    const dir = await mkdtemp(join(tmpdir(), 'opengeo-history-'));
+    try {
+      const snapshot = join(dir, 'History');
+      await copyFile(history, snapshot);
+      await copyFile(`${history}-wal`, `${snapshot}-wal`).catch(() => undefined);
+      await copyFile(`${history}-shm`, `${snapshot}-shm`).catch(() => undefined);
+      return await historyHasUrl(snapshot, url);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
 }
 
 /** Prove the extension's actual navigation reached Xue, rather than trusting its signed_in flag. */

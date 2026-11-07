@@ -1,6 +1,7 @@
 import { PromptService, WorkspaceError } from './prompts.js';
 import { RecordingService } from './recordings.js';
 import { createBrowserCollector, type BrowserEngine } from './browser/collector.js';
+import { HostBrowserMailbox } from './browser/host-mailbox.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -14,9 +15,17 @@ import { enrichWebsiteResearch } from './semantic-research.js';
 import { createRun, executeRun } from './engine.js';
 import { validateImport } from './analysis.js';
 import { exportRun, reportMarkdown } from './report.js';
-import { SKILLS, type AgentRun, type LiveConfig, type Project, type Query } from './types.js';
+import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
 
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
+const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
+  chatgpt: 'OPENGEO_CHATGPT_API_MODEL', gemini: 'OPENGEO_GEMINI_MODEL', perplexity: 'OPENGEO_PERPLEXITY_MODEL',
+  deepseek: 'OPENGEO_DEEPSEEK_MODEL', qwen: 'OPENGEO_QWEN_MODEL', seed: 'OPENGEO_SEED_MODEL',
+};
+const OPENROUTER_DIAGNOSIS_MODELS = {
+  chatgpt: 'openai/gpt-4.1-mini', gemini: 'google/gemini-2.5-flash', perplexity: 'perplexity/sonar',
+  deepseek: 'deepseek/deepseek-chat', qwen: 'qwen/qwen3-32b', seed: 'bytedance-seed/seed-2.0-lite',
+} as const;
 async function body(req: IncomingMessage): Promise<any> {
   let size = 0; const chunks: Buffer[] = [];
   for await (const chunk of req) {
@@ -34,7 +43,24 @@ function send(res: ServerResponse, status: number, value: unknown) {
   res.end(JSON.stringify(value));
 }
 function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.brand, origin: p.origin, domain: p.domain, description: p.description, sampleCount: p.samples.length, queryCount: p.queries.length }; }
-export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch } = {}) {
+function diagnosisTemplates() {
+  return [
+    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.chatgpt] || OPENROUTER_DIAGNOSIS_MODELS.chatgpt, webSearch: true },
+    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.gemini] || OPENROUTER_DIAGNOSIS_MODELS.gemini, webSearch: true },
+    { id: 'perplexity', platform: 'Perplexity', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.perplexity] || OPENROUTER_DIAGNOSIS_MODELS.perplexity, webSearch: true },
+    { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.deepseek] || OPENROUTER_DIAGNOSIS_MODELS.deepseek, webSearch: false },
+    { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.qwen] || OPENROUTER_DIAGNOSIS_MODELS.qwen, webSearch: false },
+    { id: 'seed', platform: '豆包 Seed', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.seed] || OPENROUTER_DIAGNOSIS_MODELS.seed, webSearch: false },
+  ].map(target => ({ ...target, configured: target.provider ? hasProviderKey(target.provider) : false }));
+}
+function hostWebCollector(worker: HostBrowserMailbox) {
+  return { engine: 'chatgpt', ask: async (prompt: string) => {
+    const [row] = await worker.batch('chatgpt', [prompt]);
+    if (!row || row.ok !== true) throw new Error(row && row.ok === false ? row.error : '网页采集没有返回记录。');
+    return row.data;
+  }, async close() {} };
+}
+export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch; browserWorker?: HostBrowserMailbox } = {}) {
   await store.initialize(await loadCases());
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
@@ -55,6 +81,20 @@ export async function createApp(store = new Store(), options: { research?: typeo
           'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'" });
         return res.end(await readFile(join(process.cwd(), 'public', file)));
       }
+      const workerAction = path.match(/^\/api\/local-browser-worker\/(claim|alive|finish)$/)?.[1];
+      if (workerAction && method === 'POST' && options.browserWorker) {
+        const worker = options.browserWorker;
+        const input = await body(req);
+        const nonce = worker.authorize(workerAction, req.headers.authorization, input);
+        if (!nonce) return send(res, 403, { error: '无效的本机 worker 认证。' });
+        const sendWorker = (status: number, value: object) => {
+          res.setHeader('x-opengeo-proof', worker.sign(workerAction, nonce, value));
+          return send(res, status, value);
+        };
+        if (workerAction === 'claim') return sendWorker(200, { task: worker.claim() });
+        if (workerAction === 'alive') return sendWorker(200, { alive: worker.alive(input.id) });
+        return worker.finish(input.id, input.reply) ? sendWorker(200, { ok: true }) : sendWorker(409, { error: '任务不存在、过期或回传格式无效。' });
+      }
       if (path === '/api/researches' && method === 'POST') return send(res, 202, await research.start(await body(req)));
       const researchMatch = path.match(/^\/api\/researches\/([a-zA-Z0-9_-]+)(?:\/(accept))?$/);
       if (researchMatch) {
@@ -69,7 +109,8 @@ export async function createApp(store = new Store(), options: { research?: typeo
         return send(res, 405, { error: 'Unsupported research operation.' });
       }
       if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: '0.1.0', upstream: 'niubigeo v0.3.2', skills: SKILLS,
-        providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
+        providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
+        diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
       if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(projectSummary));
       if (path === '/api/projects' && method === 'POST') {
         const input = await body(req), brand = textField(input.brand, '品牌', 80), industry = textField(input.industry, '行业', 100);
@@ -176,7 +217,9 @@ export async function createApp(store = new Store(), options: { research?: typeo
         const mode = input.mode === 'live' ? 'live' : 'replay'; let config: LiveConfig | undefined;
         const channel = input.channel === 'browser' ? 'browser' : 'api';
         let browserEngine: BrowserEngine | undefined;
-        if (mode === 'live') {
+        let diagnosis: import('./engine.js').MeasurementRuntime | undefined;
+        let diagnosisTargets: import('./types.js').MeasurementTarget[] | undefined;
+        if (mode === 'live' && input.diagnosis !== true) {
           const maxQuestions = channel === 'browser' ? Math.min(3, Math.max(1, Number(input.maxQuestions) || 2)) : Math.min(5, Math.max(1, Number(input.maxQuestions) || 3));
           if (Array.isArray(input.queryIds)) {
             if (!input.queryIds.length || input.queryIds.length > maxQuestions || new Set(input.queryIds).size !== input.queryIds.length) throw new WorkspaceError(channel === 'browser' ? 'Select 1–3 distinct active prompts for a browser run.' : 'Select 1–5 distinct active prompts.');
@@ -204,15 +247,61 @@ export async function createApp(store = new Store(), options: { research?: typeo
             browserEngine = input.engine === 'perplexity' ? 'perplexity' : 'chatgpt';
           }
         }
+        if (input.diagnosis === true) {
+          if (mode !== 'live') throw new WorkspaceError('Diagnosis must start a live run.');
+          const maxQuestions = Math.min(10, Math.max(1, Number(input.maxQuestions) || 5));
+          const activeQueries = project.queries.filter(q => !q.status || q.status === 'active');
+          let selectedQueries: Query[];
+          if (Array.isArray(input.queryIds)) {
+            selectedQueries = input.queryIds.map((id: unknown) => {
+              const query = activeQueries.find(q => q.id === id);
+              if (!query) throw new WorkspaceError('Diagnosis can only select active prompts.');
+              return query;
+            });
+            if (!selectedQueries.length || selectedQueries.length > maxQuestions || new Set(selectedQueries.map(query => query.id)).size !== selectedQueries.length) throw new WorkspaceError(`Select 1–${maxQuestions} distinct active prompts.`);
+          } else selectedQueries = activeQueries.slice(0, maxQuestions);
+          project.queries = selectedQueries;
+
+          if (!Array.isArray(input.targets) || !input.targets.length || input.targets.length > 6) throw new WorkspaceError('Select 1–6 diagnosis platforms.');
+          const parsedTargets: MeasurementTarget[] = input.targets.map((value: any): MeasurementTarget => {
+            const id = textField(value?.id, '平台 ID', 40), platform = textField(value?.platform, '平台名称', 80);
+            const preferredChannel = value?.preferredChannel === 'api' ? 'api' : 'web';
+            const provider = value?.provider === undefined || value?.provider === null || value?.provider === '' ? undefined : textField(value.provider, 'Provider', 30);
+            const model = value?.model === undefined || value?.model === null || value?.model === '' ? undefined : textField(value.model, '模型', 200);
+            if (!/^[a-z0-9][a-z0-9-]*$/.test(id) || !platform) throw new WorkspaceError('Invalid diagnosis platform.');
+            if (provider && !PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
+            if ((provider && !model) || (!provider && model)) throw new WorkspaceError('API fallback needs both provider and model.');
+            if (preferredChannel === 'web' && value?.webEngine && value.webEngine !== 'chatgpt') throw new WorkspaceError('Only the ChatGPT web adapter is implemented.');
+            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: value?.webSearch === true };
+          });
+          if (new Set(parsedTargets.map(target => target.id)).size !== parsedTargets.length) throw new WorkspaceError('Diagnosis platforms must be unique.');
+          if (!parsedTargets.some(target => target.preferredChannel === 'web' || target.provider)) throw new WorkspaceError('Select at least one collectable platform.');
+
+          const submittedKeys: Record<string, unknown> = input.apiKeys && typeof input.apiKeys === 'object' && !Array.isArray(input.apiKeys) ? input.apiKeys : {};
+          const apiKeys: Record<string, string> = {};
+          for (const provider of [...new Set(parsedTargets.map(target => target.provider).filter((provider): provider is string => Boolean(provider)))]) {
+            const submitted = submittedKeys[provider];
+            if (submitted !== undefined && (typeof submitted !== 'string' || submitted.length > 2000)) throw new WorkspaceError('Invalid API key.');
+            const key = (typeof submitted === 'string' && submitted.trim()) || resolveProviderKey(provider!);
+            if (!key) throw new WorkspaceError(`Provider ${provider} is not configured for API fallback.`);
+            apiKeys[provider!] = key;
+          }
+          diagnosis = { targets: parsedTargets, apiKeys };
+          diagnosisTargets = parsedTargets;
+          browserEngine = parsedTargets.some(target => target.preferredChannel === 'web' && target.webEngine === 'chatgpt') ? 'chatgpt' : undefined;
+        }
         if (activeRunId) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
-        const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config);
+        const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config, diagnosisTargets);
         activeRunId = run.id;
         try { await store.save('runs', run); } catch (error) { activeRunId = null; throw error; }
         void (async () => {
-          let collector: Awaited<ReturnType<typeof createBrowserCollector>> | undefined;
+          let collector: { close: () => Promise<void> } | undefined;
           try {
-            if (browserEngine) collector = await createBrowserCollector(browserEngine);
-            await executeRun(run, store, config, collector ? { ask: collector.ask, engine: collector.engine } : undefined);
+            const browserRuntime = browserEngine
+              ? options.browserWorker ? hostWebCollector(options.browserWorker) : await createBrowserCollector(browserEngine)
+              : undefined;
+            collector = browserRuntime;
+            await executeRun(run, store, config, browserRuntime, diagnosis ? { ...diagnosis, ...(browserRuntime ? { browser: browserRuntime } : {}) } : undefined);
           } catch (error) {
             run.status = 'failed'; run.error = error instanceof Error ? error.message : '执行异常，已有证据已保留'; await store.save('runs', run);
           } finally {
@@ -254,7 +343,9 @@ export async function createApp(store = new Store(), options: { research?: typeo
 
 if (process.argv[1]?.endsWith('/server.ts') || process.argv[1]?.endsWith('/server.js')) {
   loadDotEnv(); const port = Number(process.env.CITEKEEL_PORT || 8847);
-  const { server } = await createApp();
-  server.listen(port, '127.0.0.1', () => console.log(`CiteKeel 引舟: http://127.0.0.1:${port}`));
+  const container = process.env.OPENGEO_CONTAINER === '1';
+  const browserWorker = container ? new HostBrowserMailbox((await readFile('/run/secrets/opengeo_worker_token', 'utf8')).trim()) : undefined;
+  const { server } = await createApp(undefined, { browserWorker });
+  server.listen(port, container ? '0.0.0.0' : '127.0.0.1', () => console.log(`OpenGEO: http://127.0.0.1:${port}`));
   server.on('error', error => { console.error(error.message); process.exitCode = 1; });
 }

@@ -14,7 +14,7 @@ const root = resolve(directory);
 const json = async <T>(path: string): Promise<T> => JSON.parse(await readFile(path, 'utf8')) as T;
 const options = new Map<string, string>();
 if (command === 'import-attempt') {
-  for (let index = 3; index < process.argv.length; index += 2) {
+  for (let index = 4; index < process.argv.length; index += 2) {
     const key = process.argv[index];
     if (!key?.startsWith('--') || index + 1 >= process.argv.length) throw new Error('导入参数必须成对使用 --名称 值');
     options.set(key.slice(2), process.argv[index + 1]!);

@@ -60,11 +60,15 @@ export interface EvaluatedAttempt {
   attempt: CampaignAttempt; eligible: boolean; exclusion: string | null; answer: string;
   mentioned: boolean | null; recommendation: boolean | null;
   mentionQuote: { quote: string; start: number; end: number } | null;
+  top1: boolean | null; top3: boolean | null; rank: number | null;
   visibleUrls: string[]; citationExtraction: 'complete' | 'partial' | 'unknown';
 }
 export interface CampaignMetric {
   questionId: string; question: string; questionRevision: number; branded: boolean; platform: string; protocol: CampaignProtocol | null;
   numerator: number; denominator: number; value: number | null; attemptIds: string[];
+  appearance: { numerator: number; denominator: number; value: number | null };
+  top1: { numerator: number; denominator: number; value: number | null };
+  top3: { numerator: number; denominator: number; value: number | null };
 }
 export interface CampaignRun {
   schemaVersion: 'opengeo-campaign-run/v1'; id: string; specHash: string; brandScopeHash: string; asOf: string;

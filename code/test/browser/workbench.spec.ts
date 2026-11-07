@@ -4,7 +4,7 @@ test('replays public archive, opens original evidence and exports a report', asy
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/?project=posthog');
   await expect(page.getByRole('heading', { name: '把观察变成下一步行动' })).toBeVisible();
-  await page.getByRole('button', { name: '▷ 运行 Agent', exact: true }).click();
+  await page.getByRole('button', { name: '仅回放', exact: true }).click();
   await expect(page.getByText('本轮已完成，结果与执行记录已保存在本地')).toBeVisible();
   await page.getByRole('button', { name: '回答与信源', exact: true }).click();
   await expect(page.locator('tbody tr').first()).toBeVisible();
@@ -30,6 +30,31 @@ test('creates a real user project and confirms a fact without creating fake answ
   const runId = await page.locator('[data-export]').count(); expect(runId).toBe(1);
   await page.getByRole('button', { name: '回答与信源', exact: true }).click();
   await expect(page.getByText('当前没有匹配的回答。可以导入原文，或用模型执行新测量。')).toBeVisible();
+});
+
+test('diagnosis entry submits a frozen question set and platform matrix without storing keys', async ({ page }) => {
+  await page.goto('/?project=sensor');
+  let payload: Record<string, unknown> | undefined;
+  await page.route('**/api/runs', async route => {
+    if (route.request().method() !== 'POST') { await route.continue(); return; }
+    payload = route.request().postDataJSON(); await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ id: 'diagnosis-ui-test' }) });
+  });
+  await page.getByRole('button', { name: '⇶ 运行品牌诊断' }).click();
+  await expect(page.getByRole('heading', { name: '运行一轮品牌诊断' })).toBeVisible();
+  await page.getByRole('checkbox', { name: '千问 API 通道' }).check();
+  await page.locator('input[name="key-openrouter"]').fill('page-memory-key-not-persisted');
+  await page.getByRole('button', { name: '确认问题并运行' }).click();
+  await expect.poll(() => payload?.diagnosis).toBe(true);
+  expect((payload?.queryIds as string[]).length).toBe(5);
+  expect(payload?.targets).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: 'chatgpt', preferredChannel: 'web' }),
+    expect.objectContaining({ id: 'gemini', provider: 'openrouter', model: 'google/gemini-2.5-flash', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'perplexity', provider: 'openrouter', model: 'perplexity/sonar', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'deepseek', provider: 'openrouter', model: 'deepseek/deepseek-chat', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3-32b', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'seed', provider: 'openrouter', model: 'bytedance-seed/seed-2.0-lite', preferredChannel: 'api' }),
+  ]));
+  expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('page-memory-key-not-persisted');
 });
 
 test('mobile navigation remains usable without document overflow', async ({ page }) => {
