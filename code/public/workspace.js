@@ -123,7 +123,9 @@ async function pollRun() {
 }
 async function openRun(id, view = 'agent') {
   const selection = ++runSelection; clearTimeout(pollTimer);
-  const run = await api(`/api/runs/${encodeURIComponent(id)}`);
+  let run;
+  try { run = await api(`/api/runs/${encodeURIComponent(id)}`); }
+  catch (error) { if (selection === runSelection) schedulePoll(); throw error; }
   if (selection !== runSelection) return;
   state.run = run; state.view = view; await refreshAnalysis();
   if (selection !== runSelection) return;

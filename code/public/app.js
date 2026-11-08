@@ -134,7 +134,9 @@ async function pollRun(id) {
 }
 async function selectRun(id) {
   const selection = ++runSelection;
-  const run = await api(`/api/runs/${encodeURIComponent(id)}`);
+  let run;
+  try { run = await api(`/api/runs/${encodeURIComponent(id)}`); }
+  catch (error) { if (selection === runSelection && running()) pollRun(state.run.id); throw error; }
   if (selection !== runSelection) return;
   state.run = run; state.view = 'overview'; await refreshAnalysis();
   if (selection !== runSelection) return;

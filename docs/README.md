@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [工程细节与松灵补测](OPENGEO-20261108-ENGINEERING/TaskInfo.md) | 三项修复完成；新采样不足 | 修复已测试并回用；补测受地区限制与空回答中断，需恢复通道后重测 | [Report](OPENGEO-20261108-ENGINEERING/Report.md) / [Todo](OPENGEO-20261108-ENGINEERING/Todo.md) |
 | [数据分析看板与调研报告](OPENGEO-20261108-ANALYTICS-REPORT/TaskInfo.md) | 已完成本轮增量 | 共用分析投影、分组/覆盖/信源与 Markdown/HTML 导出 | [Report](OPENGEO-20261108-ANALYTICS-REPORT/Report.md) / [Todo](OPENGEO-20261108-ANALYTICS-REPORT/Todo.md) |
 | [国内外竞品与版本规划](OPENGEO-20261108-COMPETITOR-ROADMAP/TaskInfo.md) | 研究与规划已完成，功能未实施 | 按版本队列推进；先净基线与事实，再策略与内容 | [Report](OPENGEO-20261108-COMPETITOR-ROADMAP/Report.md) / [里程碑](todo/版本里程碑.md) |
 | [docs 项目化管理重构](OPENGEO-20261108-DOCS-PROJECT-MANAGEMENT/TaskInfo.md) | 已完成 | 后续文档变更先更新本入口和对应生效规格 | [Report](OPENGEO-20261108-DOCS-PROJECT-MANAGEMENT/Report.md) |
