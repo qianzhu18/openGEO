@@ -84,12 +84,16 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           const unit = run.measurementUnits!.find(item => item.id === sample.measurementUnitId)!;
           unit.status = completed ? 'completed' : 'failed';
         };
+        // Preserve unknown-cost/failure state for the entire target, not just one question.
+        const targetSessions = new Map<string, ModelSession>();
+        if (primaryMeasurement && session) targetSessions.set(primaryMeasurement.id, session);
         const collectApi = async (query: Query, target: MeasurementTarget, fallback: boolean) => {
           const sample = makeSample(query, target, 'api', fallback);
           await persist();
           const attempt = makeAttempt(sample, target, 'api');
           const apiConfig: LiveConfig = { provider: target.provider!, model: target.model!, apiKey: measurement.apiKeys[target.provider!] || '', maxQuestions: run.queries.length, webSearch: target.webSearch === true };
-          const targetSession = new ModelSession(apiConfig, run, persist);
+          let targetSession = targetSessions.get(target.id);
+          if (!targetSession) { targetSession = new ModelSession(apiConfig, run, persist); targetSessions.set(target.id, targetSession); }
           try {
             const answer = await targetSession.call('measurement', query.text, apiConfig.webSearch);
             Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: answer.text,

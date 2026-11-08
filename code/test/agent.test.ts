@@ -273,3 +273,9 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     const forbidden = await fetch(base + '/api/projects', { headers: { Origin: 'https://elsewhere.example' } }); assert.equal(forbidden.status, 403);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await cleanup(); }
 });
+
+test('diagnosis retains target failure state across questions and makes no further network calls', async () => {
+ const {store,cleanup}=await temporaryStore();const original=globalThis.fetch;let failedRouteCalls=0;
+ globalThis.fetch=async (_url:unknown,init:any)=>{const p=JSON.parse(init.body);if(p.model==='blocked-model'){failedRouteCalls++;return new Response(JSON.stringify({error:{message:'Model is not available in your region'}}),{status:403});}return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'衡川传感'}}],usage:{cost:0.001}}),{status:200,headers:{'content-type':'application/json'}});};
+ try{const p=syntheticProject();p.queries=p.queries.slice(0,3);const targets=[{id:'blocked',platform:'Blocked',provider:'deepseek',model:'blocked-model',preferredChannel:'api' as const}];const r=await executeRun(createRun(p,'live',p.goal,undefined,targets),store,undefined,undefined,{targets,apiKeys:{deepseek:'fixture'}});assert.equal(failedRouteCalls,1);assert.equal(r.measurementUnits?.length,3);assert.equal(r.samples.filter(s=>s.analysisStatus==='completed').length,0);assert.match(r.samples[1]?.error||'',/暂停后续模型调用/);}finally{globalThis.fetch=original;await cleanup();}
+});
