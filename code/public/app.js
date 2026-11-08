@@ -4,7 +4,8 @@ const $ = s => document.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? esc(u.toString()) : '#'; } catch { return '#'; } };
 const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
-let runSelection = 0;
+let runSelection = 0, projectSelection = 0;
+let showExamples = false;
 try { state.settings = JSON.parse(localStorage.getItem('citekeel-model') || '{}'); } catch {}
 const NAV = [['overview', '工作概览'], ['queries', '问题空间'], ['evidence', '回答与信源'], ['sources', '信源分析'], ['actions', '策略任务'], ['content', '内容与交付'], ['facts', '品牌事实'], ['flow', 'Agent 思路与历史']];
 const LABELS = { queued: '等待执行', running: '执行中', completed: '已完成', needs_review: '待处理', failed: '执行失败', interrupted: '已中断', pending: '待执行', blocked: '等待确认', confirmed: '已确认', unconfirmed: '待确认', conflict: '口径冲突', draft: '草稿', reviewed: '已审核' };
@@ -22,11 +23,16 @@ async function api(path, options = {}) {
 function toast(message) { $('#toast').textContent = message; $('#toast').classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => $('#toast').classList.remove('show'), 4500); }
 async function refreshProjects() { state.projects = await api('/api/projects'); }
 async function selectProject(id) {
-  ++runSelection;
-  state.project = await api(`/api/projects/${id}`); state.selectedSample = ''; state.filter = ''; state.modelFilter = 'all'; state.rangeFilter = 'all';
-  state.history = await api(`/api/runs?projectId=${encodeURIComponent(id)}`);
-  state.run = state.history.length ? await api(`/api/runs/${state.history[0].id}`) : null;
-  state.analysisFilters = {}; state.analytics = state.run?.analytics || state.project.analytics;
+  const selection = ++projectSelection; ++runSelection;
+  state.project = null; state.run = null; state.history = []; state.analytics = null;
+  $('#app').innerHTML = '<div class="boot">正在读取项目…</div>';
+  const [project, history] = await Promise.all([api(`/api/projects/${id}`), api(`/api/runs?projectId=${encodeURIComponent(id)}`)]);
+  const run = history.length ? await api(`/api/runs/${history[0].id}?projectId=${encodeURIComponent(id)}`) : null;
+  if (selection !== projectSelection) return;
+  state.project = project; state.history = history; state.run = run;
+  state.selectedSample = ''; state.filter = ''; state.modelFilter = 'all'; state.rangeFilter = 'all'; state.analysisFilters = {};
+  state.analytics = run?.analytics || project.analytics;
+  const url = new URL(location.href); url.searchParams.set('project', id); window.history.replaceState(null, '', url);
   localStorage.setItem('citekeel-project', id); render(); if (running()) pollRun(state.run.id);
 }
 function pageHeader(title, description = '', actions = '') {
@@ -113,11 +119,12 @@ function navItem(id, icon, nested = false) {
   return `<button data-nav="${id}" class="${state.view===id?'selected ':''}${nested?'nested':''}" ${state.view===id?'aria-current="page"':''}><span class="nav-icon" aria-hidden="true">${icon}</span><span>${label}</span></button>`;
 }
 function render() {
-  if (!state.project || !state.status) return;
+  if (!state.status) return;
+  if (!state.project) { $('#app').innerHTML = '<main class="boot"><h1>创建你的第一个项目</h1><button class="btn primary" data-new>＋ 新建项目</button><button class="btn" data-projects>项目管理与回收站</button></main>'; return; }
   const pages = { overview, facts: factsPage, queries: queriesPage, evidence: evidencePage, sources: sourcesPage, actions: actionsPage, content: contentPage, flow: flowPage };
   const label = NAV.find(n=>n[0]===state.view)?.[1] || '工作概览';
   const section = ['actions','content'].includes(state.view) ? '优化' : state.view === 'facts' ? '项目' : state.view === 'flow' ? 'Agent' : '分析';
-  $('#app').innerHTML = `<div class="shell ${state.collapsed?'rail-collapsed':''}"><aside class="sidebar"><div class="brand"><div class="brand-symbol" aria-hidden="true">O</div><div><div class="wordmark">OpenGEO</div><div class="brand-caption">GEO WORKSPACE</div></div></div><div class="project-picker"><label for="project-picker">当前项目</label><select id="project-picker">${state.projects.map(p=>`<option value="${esc(p.id)}" ${state.project.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div><nav class="nav" aria-label="工作台导航">${navItem('flow','♧')}<div class="nav-group">分析 <span>Analysis</span></div>${navItem('overview','▦')}<div class="tracking-label"><span aria-hidden="true">⌁</span> 监测 <span class="tracking-chevron">⌄</span></div>${navItem('queries','',true)}${navItem('evidence','',true)}${navItem('sources','',true)}<div class="nav-group">优化 <span>Optimization</span></div>${navItem('actions','♧')}${navItem('content','▤')}<div class="nav-group">项目 <span>Management</span></div>${navItem('facts','⚑')}</nav><div class="side-bottom"><a class="side-button" href="/create-workspace">＋ Create workspace</a><button class="side-button" data-new>＋ 新建项目</button><button class="side-button" data-settings>⚙ 模型设置</button><div class="local-profile"><span class="profile-avatar">O</span><div>本地工作空间<small>OpenGEO · ${esc(state.status?.version || '未知版本')}</small></div><span class="dot"></span></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb"><button class="sidebar-toggle" data-toggle-sidebar aria-label="切换侧边栏">◫</button><span class="breadcrumb-section">${section}</span><span>›</span><strong>${esc(label)}</strong></div><div class="actions">${downloadActions() || '<button class="btn small" data-nav="flow">Agent 工作流</button>'}</div></header><main class="content" id="main">${(pages[state.view]||overview)()}<footer class="footer-note"><span><span class="dot"></span> 本地运行 · 数据保存在本机</span><span>${state.run?`本轮 ${esc(fmtTime(state.run.createdAt))}`:'从一个案例开始'}</span></footer></main></div></div>`;
+  $('#app').innerHTML = `<div class="shell ${state.collapsed?'rail-collapsed':''}"><aside class="sidebar"><div class="brand"><div class="brand-symbol" aria-hidden="true">O</div><div><div class="wordmark">OpenGEO</div><div class="brand-caption">GEO WORKSPACE</div></div></div><div class="project-picker"><label for="project-picker">当前项目</label><select id="project-picker">${state.projects.filter(p=>showExamples || !p.example || p.id===state.project.id).map(p=>`<option value="${esc(p.id)}" ${state.project.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div><nav class="nav" aria-label="工作台导航">${navItem('flow','♧')}<div class="nav-group">分析 <span>Analysis</span></div>${navItem('overview','▦')}<div class="tracking-label"><span aria-hidden="true">⌁</span> 监测 <span class="tracking-chevron">⌄</span></div>${navItem('queries','',true)}${navItem('evidence','',true)}${navItem('sources','',true)}<div class="nav-group">优化 <span>Optimization</span></div>${navItem('actions','♧')}${navItem('content','▤')}<div class="nav-group">项目 <span>Management</span></div>${navItem('facts','⚑')}</nav><div class="side-bottom"><a class="side-button" href="/create-workspace">＋ Create workspace</a><button class="side-button" data-new>＋ 新建项目</button><button class="side-button" data-projects>项目管理</button><button class="side-button" data-settings>⚙ 模型设置</button><div class="local-profile"><span class="profile-avatar">O</span><div>本地工作空间<small>OpenGEO · ${esc(state.status?.version || '未知版本')}</small></div><span class="dot"></span></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb"><button class="sidebar-toggle" data-toggle-sidebar aria-label="切换侧边栏">◫</button><span class="breadcrumb-section">${section}</span><span>›</span><strong>${esc(label)}</strong></div><div class="actions">${downloadActions() || '<button class="btn small" data-nav="flow">Agent 工作流</button>'}</div></header><main class="content" id="main">${(pages[state.view]||overview)()}<footer class="footer-note"><span><span class="dot"></span> 本地运行 · 数据保存在本机</span><span>${state.run?`本轮 ${esc(fmtTime(state.run.createdAt))}`:'从一个案例开始'}</span></footer></main></div></div>`;
 }
 async function pollRun(id) {
   const selection = runSelection;
@@ -223,6 +230,11 @@ function modelDialog(live) {
     });
   $('#api-key').value = state.apiKeys[defaults.provider || 'openrouter'] || '';
 }
+async function projectManager() {
+  const deleted = await api('/api/deleted-projects');
+  showDialog('项目管理', '各项目的资料、问题、运行和报告独立。删除后进入本地回收站，可恢复；不会删除其他项目。',
+    `<label class="check-label"><input type="checkbox" name="examples" ${showExamples ? 'checked' : ''}>显示内置示例项目</label>${state.projects.filter(p => showExamples || !p.example).map(p => `<div class="actions"><strong>${esc(p.name)}</strong><button type="button" class="btn small" data-open-project="${esc(p.id)}">打开</button><button type="button" class="btn small" data-delete-project="${esc(p.id)}">删除项目</button></div>`).join('')}<h3>回收站</h3>${deleted.map(p => `<div class="actions"><span>${esc(p.name)}</span><button type="button" class="btn small" data-restore-project="${esc(p.id)}">恢复项目</button></div>`).join('') || '<p>暂无已删除项目</p>'}`, '保存显示偏好', async form => { showExamples = form.get('examples') === 'on'; render(); });
+}
 function newProjectDialog() {
   showDialog('新建一个自己的项目', '输入品牌与产品资料，再逐项确认事实。新项目不会自动生成或伪造回答数据。',
     `<div class="form-row"><label>品牌名称<input name="brand" required maxlength="80" placeholder="你的品牌"></label><label>行业或产品<input name="industry" required maxlength="100" placeholder="例如：工业温度传感器"></label></div><div class="form-row"><label>官网域名<input name="domain" placeholder="example.com"></label><label>品牌别名<input name="aliases" placeholder="用逗号分隔，可留空"></label></div><label>品牌事实（每行一项，参数：内容）<textarea name="brief" rows="7" placeholder="主营产品：…&#10;适用场景：…&#10;参数范围：…"></textarea></label>`, '创建项目', async form => {
@@ -238,6 +250,16 @@ document.addEventListener('pointerdown', () => document.body.classList.remove('k
 document.addEventListener('click', async event => {
   const button = event.target.closest('button'); if (!button) return;
   try {
+    if (button.hasAttribute('data-projects')) { await projectManager(); return; }
+    if (button.dataset.openProject) { $('#dialog').close(); await selectProject(button.dataset.openProject); return; }
+    if (button.dataset.deleteProject) {
+      const id = button.dataset.deleteProject, p = state.projects.find(p => p.id === id);
+      if (!confirm(`将「${p.name}」移入回收站？该项目的资料、运行和报告将一起隐藏，可恢复。`)) return;
+      await api(`/api/projects/${id}`, { method: 'DELETE' }); await refreshProjects(); $('#dialog').close();
+      if (state.project?.id === id) { const next = state.projects.find(p => !p.example); if (next) await selectProject(next.id); else { state.project = null; state.run = null; localStorage.removeItem('citekeel-project'); window.history.replaceState(null, '', '/'); render(); } }
+      else render(); return;
+    }
+    if (button.dataset.restoreProject) { await api(`/api/deleted-projects/${button.dataset.restoreProject}/restore`, { method: 'POST' }); await refreshProjects(); await projectManager(); return; }
     if (button.hasAttribute('data-close')) { $('#dialog').close(); return; }
     if (button.dataset.sourceLevel) { state.sourceLevel = button.dataset.sourceLevel; render(); return; }
     if (button.dataset.nav) { state.view = button.dataset.nav; render(); return; }
@@ -292,7 +314,9 @@ document.addEventListener('submit', async event => {
 try {
   [state.status] = await Promise.all([api('/api/status'), refreshProjects()]);
   const requested = new URLSearchParams(location.search).get('project') || localStorage.getItem('citekeel-project');
-  await selectProject(state.projects.some(p => p.id === requested) ? requested : 'sensor');
+  const selected = state.projects.find(p => p.id === requested) || state.projects.find(p => !p.example);
+  if (selected) await selectProject(selected.id); else render();
+  if (new URLSearchParams(location.search).get('manage') === '1') await projectManager();
   if (new URLSearchParams(location.search).get('measure') === '1') modelDialog(true);
 } catch (error) { $('#app').innerHTML = `<div class="boot"><h1>工作台暂时无法读取项目</h1><p>${esc(error.message)}</p><p>请确认本地服务正在运行，然后刷新页面。</p></div>`; }
 

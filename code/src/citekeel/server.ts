@@ -65,7 +65,9 @@ function hostWebCollector(worker: HostBrowserMailbox) {
   }, async close() {} };
 }
 export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch; browserWorker?: HostBrowserMailbox } = {}) {
-  await store.initialize(await loadCases());
+  const examples = await loadCases();
+  const exampleIds = new Set(examples.map(project => project.id));
+  await store.initialize(examples);
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
   const recordings = new RecordingService(store);
@@ -116,7 +118,10 @@ export async function createApp(store = new Store(), options: { research?: typeo
       if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: APP_VERSION, upstream: 'niubigeo v0.3.2', skills: SKILLS,
         providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
         monitorProviders: [{ id: 'cloro', configured: hasProviderKey('cloro') }], diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
-      if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(projectSummary));
+      if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(project => ({ ...projectSummary(project), example: exampleIds.has(project.id) })));
+      if (path === '/api/deleted-projects' && method === 'GET') return send(res, 200, await store.deletedProjects());
+      const restoreMatch = path.match(/^\/api\/deleted-projects\/([a-zA-Z0-9_-]+)\/restore$/);
+      if (restoreMatch && method === 'POST') return send(res, 200, await store.restoreProject(restoreMatch[1]));
       if (path === '/api/projects' && method === 'POST') {
         const input = await body(req), brand = textField(input.brand, '品牌', 80), industry = textField(input.industry, '行业', 100);
         if (!brand || !industry) throw new Error('请填写品牌和行业');
@@ -170,6 +175,10 @@ export async function createApp(store = new Store(), options: { research?: typeo
       if (projectMatch) {
         const project = await store.get<Project>('projects', projectMatch[1]); if (!project) return send(res, 404, { error: '项目不存在' });
         const action = projectMatch[2];
+        if (method === 'DELETE' && !action) {
+          if (activeRunId) return send(res, 409, { error: '当前有运行正在执行，请等待结束后删除项目' });
+          return send(res, 200, await store.deleteProject(project.id));
+        }
         if (method === 'GET' && action === 'analytics') { const days = Number(url.searchParams.get('days')); return send(res, 200, analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }, { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined })); }
         if (method === 'GET' && !action) return send(res, 200, { ...project, analytics: analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }) });
         if (method === 'GET' && action === 'observations') {
@@ -332,7 +341,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
       }
       const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|report-html|analytics|export|actions|draft|publications))?$/);
       if (runMatch) {
-        const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run) return send(res, 404, { error: '运行不存在' });
+        const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run || (url.searchParams.has('projectId') && url.searchParams.get('projectId') !== run.projectId)) return send(res, 404, { error: '运行不存在或不属于当前项目' });
         const action = runMatch[2];
         const days = Number(url.searchParams.get('days'));
         const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
