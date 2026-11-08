@@ -61,9 +61,9 @@ function overview() {
 function sourcesPage() { return pageHeader('信源分析', '域名与 URL 分层，保留来源类型与原文入口。') + diagnosticView(state.analytics, { runs: state.history, sourceLevel: state.sourceLevel, sourcesOnly: true }); }
 async function refreshAnalysis() {
   if (!state.run) { state.analytics = await api(`/api/projects/${state.project.id}/analytics${analysisQuery(state.analysisFilters)}`); return; }
-  const id = state.run.id, query = analysisQuery(state.analysisFilters);
+  const id = state.run.id, projectId = state.project.id, selection = projectSelection, query = analysisQuery(state.analysisFilters);
   const result = await api(`/api/runs/${id}/analytics${query}`);
-  if (state.run?.id === id && query === analysisQuery(state.analysisFilters)) state.analytics = result;
+  if (state.project?.id === projectId && selection === projectSelection && state.run?.id === id && query === analysisQuery(state.analysisFilters)) state.analytics = result;
 }
 function factsPage() {
   return pageHeader('品牌事实与来源', '确认可用于内容的事实。每次确认保存来源与时间，历史运行快照保持原样。', `<button class="btn primary" data-run ${running() ? 'disabled' : ''}>重新运行</button>`) + originBanner() + brandSourceForm(state.project) +
@@ -147,6 +147,7 @@ async function selectRun(id) {
   try { run = await api(`/api/runs/${encodeURIComponent(id)}`); }
   catch (error) { if (selection === runSelection && running()) pollRun(state.run.id); throw error; }
   if (selection !== runSelection) return;
+  if (run.projectId !== state.project?.id) throw new Error('运行不属于当前项目');
   state.run = run; state.view = 'overview'; await refreshAnalysis();
   if (selection !== runSelection) return;
   render(); if (running()) pollRun(id);

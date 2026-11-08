@@ -116,15 +116,15 @@ test('recording pool keeps URLs as source inputs and can be removed', async ({ p
 test('project imports a local PDF with page provenance and shows unsupported files as errors', async ({ page }) => {
   await page.goto(`/workspace?project=${projectId}&view=project`);
   const form = page.locator('[data-brand-source]');
-  await form.getByLabel('Source type').selectOption('pdf');
-  await expect(form.getByLabel('Text PDF (up to 1MB, 40 pages)')).toBeVisible();
-  await form.getByLabel('Text PDF (up to 1MB, 40 pages)').setInputFiles({ name: 'fixture-manual.pdf', mimeType: 'application/pdf', buffer: textPdf() });
+  await form.getByLabel('Source type').selectOption('file');
+  await expect(form.getByLabel('Local brand file (PDF / TXT / MD, up to 1MB)')).toBeVisible();
+  await form.getByLabel('Local brand file (PDF / TXT / MD, up to 1MB)').setInputFiles({ name: 'fixture-manual.pdf', mimeType: 'application/pdf', buffer: textPdf() });
   await form.getByRole('button', { name: 'Import source', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'fixture-manual.pdf · 第 1 页', exact: true })).toBeVisible();
   await page.getByText('Add a fact from a source', { exact: true }).click();
   await page.locator('[data-brand-claim]').getByLabel('Source / page').selectOption({ label: 'fixture-manual.pdf · 第 1 页' });
-  await form.getByLabel('Source type').selectOption('pdf');
-  await form.getByLabel('Text PDF (up to 1MB, 40 pages)').setInputFiles({ name: 'broken.pdf', mimeType: 'application/pdf', buffer: Buffer.from('broken') });
+  await form.getByLabel('Source type').selectOption('file');
+  await form.getByLabel('Local brand file (PDF / TXT / MD, up to 1MB)').setInputFiles({ name: 'broken.pdf', mimeType: 'application/pdf', buffer: Buffer.from('broken') });
   await form.getByRole('button', { name: 'Import source', exact: true }).click();
   await expect(form.getByRole('status')).toContainText('PDF');
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -192,7 +192,7 @@ test('Chinese dashboard keeps the latest choice when run requests finish out of 
 });
 test('a failed run choice resumes polling the displayed running workflow', async ({page,request}) => {
  const response=await request.get(`/api/runs/${runIds[1]}`);const saved=await response.json();let reads=0;
- await page.route(`**/api/runs/${runIds[1]}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
+ await page.route(`**/api/runs/${runIds[1]}{,?*}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
  await page.route(`**/api/runs/${runIds[0]}`,async route=>{await route.fulfill({status:500,json:{error:'fixture unavailable'}});});
  await page.goto(`/workspace?project=${projectId}&run=${runIds[1]}`);
  await expect(page.getByLabel('Analysis run',{exact:true})).toBeVisible();
@@ -202,7 +202,7 @@ test('a failed run choice resumes polling the displayed running workflow', async
 });
 test('Chinese failed run selection keeps the displayed workflow polling', async ({page,request}) => {
  const response=await request.get(`/api/runs/${runIds[1]}`);const saved=await response.json();let reads=0;
- await page.route(`**/api/runs/${runIds[1]}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
+ await page.route(`**/api/runs/${runIds[1]}{,?*}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
  await page.route(`**/api/runs/${runIds[0]}`,async route=>{await route.fulfill({status:500,json:{error:'fixture unavailable'}});});
  await page.goto(`/?project=${projectId}`);await expect(page.locator('[data-analysis-run]')).toBeVisible();
  const before=reads;await page.locator('[data-analysis-run]').selectOption(runIds[0]!);

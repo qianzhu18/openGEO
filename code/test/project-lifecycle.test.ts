@@ -24,3 +24,22 @@ test('deletion hides only its project and runs, survives seeding, and restores s
   await assert.rejects(store.deleteProject(a.id),/正在执行/);
  } finally { await rm(root,{recursive:true,force:true}); }
 });
+
+test('project deletion API scopes runs, refuses writes while deleted and permits recovery',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'opengeo-delete-api-'));
+ const {createApp}=await import('../src/citekeel/server.js');
+ const app=await createApp(new Store(root)); await new Promise<void>(resolve=>app.server.listen(0,'127.0.0.1',resolve));
+ const base=`http://127.0.0.1:${(app.server.address() as {port:number}).port}`;
+ try {
+  const a=syntheticProject(), b={...syntheticProject(),id:'other-project'};
+  await app.store.save('projects',a);await app.store.save('projects',b);
+  const run=createRun(a,'replay');run.status='completed';await app.store.save('runs',run);
+  assert.equal((await fetch(`${base}/api/runs/${run.id}?projectId=${b.id}`)).status,404);
+  assert.equal((await fetch(`${base}/api/projects/${a.id}`,{method:'DELETE'})).status,200);
+  assert.equal((await fetch(`${base}/api/runs/${run.id}`)).status,404);
+  assert.equal((await fetch(`${base}/api/projects/${b.id}`)).status,200);
+  assert.equal((await fetch(`${base}/api/projects/${a.id}/brand-sources`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'text',title:'deleted',text:'blocked'})})).status,400);
+  assert.equal((await fetch(`${base}/api/deleted-projects/${a.id}/restore`,{method:'POST'})).status,200);
+  assert.equal((await fetch(`${base}/api/runs/${run.id}`)).status,200);
+ } finally {await new Promise<void>(resolve=>app.server.close(()=>resolve()));await rm(root,{recursive:true,force:true});}
+});

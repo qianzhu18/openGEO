@@ -48,7 +48,7 @@ test('diagnosis entry submits a frozen question set and platform matrix without 
   await page.locator('input[name="key-openrouter"]').fill('page-memory-key-not-persisted');
   await page.getByRole('button', { name: '开始品牌诊断' }).click();
   await expect.poll(() => payload?.diagnosis).toBe(true);
-  expect((payload?.queryIds as string[]).length).toBe(5);
+  expect((payload?.queryIds as string[]).length).toBe(10);
   expect(payload?.targetIds).toEqual(['chatgpt','gemini','deepseek','qwen','seed']);
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('page-memory-key-not-persisted');
 });
@@ -115,6 +115,7 @@ test('imports brand evidence, rejects unsupported claims and creates a reviewed 
   await page.goto(`/?project=${project.id}`);
   await page.getByRole('button', { name: '品牌事实', exact: true }).click();
   const sourceForm = page.locator('[data-brand-source]');
+  await sourceForm.getByLabel('资料类型').selectOption('text');
   await sourceForm.getByLabel('资料标题').fill('PiPER 原文说明');
   await sourceForm.getByLabel('资料原文').fill('PiPER 的额定负载为 1.5 kg。');
   await sourceForm.getByRole('button', { name: '导入来源', exact: true }).click();
