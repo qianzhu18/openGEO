@@ -26,12 +26,12 @@ export interface BrandMetricRow {
   estimatedDemand: null; cvr: null;
   mentionedObservationIds: string[]; eligibleObservationIds: string[]; excludedObservationIds: string[];
 }
-export interface CohortIdentity { key: string; origin: Sample['origin']; model: string; protocolId: string; branded: boolean }
+export interface CohortIdentity { key: string; origin: Sample['origin']; model: string; protocolId: string; branded: boolean; runGroup: string; intent: string }
 export interface BrandMetricCohort extends CohortIdentity {
   brands: BrandMetricRow[]; eligibleObservationIds: string[]; excludedObservationIds: string[];
 }
 export interface BrandMetricsResult {
-  version: 'opengeo-brand-metrics/v1'; matcherVersion: 'literal-boundary-overlap/v1';
+  version: 'opengeo-brand-metrics/v2'; matcherVersion: 'literal-boundary-overlap/v1';
   mixedCohorts: boolean; brands: BrandMetricRow[]; cohorts: BrandMetricCohort[];
   observations: BrandObservation[]; eligibleObservationIds: string[]; excludedObservationIds: string[];
   exclusions: { sampleId: string; reason: string }[];
@@ -45,8 +45,8 @@ const formulas = {
   top3Rate: 'Eligible answers in which brand has first-appearance rank 1, 2, or 3 among tracked brands / all eligible answers. Absence is not rank 3.',
 };
 export function metricCohortIdentity(sample: Sample): CohortIdentity {
-  const identity = { origin: sample.origin, model: sample.model || 'unknown-model', protocolId: sample.protocolId || 'unknown-protocol', branded: Boolean(sample.branded) };
-  return { key: JSON.stringify([identity.origin, identity.model, identity.protocolId, identity.branded]), ...identity };
+  const identity = { origin: sample.origin, model: sample.model || 'unknown-model', protocolId: sample.protocolId || 'unknown-protocol', branded: Boolean(sample.branded), runGroup: sample.runGroup || 'unknown-batch', intent: sample.intent || 'unknown-intent' };
+  return { key: JSON.stringify([identity.origin, identity.model, identity.protocolId, identity.branded, identity.runGroup, identity.intent]), ...identity };
 }
 function uniqueSamples(samples: Sample[]): Sample[] {
   const records = new Map<string, Sample>();
@@ -144,7 +144,7 @@ export function deriveBrandMetrics(samples: Sample[], inputBrands: BrandEntity[]
   const groups = new Map<string, { identity: CohortIdentity; observations: BrandObservation[] }>();
   samples.forEach((sample, index) => { const identity = metricCohortIdentity(sample); if (!groups.has(identity.key)) groups.set(identity.key, { identity, observations: [] }); groups.get(identity.key)!.observations.push(observations[index]!); });
   const cohorts = [...groups.values()].map(({ identity, observations: items }) => ({ ...identity, brands: rows(items, brands, false), eligibleObservationIds: items.filter(row => row.eligible).map(row => row.sampleId), excludedObservationIds: items.filter(row => !row.eligible).map(row => row.sampleId) }));
-  return { version: 'opengeo-brand-metrics/v1', matcherVersion: 'literal-boundary-overlap/v1', formulas,
+  return { version: 'opengeo-brand-metrics/v2', matcherVersion: 'literal-boundary-overlap/v1', formulas,
     mixedCohorts: cohorts.length > 1, brands: rows(observations, brands, cohorts.length > 1), cohorts, observations,
     eligibleObservationIds: observations.filter(row => row.eligible).map(row => row.sampleId), excludedObservationIds: observations.filter(row => !row.eligible).map(row => row.sampleId),
     exclusions: observations.filter(row => !row.eligible).map(row => ({ sampleId: row.sampleId, reason: row.exclusionReason! })) };
@@ -163,7 +163,7 @@ export interface SourceMetricCohort extends CohortIdentity {
   invalidCitationCount: number;
 }
 export interface SourceMetricsResult {
-  version: 'opengeo-source-metrics/v1'; mixedCohorts: boolean;
+  version: 'opengeo-source-metrics/v2'; mixedCohorts: boolean;
   domains: SourceMetricRow[]; urls: SourceMetricRow[]; cohorts: SourceMetricCohort[];
   eligibleObservationIds: string[]; excludedObservationIds: string[]; invalidCitationCount: number;
   formulas: { used: string; averageCitations: string; citationShare: string };
@@ -215,7 +215,7 @@ export function deriveSourceMetrics(samples: Sample[], brands: BrandEntity[] = [
     const local = sourceEntries(items);
     return { ...identity, domains: sourceRows(items, local.entries, 'domain', false, brands), urls: sourceRows(items, local.entries, 'url', false, brands), eligibleObservationIds: items.filter(sample => !exclusion(sample)).map(sample => sample.id), excludedObservationIds: items.filter(sample => exclusion(sample)).map(sample => sample.id), invalidCitationCount: local.invalidCitationCount };
   });
-  return { version: 'opengeo-source-metrics/v1', mixedCohorts: groups.size > 1,
+  return { version: 'opengeo-source-metrics/v2', mixedCohorts: groups.size > 1,
     domains: sourceRows(samples, entries, 'domain', groups.size > 1, brands), urls: sourceRows(samples, entries, 'url', groups.size > 1, brands), cohorts,
     eligibleObservationIds: samples.filter(sample => !exclusion(sample)).map(sample => sample.id), excludedObservationIds: samples.filter(sample => exclusion(sample)).map(sample => sample.id), invalidCitationCount,
     formulas: { used: 'Distinct eligible answers citing source / eligible answers in the cohort.', averageCitations: 'Eligible citation items for source / distinct eligible answers citing source.', citationShare: 'Eligible citation items for source / all eligible citation items with the same evidence kind and integrity in the cohort. Domain and URL levels use the same underlying item denominator.' } };

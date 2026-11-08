@@ -1,7 +1,9 @@
+import { diagnosticView, analysisQuery } from './analytics-view.js';
+import { brandSourceForm } from './brand-sources.js';
 const $ = s => document.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? esc(u.toString()) : '#'; } catch { return '#'; } };
-const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false };
+const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
 try { state.settings = JSON.parse(localStorage.getItem('citekeel-model') || '{}'); } catch {}
 const NAV = [['overview', '工作概览'], ['queries', '问题空间'], ['evidence', '回答与信源'], ['sources', '信源分析'], ['actions', '策略任务'], ['content', '内容与交付'], ['facts', '品牌事实'], ['flow', 'Agent 思路与历史']];
 const LABELS = { queued: '等待执行', running: '执行中', completed: '已完成', needs_review: '待处理', failed: '执行失败', interrupted: '已中断', pending: '待执行', blocked: '等待确认', confirmed: '已确认', unconfirmed: '待确认', conflict: '口径冲突', draft: '草稿', reviewed: '已审核' };
@@ -22,12 +24,13 @@ async function selectProject(id) {
   state.project = await api(`/api/projects/${id}`); state.selectedSample = ''; state.filter = ''; state.modelFilter = 'all'; state.rangeFilter = 'all';
   state.history = await api(`/api/runs?projectId=${encodeURIComponent(id)}`);
   state.run = state.history.length ? await api(`/api/runs/${state.history[0].id}`) : null;
+  state.analysisFilters = {}; state.analytics = state.run?.analytics || state.project.analytics;
   localStorage.setItem('citekeel-project', id); render(); if (running()) pollRun(state.run.id);
 }
 function pageHeader(title, description = '', actions = '') {
   return `<div class="page-heading"><div><div class="eyebrow">${esc(state.project.brand)} / GEO workspace</div><h1>${esc(title)}</h1>${description ? `<p class="subtle">${esc(description)}</p>` : ''}</div>${actions && !actions.includes('data-export') ? `<div class="actions">${actions}</div>` : ''}</div>`;
 }
-function downloadActions() { return state.run ? `<a class="btn small" href="/api/runs/${state.run.id}/report" download>导出报告 ↗</a><button class="btn small" data-export>JSON 证据</button>` : ''; }
+function downloadActions() { return state.run ? `<a class="btn small" href="/api/runs/${state.run.id}/report${analysisQuery(state.analysisFilters)}" download>导出报告 ↗</a><a class="btn small" href="/api/runs/${state.run.id}/report-html${analysisQuery(state.analysisFilters)}" download>HTML 报告</a><button class="btn small" data-export>JSON 证据</button>` : ''; }
 function originBanner() {
   const samples = state.run?.samples || state.project.samples;
   const apiArchive = state.run?.mode !== 'live' && samples.length > 0 && samples.every(s => s.origin === 'api');
@@ -40,83 +43,22 @@ function originBanner() {
 function runBox() {
   return `<div class="goal-box"><label>本轮目标<textarea id="goal" rows="2" aria-label="本轮目标">${esc(state.run?.goal || state.project.goal)}</textarea></label><div class="actions"><button class="btn primary" data-diagnosis ${running() ? 'disabled' : ''}>${running() ? '执行中…' : '⇶ 运行品牌诊断'}</button><button class="btn" data-live ${running() ? 'disabled' : ''}>单模型实测</button><button class="btn quiet" data-run ${running() ? 'disabled' : ''}>仅回放</button></div></div>`;
 }
-function metricStrip() {
-  const a = state.run?.audit;
-  return `<div class="metric-strip"><div class="metric"><div class="metric-label">取得回答原文</div><div class="metric-value">${a ? a.collected : '·'}<span>/ ${a ? a.plannedUnits || a.planned : '·'} 个单元</span></div><small>${a ? `执行 ${a.attemptCount || a.planned} 次尝试；采纳后失败 ${a.collectionFailed}，分析待处理 ${a.analysisFailed}` : '运行后查看本轮覆盖'}</small></div><div class="metric"><div class="metric-label">品牌字面提及</div><div class="metric-value">${pct(a?.mention)}</div><small>${a ? `${a.mention.numerator} / ${a.mention.denominator} 个可判定单元` : '保留原文定位与人工复核'}</small></div><div class="metric"><div class="metric-label">Provider 引用</div><div class="metric-value">${a ? a.providerCitations : '·'}<span>项</span></div><small>与正文链接分开统计</small></div><div class="metric"><div class="metric-label">策略任务</div><div class="metric-value">${state.run ? state.run.actions.length : '·'}<span>项</span></div><small>${state.run ? `${state.run.actions.filter(a => a.status === 'done').length} 项已完成` : '每个任务保留依据'}</small></div></div>`;
-}
 function trace() {
   const steps = state.run?.steps || state.status.skills.map(([id, label, skill]) => ({ id, label, skill, status: 'pending', executor: 'rules', summary: '' }));
   return `<div class="panel"><div class="panel-head"><h2>Agent 执行轨迹</h2>${state.run ? statusBadge(state.run.status) : badge('尚未运行')}</div><div class="steps">${steps.map((step, i) => `<div class="step ${esc(step.status)}"><span class="step-mark">${step.status === 'completed' ? '✓' : i + 1}</span><div class="step-title">${esc(step.label)}<small>${esc(step.skill)}</small></div><p class="step-summary">${esc(step.summary || '等待本轮输入与前置步骤')}</p><span class="step-state">${esc(EXECUTORS[step.executor])}</span></div>`).join('')}</div></div>`;
 }
-function findings() {
-  const actions = state.run?.actions || [];
-  return `<div class="panel"><div class="panel-head"><h2>本轮发现与动作</h2><button class="btn quiet small" data-nav="actions">查看全部 →</button></div>${actions.length ? actions.slice(0, 3).map((item, i) => `<div class="finding"><span class="finding-number">0${i + 1}</span><div><h3>${esc(item.title)}</h3><p>${esc(item.rationale)}</p></div>${badge(item.priority, item.priority === 'P0' ? 'warn' : '')}</div>`).join('') : `<div class="empty">运行后，Agent 会根据资料冲突、回答和信源生成下一步任务。</div>`}</div>`;
-}
-function dashboardSamples() {
-  const samples = state.run?.samples || state.project.samples;
-  const cutoff = state.rangeFilter === 'all' ? 0 : Date.now() - Number(state.rangeFilter) * 86400000;
-  return samples.filter(s => s.selected !== false && (state.modelFilter === 'all' || s.model === state.modelFilter) && (!cutoff || Date.parse(s.observedAt) >= cutoff));
-}
-function observedMention(sample) {
-  const judgment = state.run?.audit?.judgments.find(j => j.sampleId === sample.id);
-  if (judgment) return judgment.mentioned;
-  if (sample.collectionStatus !== 'completed' || sample.analysisStatus !== 'completed' || !sample.answer.trim()) return null;
-  const folded = sample.answer.replace(/https?:\/\/[^\s"<>]+/gi, url => ' '.repeat(url.length)).toLocaleLowerCase();
-  for (const alias of [state.project.brand, ...state.project.aliases].filter(Boolean)) {
-    const needle = alias.toLocaleLowerCase(); let offset = folded.indexOf(needle);
-    while (offset !== -1) {
-      const ascii = /^[a-z0-9 ._-]+$/i.test(alias);
-      if (!ascii || (!/[a-z0-9_]/i.test(sample.answer[offset-1] || '') && !/[a-z0-9_]/i.test(sample.answer[offset+alias.length] || ''))) return true;
-      offset = folded.indexOf(needle, offset + needle.length);
-    }
-  }
-  return false;
-}
-function sampleMetric(samples) {
-  const valid = samples.filter(s => observedMention(s) !== null);
-  if (state.chartMetric === 'citations') return valid.length ? valid.filter(s => s.citations.some(c => c.kind === 'provider_citation')).length / valid.length : null;
-  return valid.length ? valid.filter(s => observedMention(s)).length / valid.length : null;
-}
-function trendChart(samples) {
-  const series = new Map();
-  for (const sample of samples) {
-    const day = sample.observedAt?.slice(0,10); if (!day || !Number.isFinite(Date.parse(day))) continue;
-    const key = [sample.model, sample.protocolId, sample.origin, sample.runGroup, sample.branded ? '品牌问题' : '非品牌问题', sample.intent].join(' · ');
-    if (!series.has(key)) series.set(key, new Map());
-    const days = series.get(key); if (!days.has(day)) days.set(day, []); days.get(day).push(sample);
-  }
-  const dates = [...new Set([...series.values()].flatMap(days => [...days.keys()]))].sort();
-  const colors = ['#44403c', '#a855f7', '#ec4899', '#f59e0b', '#2a9d8f'];
-  if (!dates.length) return '<div class="chart-empty">暂无符合筛选条件的观察<br><small>导入回答或运行模型实测后查看。</small></div>';
-  const x = i => dates.length === 1 ? 320 : 50 + i * 540 / (dates.length - 1);
-  const grid = [0,25,50,75,100].map(v => `<line x1="50" y1="${250-v*2.1}" x2="605" y2="${250-v*2.1}" class="chart-grid"/><text x="38" y="${254-v*2.1}" text-anchor="end">${v}%</text>`).join('');
-  const plots = [...series.entries()].map(([name, days], i) => {
-    const points = [...days.entries()].map(([day, values]) => ({day, value: sampleMetric(values)})).filter(p => p.value !== null).sort((a,b)=>a.day.localeCompare(b.day));
-    return `<g class="chart-series"><title>${esc(name)}</title>${points.length > 1 ? `<polyline points="${points.map(p => `${x(dates.indexOf(p.day))},${250-p.value*210}`).join(' ')}" fill="none" stroke="${colors[i%5]}" stroke-width="2"/>` : ''}${points.map(p => `<circle cx="${x(dates.indexOf(p.day))}" cy="${250-p.value*210}" r="4" fill="${colors[i%5]}"><title>${esc(name)} · ${p.day} · ${(p.value*100).toFixed(1)}%</title></circle>`).join('')}</g>`;
-  }).join('');
-  return `<div class="chart-surface"><svg class="trend-chart" viewBox="0 0 640 290" role="img" aria-label="按模型、来源、协议和批次分开的品牌观察">${grid}${plots}${dates.filter((_,i)=>i===0||i===dates.length-1||dates.length<7).map(day=>`<text x="${x(dates.indexOf(day))}" y="280" text-anchor="middle">${day.slice(5)}</text>`).join('')}</svg></div><div class="chart-legend">${[...series.keys()].map((name,i)=>`<span><i class="legend-dot color-${i%5}"></i>${esc(name)}</span>`).join('')}</div><p class="chart-note">${dates.length === 1 ? '当前只有一个观察日，显示实际点位。' : '仅连接相同模型、来源、协议和批次的实际观察。'} 不补齐缺失日期。</p>`;
-}
-function modelComparison(samples) {
-  const models = [...new Set(samples.map(s=>s.model))];
-  const rows = models.map(model=> { const set=samples.filter(s=>s.model===model); const value=sampleMetric(set); return {model,set,value}; }).sort((a,b)=>(b.value ?? -1)-(a.value ?? -1));
-  return `<div class="panel dashboard-panel"><div class="dashboard-head"><div><h2>模型表现</h2><p>当前品牌在不同模型中的实际观察</p></div><button class="text-link" data-nav="evidence">查看全部</button></div><div class="table-scroll comparison-table"><table class="data-table"><thead><tr><th>#</th><th>模型</th><th>${state.chartMetric === 'citations' ? '引用覆盖率' : '品牌提及率'}</th><th>回答</th><th>Provider 引用</th></tr></thead><tbody>${rows.length ? rows.map((r,i)=>`<tr><td>${i+1}</td><td><span class="model-avatar">${esc(r.model.charAt(0).toUpperCase())}</span><span class="model-name">${esc(r.model)}</span></td><td>${r.value===null?'—':(r.value*100).toFixed(1)+'%'}</td><td>${r.set.filter(s=>s.collectionStatus==='completed').length} / ${r.set.length}</td><td>${r.set.reduce((n,s)=>n+s.citations.filter(c=>c.kind==='provider_citation').length,0)}</td></tr>`).join(''):'<tr><td colspan="5"><div class="empty">暂无模型观察数据</div></td></tr>'}</tbody></table></div><p class="chart-note">不同模型可能对应不同问题集与批次，此表不代表同条件竞测。</p></div>`;
-}
-function topicBreakdown(samples) {
-  const intents = [...new Set(state.project.queries.map(q=>q.intent))];
-  return `<div class="panel dashboard-panel section-gap"><div class="dashboard-head"><div><h2>主题表现</h2><p>从问题主题返回每一条回答证据</p></div><button class="text-link" data-nav="queries">管理问题 →</button></div><div class="table-scroll"><table class="data-table"><thead><tr><th>主题</th><th>问题数</th><th>取得回答</th><th>品牌提及率</th><th>Provider 引用</th></tr></thead><tbody>${intents.map(intent=>{ const set=samples.filter(s=>s.intent===intent); const valid=set.filter(s=>observedMention(s)!==null);return `<tr><td><button class="row-button" data-nav="evidence">${esc(intent)}</button></td><td>${state.project.queries.filter(q=>q.intent===intent).length}</td><td>${set.filter(s=>s.collectionStatus==='completed').length}</td><td>${valid.length ? (valid.filter(s=>observedMention(s)).length/valid.length*100).toFixed(1)+'%' : '—'}</td><td>${set.reduce((n,s)=>n+s.citations.filter(c=>c.kind==='provider_citation').length,0)}</td></tr>`; }).join('')}</tbody></table></div></div>`;
-}
 function overview() {
-  const samples = dashboardSamples();
-  const models = [...new Set((state.run?.samples || state.project.samples).map(s=>s.model))];
-  return `<h1 class="sr-only">把观察变成下一步行动</h1><div class="dashboard-toolbar"><div class="dashboard-filters"><label><span class="sr-only">观察时间范围</span><select id="dashboard-range" aria-label="观察时间范围">${[['all','全部观察时间'],['7','最近 7 天'],['30','最近 30 天']].map(([value,label])=>`<option value="${value}" ${state.rangeFilter===value?'selected':''}>${label}</option>`).join('')}</select></label><label><span class="sr-only">筛选模型</span><select id="dashboard-model" aria-label="筛选模型"><option value="all">全部模型</option>${models.map(model=>`<option value="${esc(model)}" ${state.modelFilter===model?'selected':''}>${esc(model)}</option>`).join('')}</select></label><span class="brand-filter">◇ ${esc(state.project.brand)}</span></div><div class="metric-tabs" role="group" aria-label="图表指标"><button data-chart="visibility" class="${state.chartMetric==='visibility'?'active':''}">品牌提及</button><button data-chart="citations" class="${state.chartMetric==='citations'?'active':''}">引用覆盖</button></div></div><div class="dashboard-grid"><div class="panel dashboard-panel"><div class="dashboard-head"><div><h2>品牌趋势 <span class="help-hint" title="品牌提及以可判定原文为分母；引用覆盖以含 Provider 引用的回答为分子。">ⓘ</span></h2><p>${state.chartMetric==='citations'?'Provider 引用覆盖率':'品牌在 AI 回答中的字面提及率'}</p></div></div>${trendChart(samples)}</div>${modelComparison(samples)}</div><div class="section-gap">${findings()}</div>${topicBreakdown(samples)}<div class="dashboard-provenance">${originBanner()}</div><details class="run-controls" open><summary>运行工作流</summary>${runBox()}${metricStrip()}</details>`;
+  return `<h1 class="sr-only">把观察变成下一步行动</h1><div class="page-heading"><div><div class="eyebrow">${esc(state.project.brand)} / GEO analytics</div><h1>数据分析</h1><p class="subtle">从本轮覆盖、品牌表现与信源，回到每一条回答。</p></div></div>` + diagnosticView(state.analytics, { runs: state.history, chart: state.chartMetric, sourceLevel: state.sourceLevel }) + `<details class="run-controls" open><summary>运行工作流</summary>${runBox()}</details>`;
 }
-function sourcesPage() {
-  const citations = (state.run?.samples || state.project.samples).flatMap(s=>s.citations.map(c=>({...c,sample:s})));
-  const kinds={provider_citation:'Provider 引用',search_result:'检索结果',grounding:'Grounding',answer_url:'正文链接'};
-  return pageHeader('信源分析','保留来源类型，正文链接不自动计为 Provider 引用。',downloadActions())+`<div class="panel table-scroll"><table class="data-table"><thead><tr><th>来源网址</th><th>类型</th><th>模型</th><th>关联回答</th></tr></thead><tbody>${citations.length?citations.map(c=>`<tr><td><a href="${safeUrl(c.url)}" target="_blank" rel="noopener noreferrer">${esc(c.url)}</a></td><td>${badge(kinds[c.kind]||c.kind)}</td><td>${esc(c.sample.model)}</td><td><button class="row-button" data-sample="${esc(c.sample.id)}">${esc(c.sample.question)}</button></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty">尚无信源记录。导入回答或运行 Agent 后查看。</div></td></tr>'}</tbody></table></div>`;
+function sourcesPage() { return pageHeader('信源分析', '域名与 URL 分层，保留来源类型与原文入口。') + diagnosticView(state.analytics, { runs: state.history, sourceLevel: state.sourceLevel, sourcesOnly: true }); }
+async function refreshAnalysis() {
+  if (!state.run) { state.analytics = await api(`/api/projects/${state.project.id}/analytics${analysisQuery(state.analysisFilters)}`); return; }
+  const id = state.run.id, query = analysisQuery(state.analysisFilters);
+  const result = await api(`/api/runs/${id}/analytics${query}`);
+  if (state.run?.id === id && query === analysisQuery(state.analysisFilters)) state.analytics = result;
 }
 function factsPage() {
-  return pageHeader('品牌事实与来源', '确认可用于内容的事实。每次确认保存来源与时间，历史运行快照保持原样。', `<button class="btn primary" data-run ${running() ? 'disabled' : ''}>重新运行</button>`) + originBanner() +
+  return pageHeader('品牌事实与来源', '确认可用于内容的事实。每次确认保存来源与时间，历史运行快照保持原样。', `<button class="btn primary" data-run ${running() ? 'disabled' : ''}>重新运行</button>`) + originBanner() + brandSourceForm(state.project) +
     `<div class="panel"><div class="panel-head"><h2>事实清单</h2>${badge(`${state.project.claims.length} 项`)}</div><div class="claim-list">${state.project.claims.length ? state.project.claims.map(claim => `<div class="claim-row" id="${esc(claim.id)}"><div class="claim-label">${esc(claim.label)}</div><div><p class="claim-value">${esc(claim.value)}</p><p class="claim-sources">${claim.sourceIds.map(id => esc(state.project.sources.find(s => s.id === id)?.title || id)).join(' · ')}</p>${claim.status === 'conflict' ? `<div class="claim-options">${(claim.alternatives || []).map(option => `<button class="btn small" data-confirm="${esc(claim.id)}" data-source="${esc(option.sourceId)}">采用：${esc(option.value)}</button>`).join('')}</div>` : claim.status === 'unconfirmed' ? `<div class="claim-options"><button class="btn small" data-confirm="${esc(claim.id)}" data-source="${esc(claim.sourceIds[0])}">我已核对，确认此项</button></div>` : claim.confirmation ? `<p class="claim-sources">本地确认于 ${esc(fmtTime(claim.confirmation.at))}</p>` : ''}</div>${statusBadge(claim.status)}</div>`).join('') : `<div class="empty">创建项目时按“参数：内容”逐行输入品牌资料，可在这里逐项确认。</div>`}</div></div><div class="panel section-gap"><div class="panel-head"><h2>原始资料</h2></div>${state.project.sources.map(source => `<div class="source-document"><h3>${esc(source.title)}</h3><p>${esc(source.text)}</p>${source.url ? `<a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">打开公开来源 ↗</a>` : ''}</div>`).join('')}</div>`;
 }
 function queriesPage() {
@@ -180,7 +122,7 @@ async function pollRun(id) {
     while (true) {
       const run = await api(`/api/runs/${id}`);
       if (run.projectId !== state.project.id) break;
-      state.run = run; render();
+      state.run = run; state.analytics = run.analytics; if (Object.keys(state.analysisFilters).length) await refreshAnalysis(); render();
       if (!['queued', 'running'].includes(run.status)) { state.history = await api(`/api/runs?projectId=${state.project.id}`); toast(run.status === 'failed' ? run.error || '本轮执行失败，已有证据保留' : '本轮已完成，结果与执行记录已保存在本地'); break; }
       await new Promise(resolve => setTimeout(resolve, 450));
     }
@@ -190,7 +132,7 @@ async function pollRun(id) {
 async function startRun(input = {}) {
   const goal = $('#goal')?.value || state.run?.goal || state.project.goal;
   const run = await api('/api/runs', { method: 'POST', body: JSON.stringify({ projectId: state.project.id, goal, mode: 'replay', ...input }) });
-  state.run = await api(`/api/runs/${run.id}`); state.view = 'overview'; render(); pollRun(run.id);
+  state.run = await api(`/api/runs/${run.id}`); state.analytics = state.run.analytics; state.analysisFilters = {}; state.view = 'overview'; render(); pollRun(run.id);
 }
 function showDialog(title, description, fields, submitLabel, onSubmit) {
   const dialog = $('#dialog'); if (dialog.open) dialog.close();
@@ -278,6 +220,7 @@ document.addEventListener('click', async event => {
   const button = event.target.closest('button'); if (!button) return;
   try {
     if (button.hasAttribute('data-close')) { $('#dialog').close(); return; }
+    if (button.dataset.sourceLevel) { state.sourceLevel = button.dataset.sourceLevel; render(); return; }
     if (button.dataset.nav) { state.view = button.dataset.nav; render(); return; }
     if (button.dataset.prompt) { state.view = 'queries'; render(); return; }
     if (button.hasAttribute('data-diagnosis')) { button.disabled = true; diagnosisDialog(); return; }
@@ -299,12 +242,14 @@ document.addEventListener('click', async event => {
     if (button.hasAttribute('data-export')) { const data = await api(`/api/runs/${state.run.id}/export`); saveDownload(`citekeel-${state.project.id}.json`, JSON.stringify(data, null, 2)); return; }
     if (button.hasAttribute('data-import')) { $('#sample-file').click(); return; }
     if (button.hasAttribute('data-import-template')) { saveDownload('citekeel-import-template.json', JSON.stringify([{ question: state.project.queries[0]?.text || '你的原始问题', answer: '请替换成实际取得的原始回答', model: '请填写实际入口与模型', observedAt: new Date().toISOString(), runGroup: 'manual-batch-1' }], null, 2)); return; }
-    if (button.dataset.history) { state.run = await api(`/api/runs/${button.dataset.history}`); state.view = 'overview'; render(); return; }
+    if (button.dataset.history) { state.run = await api(`/api/runs/${button.dataset.history}`); state.analytics = state.run.analytics; state.analysisFilters = {}; state.view = 'overview'; render(); return; }
   } catch (error) { toast(error.message); button.disabled = false; }
 });
 document.addEventListener('change', async event => {
   const input = event.target;
   try {
+    if (input.hasAttribute('data-analysis-run')) { state.run = await api(`/api/runs/${input.value}`); await refreshAnalysis(); render(); return; }
+    if (input.matches('[data-analysis-model],[data-analysis-channel],[data-analysis-days]')) { const key = input.hasAttribute('data-analysis-model') ? 'model' : input.hasAttribute('data-analysis-channel') ? 'channel' : 'days'; state.analysisFilters[key] = input.value; await refreshAnalysis(); render(); return; }
     if (input.id === 'project-picker') { state.view = 'overview'; await selectProject(input.value); }
     if (input.dataset.actionId) { state.run = await api(`/api/runs/${state.run.id}/actions`, { method: 'PATCH', body: JSON.stringify({ id: input.dataset.actionId, status: input.value }) }); toast('任务状态已保存'); }
     if (input.id === 'sample-file' && input.files[0]) {
@@ -333,11 +278,13 @@ try {
 } catch (error) { $('#app').innerHTML = `<div class="boot"><h1>工作台暂时无法读取项目</h1><p>${esc(error.message)}</p><p>请确认本地服务正在运行，然后刷新页面。</p></div>`; }
 
 document.addEventListener('change', event => {
-  if (event.target.id === 'dashboard-model') { state.modelFilter = event.target.value; render(); }
-  if (event.target.id === 'dashboard-range') { state.rangeFilter = event.target.value; render(); }
+
+
 });
 document.addEventListener('click', event => {
   const metric = event.target.closest('[data-chart]');
   if (metric) { state.chartMetric = metric.dataset.chart; render(); }
   if (event.target.closest('[data-toggle-sidebar]')) { state.collapsed = !state.collapsed; render(); }
 });
+
+document.addEventListener('brand-sources-updated', event => { state.project = event.detail; render(); toast('资料已保存，请逐项核对事实；历史运行快照保持原样。'); });

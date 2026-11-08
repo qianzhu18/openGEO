@@ -1,10 +1,15 @@
 export type Mode = 'replay' | 'live';
 export type Origin = 'synthetic' | 'archive' | 'api' | 'manual' | 'browser';
-export interface ClaimSource { id: string; title: string; text: string; url?: string }
+export interface ClaimSource {
+  id: string; title: string; text: string; url?: string;
+  kind?: 'text' | 'pdf' | 'website'; sha256?: string; importedAt?: string;
+  page?: number; fileName?: string; localPath?: string;
+}
 export interface Claim {
   id: string; label: string; value: string; status: 'confirmed' | 'unconfirmed' | 'conflict';
   sourceIds: string[]; alternatives?: { value: string; sourceId: string }[];
   confirmation?: { sourceId: string; at: string };
+  quote?: string;
 }
 export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; country?: string; language?: string; revision?: number; previousVersionId?: string; createdAt?: string; updatedAt?: string }
 export interface Citation {

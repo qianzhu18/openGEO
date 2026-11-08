@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { textPdf } from '../fixtures/pdf.js';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Store } from '../../src/citekeel/storage.js';
@@ -40,9 +41,10 @@ test('international workspace keeps cohorts separate and opens cross-run origina
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto(`/workspace?project=${projectId}`);
   await expect(page.getByRole('heading', { name: 'Your brand, in AI answers' })).toBeVisible();
-  await expect(page.getByText('Mixed cohorts', { exact: true })).toBeVisible();
-  await expect(page.locator('.cohort-table tbody tr')).toHaveCount(2);
-  await expect(page.getByText('API region not verified', { exact: false }).first()).toBeVisible();
+  await expect(page.locator('.cohort-table tbody tr')).toHaveCount(1);
+  await page.getByLabel('Analysis run', { exact: true }).selectOption(runIds[0]!);
+  await expect(page.locator('.da-metrics')).toContainText('1/2');
+  await expect(page.getByText('Only brands tracked in this run.', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Prompts', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Prompts', exact: true })).toBeVisible();
   await expect(page.locator('.prompt-table tbody tr')).toHaveCount(6);
@@ -53,8 +55,8 @@ test('international workspace keeps cohorts separate and opens cross-run origina
   await expect(page.locator('#evidence-dialog .answer-text')).not.toBeEmpty();
   await page.getByRole('button', { name: 'Close evidence' }).click();
   await page.getByRole('button', { name: 'Sources', exact: true }).click();
-  await expect(page.locator('.source-table tbody tr')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Answer 1', exact: true }).click();
+  await expect(page.locator('.da-source')).toHaveCount(1);
+  await page.locator('.da-panel').filter({ has: page.getByRole('heading', { name: 'Source distribution' }) }).getByRole('button', { name: 'Read answer', exact: true }).click();
   await expect(page.locator('#evidence-dialog .answer-text')).toContainText('Acme is one option');
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Overview', exact: true }).click();
@@ -113,4 +115,57 @@ test('recording pool keeps URLs as source inputs and can be removed', async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await expect(page.getByText('No URLs recorded yet', { exact: false })).toBeVisible();
+});
+
+
+test('project imports a local PDF with page provenance and shows unsupported files as errors', async ({ page }) => {
+  await page.goto(`/workspace?project=${projectId}&view=project`);
+  const form = page.locator('[data-brand-source]');
+  await form.getByLabel('Source type').selectOption('pdf');
+  await expect(form.getByLabel('Text PDF (up to 1MB, 40 pages)')).toBeVisible();
+  await form.getByLabel('Text PDF (up to 1MB, 40 pages)').setInputFiles({ name: 'fixture-manual.pdf', mimeType: 'application/pdf', buffer: textPdf() });
+  await form.getByRole('button', { name: 'Import source', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'fixture-manual.pdf · 第 1 页', exact: true })).toBeVisible();
+  await page.getByText('Add a fact from a source', { exact: true }).click();
+  await page.locator('[data-brand-claim]').getByLabel('Source / page').selectOption({ label: 'fixture-manual.pdf · 第 1 页' });
+  await form.getByLabel('Source type').selectOption('pdf');
+  await form.getByLabel('Text PDF (up to 1MB, 40 pages)').setInputFiles({ name: 'broken.pdf', mimeType: 'application/pdf', buffer: Buffer.from('broken') });
+  await form.getByRole('button', { name: 'Import source', exact: true }).click();
+  await expect(form.getByRole('status')).toContainText('PDF');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({ path: 'data/browser-tests/brand-sources-desktop.png', fullPage: true });
+});
+
+test('analysis scope and exported report agree, with inert HTML and usable mobile tables', async ({ page, request }) => {
+  await page.goto(`/workspace?project=${projectId}`);
+  await page.getByLabel('Analysis run', { exact: true }).selectOption(runIds[0]!);
+  await expect(page.locator('.da-metrics')).toContainText('1/2');
+  await expect(page.getByRole('heading', { name: 'Measurement units and failures' })).toBeVisible();
+  await expect(page.locator('.diagnostic')).toContainText('Fixture provider timeout');
+  const base = `/api/runs/${runIds[0]}`;
+  const analysis = await (await request.get(base + '/analytics?channel=api')).json();
+  expect(analysis.quality.valid).toBe(1); expect(analysis.quality.planned).toBe(2);
+  const markdown = await (await request.get(base + '/report?channel=api')).text();
+  expect(markdown).toContain('**1/2**'); expect(markdown).toContain('Fixture provider timeout');
+  expect(markdown).not.toContain('## Content'); expect(markdown).not.toContain('## Actions');
+  const html = await (await request.get(base + '/report-html?channel=api')).text();
+  expect(html).toContain('<!doctype html>'); expect(html).toContain('<table>');
+  const download = page.waitForEvent('download'); await page.getByRole('link', { name: 'HTML report', exact: true }).click();
+  expect((await download).suggestedFilename()).toContain('.html');
+  await page.getByLabel('Collection channel').selectOption('web');
+  await expect(page.locator('.da-metrics')).toContainText('UNKNOWN');
+  await page.getByLabel('Collection channel').selectOption('all');
+  await expect(page.locator('.da-metrics')).toContainText('1/2');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await mkdir('data/browser-tests/analytics-preview', { recursive: true });
+  await page.screenshot({ path: 'data/browser-tests/analytics-preview/dashboard-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'data/browser-tests/analytics-preview/dashboard-mobile.png', fullPage: true });
+  // Inspect the actual exported artifact with scripts and all remote content disabled by its CSP.
+  await page.route('**/analysis-report-preview', route => route.fulfill({ contentType: 'text/html', body: html }));
+  await page.goto('/analysis-report-preview');
+  await expect(page.getByRole('heading', { name: 'Summary and data quality' })).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 1000 });
+  await page.screenshot({ path: 'data/browser-tests/analytics-preview/report-desktop.png', fullPage: true });
 });

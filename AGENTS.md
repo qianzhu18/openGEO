@@ -7,6 +7,7 @@
 1. [docs/产品.md](docs/产品.md)：定位、边界、现在有什么
 2. [docs/采集.md](docs/采集.md)：官网抓取与 AI 回答采样
 3. [docs/案例交付.md](docs/案例交付.md)：做案例时的合约与验收
+4. [docs/README.md](docs/README.md)：项目状态、任务看板和文档规则
 
 ## 1. 项目是什么
 
@@ -39,10 +40,10 @@ OpenGEO 是一个**个人可用的开源 GEO 工作台**：用本机的浏览器
 ## 3. 目录
 
 ```text
-code/        全部代码与运行数据（npm 项目）
-docs/        给人读的文档（中文文件名）
-references/  竞品、行业、知识库、上游归属
-AGENTS.md    本文件
+code/         全部代码与运行数据（npm 项目）
+docs/         项目入口、生效规格、任务记录和历史归档（中文文件名）
+references/   竞品、行业、知识库、上游归属
+AGENTS.md     本文件
 ```
 
 所有命令在 `code/` 下执行。文档里的历史路径 `src/...` 现在指 `code/src/...`；上游 `code/vendor/niubigeo/...`。
@@ -108,7 +109,7 @@ npm run browser:batch -- --file questions.jsonl
 
 ## 8. 文档规则
 
-- `docs/` 只保留仍在生效的三份：[产品](docs/产品.md)、[采集](docs/采集.md)、[案例交付](docs/案例交付.md)。竞品、行业和上游材料放 `references/`。不要为同一次结论再开路线图、索引或研究笔记；
+- `docs/` 的生效规格只保留三份：[产品](docs/产品.md)、[采集](docs/采集.md)、[案例交付](docs/案例交付.md)；[README](docs/README.md) 只做项目入口、任务看板和文档规则。工程任务记录放 `docs/{TASK-ID}/`，历史方案和研究放 `docs/archive/`，竞品、行业和上游材料放 `references/`。不要为同一次结论再开路线图、索引或研究笔记；
 - 事实分级：UI / DOC / NET / JS / INFER / UNKNOWN，不要把推断写成事实；
 - 未实现的能力必须标"未实现"，不要写成已完成；
 - 改动行为时同步更新对应的那一份，不要让文档落后于代码。

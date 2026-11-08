@@ -113,3 +113,10 @@ test('replayed copies of an observation are counted once and conflicting identit
   assert.equal(deriveSourceMetrics([row,structuredClone(row)]).domains[0]!.citationCount,1);
   assert.throws(()=>deriveBrandMetrics([row,{...row,answer:'Beta'}],brands),/Conflicting observation identity/);
 });
+
+test('different batches and intents do not silently share a metric denominator',()=>{
+  for(const patch of [{runGroup:'second-batch'},{intent:'branded-fact'}]) {
+    const result=deriveBrandMetrics([sample('one','Alpha'),sample('two','Beta',patch)],brands);
+    assert.equal(result.mixedCohorts,true);assert.equal(result.cohorts.length,2);assert.equal(result.brands[0]!.visibility.value,null);
+  }
+});

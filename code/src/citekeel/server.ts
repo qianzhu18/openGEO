@@ -1,4 +1,5 @@
 import { PromptService, WorkspaceError } from './prompts.js';
+import { BrandSourceService } from './brand-sources.js';
 import { RecordingService } from './recordings.js';
 import { createBrowserCollector, type BrowserEngine } from './browser/collector.js';
 import { HostBrowserMailbox } from './browser/host-mailbox.js';
@@ -14,8 +15,10 @@ import { researchWebsite } from './onboarding.js';
 import { enrichWebsiteResearch } from './semantic-research.js';
 import { createRun, executeRun } from './engine.js';
 import { validateImport } from './analysis.js';
-import { exportRun, reportMarkdown } from './report.js';
+import { exportRun, reportMarkdown, reportHtml } from './report.js';
+import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
+import { parseQuestionSet } from './question-set.js';
 
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
 const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
@@ -65,6 +68,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
   const recordings = new RecordingService(store);
+  const brandSources = new BrandSourceService(store, options.research);
   let activeRunId: string | null = null;
   const server = createServer(async (req, res) => {
     try {
@@ -74,7 +78,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
       if (req.headers.origin && req.headers.origin !== `http://${host}`) return send(res, 403, { error: '请求来源与本地工作台不一致' });
       const url = new URL(req.url || '/', `http://${host}`), path = url.pathname;
       const method = req.method || 'GET';
-      if (method === 'GET' && ['/', '/app.js', '/style.css', '/create-workspace', '/onboarding.js', '/onboarding.css', '/workspace', '/workspace.js', '/workspace.css'].includes(path)) {
+      if (method === 'GET' && ['/', '/app.js', '/brand-sources.js', '/analytics-view.js', '/analytics.css', '/style.css', '/create-workspace', '/onboarding.js', '/onboarding.css', '/workspace', '/workspace.js', '/workspace.css'].includes(path)) {
         const file = path === '/' ? 'index.html' : path === '/create-workspace' ? 'onboarding.html' : path === '/workspace' ? 'workspace.html' : path.slice(1);
         const mime = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
         res.writeHead(200, { 'content-type': `${mime}; charset=utf-8`, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff',
@@ -130,6 +134,14 @@ export async function createApp(store = new Store(), options: { research?: typeo
           queryVersion: 1, samples: [], createdAt: now, updatedAt: now };
         await store.save('projects', project); return send(res, 201, project);
       }
+      const sourceMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/(brand-sources|brand-claims)$/);
+      if (sourceMatch && method === 'POST') {
+        const input = await body(req);
+        const outcome = sourceMatch[2] === 'brand-sources'
+          ? await brandSources.add(sourceMatch[1], input)
+          : await brandSources.addClaim(sourceMatch[1], input);
+        return send(res, 200, outcome);
+      }
       const recordingMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/recordings(?:\/([a-zA-Z0-9_-]+))?(?:\/(collect))?$/);
       if (recordingMatch) {
         const [, id, rid, action] = recordingMatch;
@@ -153,11 +165,12 @@ export async function createApp(store = new Store(), options: { research?: typeo
         if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
         return send(res,405,{error:'Unsupported prompt operation.'});
       }
-      const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations))?$/);
+      const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations|analytics))?$/);
       if (projectMatch) {
         const project = await store.get<Project>('projects', projectMatch[1]); if (!project) return send(res, 404, { error: '项目不存在' });
         const action = projectMatch[2];
-        if (method === 'GET' && !action) return send(res, 200, project);
+        if (method === 'GET' && action === 'analytics') { const days = Number(url.searchParams.get('days')); return send(res, 200, analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }, { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined })); }
+        if (method === 'GET' && !action) return send(res, 200, { ...project, analytics: analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }) });
         if (method === 'GET' && action === 'observations') {
           const runs = (await store.list<AgentRun>('runs')).filter(r => r.projectId === project.id);
           const observations = [...project.samples, ...runs.flatMap(r => r.samples)];
@@ -175,14 +188,14 @@ export async function createApp(store = new Store(), options: { research?: typeo
           const claim = project.claims.find(c => c.id === input.claimId);
           if (!claim) throw new Error('事实不存在');
           if (!project.sources.some(s => s.id === input.sourceId)) throw new Error('需要选择存在的资料来源');
+          if (!claim.sourceIds.includes(input.sourceId) && !claim.alternatives?.some(option => option.sourceId === input.sourceId)) throw new Error('来源必须属于当前事实');
           if (claim.status === 'conflict') {
             const option = claim.alternatives?.find(a => a.sourceId === input.sourceId);
             if (!option) throw new Error('需要选择一个事实口径'); claim.value = option.value;
           }
           claim.status = 'confirmed'; claim.confirmation = { sourceId: input.sourceId, at: new Date().toISOString() };
         } else if (method === 'PUT' && action === 'queries') {
-          if (!Array.isArray(input.questions) || input.questions.length < 1 || input.questions.length > 40) throw new Error('问题集需要 1–40 条问题');
-          const questions: string[] = input.questions.map((s: unknown) => textField(s, '问题', 800)).filter(Boolean);
+          const questions: string[] = parseQuestionSet(input.questions, { min: 1, max: 40, maxLength: 800 }).questions;
           project.queries = [...new Set<string>(questions)].map((text, i): Query => ({
             ...project.queries.find(q => q.text === text),
             id: project.queries.find(q => q.text === text)?.id || `q-v${project.queryVersion + 1}-${i + 1}`, text,
@@ -230,8 +243,8 @@ export async function createApp(store = new Store(), options: { research?: typeo
             });
             project.queries = selected;
           } else if (Array.isArray(input.questions)) {
-            project.queries = input.questions.slice(0, maxQuestions).map((s: unknown, i: number): Query => {
-              const text = textField(s, '问题', 800); if (!text) throw new Error('采样问题不能为空');
+            const confirmedQuestions = parseQuestionSet(input.questions, { min: 1, max: maxQuestions, maxLength: 800 }).questions;
+            project.queries = confirmedQuestions.map((text, i): Query => {
               const known = project.queries.find(q => q.text === text);
               if (known?.status && known.status !== 'active') throw new WorkspaceError('Track a suggested or inactive prompt before collection.');
               return known || { id: `adhoc-${randomUUID()}`, text, intent: '用户确认的 API 采样问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '本轮确认' };
@@ -310,14 +323,20 @@ export async function createApp(store = new Store(), options: { research?: typeo
         })();
         return send(res, 202, { id: run.id });
       }
-      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|export|actions|draft|publications))?$/);
+      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|report-html|analytics|export|actions|draft|publications))?$/);
       if (runMatch) {
         const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run) return send(res, 404, { error: '运行不存在' });
         const action = runMatch[2];
-        if (method === 'GET' && !action) return send(res, 200, run);
+        const days = Number(url.searchParams.get('days'));
+        const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
+        if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter) });
+        if (method === 'GET' && action === 'analytics') return send(res, 200, analyzeRun(run, filter));
+        if (method === 'GET' && action === 'report-html') {
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-${run.id}.html"`, 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(reportHtml(run, filter));
+        }
         if (method === 'GET' && action === 'export') return send(res, 200, exportRun(run));
         if (method === 'GET' && action === 'report') {
-          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="citekeel-${run.id}.md"` }); return res.end(reportMarkdown(run));
+          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="citekeel-${run.id}.md"` }); return res.end(reportMarkdown(run, filter));
         }
         if (['queued', 'running'].includes(run.status)) return send(res, 409, { error: '运行结束后才能修改交付记录' });
         const input = await body(req);

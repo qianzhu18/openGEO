@@ -13,7 +13,7 @@ export class ModelSession {
   private unknownCost = false;
   constructor(private config: LiveConfig, private run: AgentRun, private persist: () => Promise<void>) {}
   async call(purpose: string, prompt: string, search = false): Promise<AnswerResult> {
-    if (this.run.calls.length >= 8) throw new Error('已达到本轮 8 次请求上限');
+    if (this.run.calls.length >= 64) throw new Error('已达到本轮 64 次请求上限');
     if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
     const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.5-flash-02-23', 'qwen/qwen3-32b'].includes(this.config.model);
     const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 1200;

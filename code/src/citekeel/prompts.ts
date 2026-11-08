@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Store } from './storage.js';
 import type { Project, Query } from './types.js';
+import { parseQuestionSet } from './question-set.js';
 export class WorkspaceError extends Error {
   constructor(message: string, readonly code = 'INVALID_INPUT', readonly status = 400) { super(message); }
 }
@@ -24,8 +25,7 @@ export class PromptService {
     return {items:rows.slice((page-1)*pageSize,page*pageSize),total:rows.length,page,pageSize,counts,version:project.queryVersion,topics:project.topics||[]};
   }
   async add(projectId:string,input:{texts:unknown;status?:unknown;topicId?:unknown;country?:unknown;expectedVersion:unknown;requestId:unknown}){
-    if(!Array.isArray(input.texts)||!input.texts.length||input.texts.length>100)throw new WorkspaceError('Add between 1 and 100 prompts.');
-    const texts=[...new Set(input.texts.map(v=>text(v,'prompt')))];
+    const texts=parseQuestionSet(input.texts,{min:1,max:100,maxLength:2000}).questions;
     const requestId=text(input.requestId,'request ID',100),fingerprint=hash({...input,texts});
     const change=await this.store.updateProject(projectId,project=>{
       const old=project.promptChanges?.find(c=>c.requestId===requestId);
@@ -50,7 +50,7 @@ export class PromptService {
     const change=await this.store.updateProject(projectId,project=>{
       const query=project.queries.find(q=>q.id===id);if(!query)throw new WorkspaceError('Prompt not found.','NOT_FOUND',404);
       if(input.expectedRevision!==(query.revision||1))throw new WorkspaceError('This prompt changed. Refresh before editing.','STALE_REVISION',409);
-      const value=input.text===undefined?query.text:text(input.text,'prompt');
+      const value=input.text===undefined?query.text:parseQuestionSet([input.text],{min:1,max:1,maxLength:2000}).questions[0]!;
       const intent=input.intent===undefined?query.intent:text(input.intent,'intent',80);
       const topicId=input.topicId===undefined?query.topicId:topic(input.topicId,project),target=country(input.country??query.country,project),now=new Date().toISOString();
       const changed=value!==query.text||target!==(query.country||project.country||'US');
