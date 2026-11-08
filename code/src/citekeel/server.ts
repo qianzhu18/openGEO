@@ -182,6 +182,38 @@ export async function createApp(store = new Store(), options: { research?: typeo
         if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
         return send(res,405,{error:'Unsupported prompt operation.'});
       }
+      const spacesMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/diagnosis-spaces(?:\/([a-zA-Z0-9_-]+))?$/);
+      if (spacesMatch) {
+        const projectId = spacesMatch[1], spaceId = spacesMatch[2];
+        const project = await store.get<Project>('projects', projectId);
+        if (!project) return send(res, 404, { error: '项目不存在' });
+        if (method === 'GET' && !spaceId) return send(res, 200, project.diagnosisSpaces || []);
+        const input = await body(req);
+        if (method === 'POST' && !spaceId) {
+          const result = await store.updateProject(projectId, current => {
+            const existing = current.diagnosisSpaces?.find(space => space.queryVersion === current.queryVersion && JSON.stringify(space.queries) === JSON.stringify(current.queries));
+            if (existing) return existing;
+            const now = new Date().toISOString();
+            const space: NonNullable<Project['diagnosisSpaces']>[number] = { id: randomUUID(), name: `问题集 v${current.queryVersion}`, queryVersion: current.queryVersion, queries: structuredClone(current.queries), targetIds: [] as string[], createdAt: now, updatedAt: now };
+            (current.diagnosisSpaces ||= []).push(space); return space;
+          });
+          return send(res, 200, result.result);
+        }
+        if (method === 'PATCH' && spaceId) {
+          if (!Array.isArray(input.targetIds) || !input.targetIds.length || input.targetIds.some((id: unknown) => !diagnosisTemplates().some(t => t.id === id)) || new Set(input.targetIds).size !== input.targetIds.length) throw new WorkspaceError('请选择有效且不重复的平台');
+          const result = await store.updateProject(projectId, current => {
+            const space = current.diagnosisSpaces?.find(s => s.id === spaceId);
+            if (!space) throw new WorkspaceError('诊断空间不存在');
+            if (input.queryIds !== undefined) {
+              if (!Array.isArray(input.queryIds) || !input.queryIds.length || input.queryIds.length > 10 || new Set(input.queryIds).size !== input.queryIds.length || input.queryIds.some((id: unknown) => !space.queries.some(q=>q.id===id))) throw new WorkspaceError('请选择空间内 1–10 个不重复的问题');
+              space.selectedQueryIds = [...input.queryIds];
+            }
+            space.targetIds = [...input.targetIds]; space.updatedAt = new Date().toISOString(); return space;
+          });
+          return send(res, 200, result.result);
+        }
+        return send(res, 405, { error: '不支持的空间操作' });
+      }
       const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations|analytics))?$/);
       if (projectMatch) {
         const project = await store.get<Project>('projects', projectMatch[1]); if (!project) return send(res, 404, { error: '项目不存在' });
@@ -217,11 +249,12 @@ export async function createApp(store = new Store(), options: { research?: typeo
           claim.status = 'confirmed'; claim.confirmation = { sourceId: input.sourceId, at: new Date().toISOString() };
         } else if (method === 'PUT' && action === 'queries') {
           const questions: string[] = parseQuestionSet(input.questions, { min: 1, max: 40, maxLength: 800 }).questions;
+          const changed = JSON.stringify(questions) !== JSON.stringify(project.queries.map(q=>q.text));
           project.queries = [...new Set<string>(questions)].map((text, i): Query => ({
             ...project.queries.find(q => q.text === text),
             id: project.queries.find(q => q.text === text)?.id || `q-v${project.queryVersion + 1}-${i + 1}`, text,
             intent: project.queries.find(q => q.text === text)?.intent || '用户问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '用户确认的问题集',
-          })); project.queryVersion += 1;
+          })); if (changed) project.queryVersion += 1;
         } else if (method === 'POST' && action === 'samples') {
           const imported = validateImport(input.samples);
           let added = false;
@@ -242,12 +275,17 @@ export async function createApp(store = new Store(), options: { research?: typeo
       }
       if (path === '/api/runs' && method === 'GET') {
         const runs = (await store.list<AgentRun>('runs')).filter(r => !url.searchParams.get('projectId') || r.projectId === url.searchParams.get('projectId'));
-        return send(res, 200, runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 60).map(r => ({ id: r.id, projectId: r.projectId, createdAt: r.createdAt, status: r.status, mode: r.mode, goal: r.goal, sampleCount: r.samples.length })));
+        return send(res, 200, runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 60).map(r => ({ id: r.id, projectId: r.projectId, createdAt: r.createdAt, status: r.status, mode: r.mode, spaceId: r.spaceId, queryVersion: r.projectSnapshot.queryVersion, goal: r.goal, sampleCount: r.samples.length })));
       }
       if (path === '/api/runs' && method === 'POST') {
         if ((await store.list<AgentRun>('runs')).some(r => ['queued', 'running'].includes(r.status))) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const input = await body(req), project = await store.get<Project>('projects', String(input.projectId || ''));
         if (!project) throw new Error('请选择项目');
+        if (input.spaceId) {
+          const space = project.diagnosisSpaces?.find(s => s.id === input.spaceId);
+          if (!space) throw new WorkspaceError('诊断空间不属于当前项目');
+          project.queries = structuredClone(space.queries); project.queryVersion = space.queryVersion;
+        }
         const mode = input.mode === 'live' ? 'live' : 'replay'; let config: LiveConfig | undefined;
         const channel = input.channel === 'browser' ? 'browser' : 'api';
         let browserEngine: BrowserEngine | undefined;
@@ -336,6 +374,8 @@ export async function createApp(store = new Store(), options: { research?: typeo
         }
         if (activeRunId) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config, diagnosisTargets);
+        if (input.spaceId) run.spaceId = input.spaceId;
+        run.projectSnapshot.diagnosisSpaces = undefined;
         activeRunId = run.id;
         try { await store.save('runs', run); } catch (error) { activeRunId = null; throw error; }
         void (async () => {

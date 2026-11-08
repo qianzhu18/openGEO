@@ -45,7 +45,11 @@ export interface MeasurementUnit {
   attempts: MeasurementAttemptRecord[]; selectedSampleId?: string; selectedChannel?: 'web' | 'api';
 }
 export interface TrackedBrand { id: string; name: string; aliases: string[]; domains: string[]; status: 'active' | 'suggested' | 'inactive'; isOwn: boolean }
+export interface DiagnosisSpace {
+  id: string; name: string; queryVersion: number; queries: Query[]; targetIds: string[]; selectedQueryIds?: string[]; createdAt: string; updatedAt: string;
+}
 export interface Project {
+  diagnosisSpaces?: DiagnosisSpace[];
   recordings?: import('./recordings.js').Recording[];
   competitors?: TrackedBrand[];
   tableSettings?: { hiddenColumns: string[]; deltaDisplay: 'full' | 'icon' | 'none'; version: number };
@@ -100,7 +104,7 @@ export interface ModelCall {
 }
 export interface Publication { id: string; url: string; recordedAt: string; note: string; state: 'recorded_not_verified' }
 export interface AgentRun {
-  id: string; projectId: string; projectSnapshot: Project; mode: Mode; goal: string;
+  id: string; projectId: string; spaceId?: string; projectSnapshot: Project; mode: Mode; goal: string;
   status: 'queued' | 'running' | 'completed' | 'needs_review' | 'failed' | 'interrupted';
   createdAt: string; finishedAt?: string; steps: Step[]; queries: Query[]; samples: Sample[];
   audit?: Audit; actions: Action[]; draft?: Draft; calls: ModelCall[]; publications: Publication[];

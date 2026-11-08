@@ -56,3 +56,20 @@ export function collectionStatusPanel(run, en = false) {
   const count = quality?.valid ?? selected.filter(valid).length;
   return `<section class="panel section-gap collection-status"><div class="panel-head"><h2>${t('采集状态', 'Collection status')}</h2></div><div class="panel-body"><p>${t('本批次有效回答 / 计划单元', 'Valid answers / planned units in this saved run')}: <strong>${count}/${planned}</strong></p><p>${t('采集异常不属于品牌优化建议。失败、跳过与截断见原文和执行记录；切换采集路由仅影响新运行，不会重采或改写旧批次。', 'Collection incidents are separate from brand recommendations. Inspect failures, skipped attempts and truncation in the evidence and workflow. Route changes affect new runs; this saved run is not recollected or rewritten.')}</p><button class="${en ? 'button small' : 'btn small'}" ${en ? 'data-view="agent"' : 'data-nav="flow"'}>${t('查看执行记录', 'View workflow')}</button></div></section>`;
 }
+
+// Execution progress is work processed, never a visibility or success percentage.
+export function executionPanel(run, en = false) {
+  if (!run) return '';
+  const t = (zh, english) => en ? english : zh;
+  const active = ['queued', 'running'].includes(run.status), units = run.measurementUnits || [];
+  const done = units.filter(u => u.status !== 'planned').length;
+  const steps = run.steps || [], settled = steps.filter(s => ['completed','blocked','failed'].includes(s.status)).length;
+  const current = steps.find(s => s.status === 'running');
+  const work = steps.reduce((sum,s) => sum + (['completed','blocked','failed'].includes(s.status) ? 1 : s.id === 'audit' && s.status === 'running' && units.length ? done/units.length : 0), 0);
+  const percent = active ? Math.min(99, Math.floor(work / Math.max(1,steps.length) * 100)) : ['completed','needs_review'].includes(run.status) ? 100 : Math.floor(work/Math.max(1,steps.length)*100);
+  const labels = {queued:t('等待执行','Queued'),running:t('品牌诊断进行中','Brand diagnosis in progress'),completed:t('诊断已完成','Diagnosis completed'),needs_review:t('执行已结束，有待处理项','Finished with items to review'),failed:t('执行失败，结果不完整','Failed, results are incomplete'),interrupted:t('执行已中断，结果不完整','Interrupted, results are incomplete')};
+  const quality = run.analytics?.quality;
+  const failures = units.filter(u=>u.status === 'failed').length;
+  const summary = active ? t('结果将在本轮结束后展示。可以离开此页面，返回后继续查看保存的状态。','Results appear when this run finishes. You may leave and return to the saved state.') : `${t('有效回答','Valid answers')}: ${quality?.valid ?? 'UNKNOWN'}/${quality?.planned ?? (units.length || 'UNKNOWN')} · ${t('失败单元','Failed units')}: ${failures} · ${t('已保存原文','Saved answer records')}: ${(run.samples || []).filter(s=>s.answer?.trim()).length}`;
+  return `<section class="execution-panel ${active?'is-running':''}" aria-label="${t('诊断执行状态','Diagnosis execution status')}" aria-busy="${active}"><div class="execution-heading"><div><small>${t('本轮执行状态','Run status')} · ${esc(run.id.slice(0,8))}</small><h2>${esc(labels[run.status] || run.status)}</h2></div><strong>${percent}%</strong></div><progress max="100" value="${percent}" aria-label="${t('诊断执行进度','Diagnosis progress')}"></progress><p>${active ? `${t('当前阶段','Current stage')}: ${esc(current?.label || t('准备执行','Preparing'))} · ${units.length ? `${t('已处理','Processed')} ${done}/${units.length} ${t('个单元','units')}` : `${settled}/${steps.length} ${t('个阶段','steps')}`}` : t('执行进度不代表采集成功率；结果中的失败与未知仍保留。','Execution progress is not collection success. Failures and unknowns remain in the results.')}</p><p>${esc(summary)}</p>${run.error?`<p class="execution-error">${esc(run.error)}</p>`:''}${!active && steps.some(s=>['blocked','failed'].includes(s.status))?`<p>${t('待处理阶段','Stages to review')}: ${steps.filter(s=>['blocked','failed'].includes(s.status)).map(s=>esc(s.label)).join(' · ')}</p>`:''}</section>`;
+}

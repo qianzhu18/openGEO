@@ -43,3 +43,31 @@ test('project deletion API scopes runs, refuses writes while deleted and permits
   assert.equal((await fetch(`${base}/api/runs/${run.id}`)).status,200);
  } finally {await new Promise<void>(resolve=>app.server.close(()=>resolve()));await rm(root,{recursive:true,force:true});}
 });
+
+test('diagnosis spaces persist immutable question versions, platform selection and scoped run association',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'opengeo-spaces-'));
+ const {createApp}=await import('../src/citekeel/server.js');
+ const {server,store}=await createApp(new Store(root));await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const base=`http://127.0.0.1:${(server.address() as {port:number}).port}`;
+ const call=async(path:string,method='GET',body?:object)=>fetch(base+path,{method,...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});
+ try {
+  const a=syntheticProject(),b={...syntheticProject(),id:'other-space-project'};await store.save('projects',a);await store.save('projects',b);
+  const spaces=`/api/projects/${a.id}/diagnosis-spaces`;
+  const first=await(await call(spaces,'POST',{})).json();
+  assert.equal((await(await call(spaces,'POST',{})).json()).id,first.id);
+  const unchanged=await(await call(`/api/projects/${a.id}/queries`,'PUT',{questions:a.queries.map(q=>q.text)})).json();assert.equal(unchanged.queryVersion,a.queryVersion);
+  await call(spaces+'/'+first.id,'PATCH',{targetIds:['qwen'],queryIds:[first.queries[0].id]});
+  await call(`/api/projects/${a.id}/queries`,'PUT',{questions:['Which platform fits a new task?']});
+  const second=await(await call(spaces,'POST',{})).json();assert.notEqual(second.id,first.id);
+  const reloaded=await(new Store(root)).get<any>('projects',a.id);
+  assert.deepEqual(reloaded.diagnosisSpaces[0].queries,first.queries);assert.deepEqual(reloaded.diagnosisSpaces[0].targetIds,['qwen']);assert.deepEqual(reloaded.diagnosisSpaces[0].selectedQueryIds,[first.queries[0].id]);
+  assert.equal((await call(spaces+'/'+first.id,'PATCH',{targetIds:['qwen'],queryIds:['foreign-question']})).status,400);
+  assert.equal((await call('/api/runs','POST',{projectId:b.id,spaceId:first.id})).status,400);
+  const response=await call('/api/runs','POST',{projectId:a.id,spaceId:first.id,mode:'replay'});assert.equal(response.status,202);const {id}=await response.json();
+  let run:any;
+  for(let i=0;;i++){run=await(await call('/api/runs/'+id)).json();if(!['running','queued'].includes(run.status))break;assert.ok(i<100);await new Promise(r=>setTimeout(r,10));}
+  assert.equal(run.spaceId,first.id);assert.deepEqual(run.projectSnapshot.queries,first.queries);
+  assert.equal((await store.get<any>('projects',a.id)).queryVersion,second.queryVersion);
+  assert.equal((await(await call(`/api/runs?projectId=${a.id}`)).json())[0].spaceId,first.id);
+ }finally{server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));await rm(root,{recursive:true,force:true});}
+});

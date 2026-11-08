@@ -195,19 +195,21 @@ test('a failed run choice resumes polling the displayed running workflow', async
  await page.route(`**/api/runs/${runIds[1]}{,?*}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
  await page.route(`**/api/runs/${runIds[0]}`,async route=>{await route.fulfill({status:500,json:{error:'fixture unavailable'}});});
  await page.goto(`/workspace?project=${projectId}&run=${runIds[1]}`);
- await expect(page.getByLabel('Analysis run',{exact:true})).toBeVisible();
- const before=reads;await page.getByLabel('Analysis run',{exact:true}).selectOption(runIds[0]!);
+ await page.getByRole('button',{name:'Agent',exact:true}).click();
+ const before=reads;await page.locator(`[data-run="${runIds[0]}"]`).click();
  await expect.poll(()=>reads).toBeGreaterThan(before);
- await expect(page.getByRole('link',{name:'Export report ↗'})).toHaveAttribute('href',new RegExp(runIds[1]!));
+ await expect(page.getByRole('heading',{name:'Brand diagnosis in progress',exact:true})).toBeVisible();
+ await expect(page.getByRole('link',{name:'Export report ↗'})).toHaveCount(0);
 });
 test('Chinese failed run selection keeps the displayed workflow polling', async ({page,request}) => {
  const response=await request.get(`/api/runs/${runIds[1]}`);const saved=await response.json();let reads=0;
  await page.route(`**/api/runs/${runIds[1]}{,?*}`,async route=>{reads++;await route.fulfill({json:{...saved,status:'running'}});});
  await page.route(`**/api/runs/${runIds[0]}`,async route=>{await route.fulfill({status:500,json:{error:'fixture unavailable'}});});
- await page.goto(`/?project=${projectId}`);await expect(page.locator('[data-analysis-run]')).toBeVisible();
- const before=reads;await page.locator('[data-analysis-run]').selectOption(runIds[0]!);
+ await page.goto(`/?project=${projectId}`);await expect(page.locator('[data-space-run]')).toBeVisible();
+ const before=reads;await page.locator('[data-space-run]').selectOption(runIds[0]!);
  await expect.poll(()=>reads).toBeGreaterThan(before);
- await expect(page.getByRole('link',{name:'导出报告 ↗'})).toHaveAttribute('href',new RegExp(runIds[1]!));
+ await expect(page.getByRole('heading',{name:'品牌诊断进行中',exact:true})).toBeVisible();
+ await expect(page.getByRole('link',{name:'导出报告 ↗'})).toHaveCount(0);
 });
 
 
