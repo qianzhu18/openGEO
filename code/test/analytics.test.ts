@@ -20,3 +20,15 @@ test('exports share analysis filters, remove strategy noise, and HTML keeps host
  const run=createRun(project,'replay');run.samples=[sample('good',{answer:'AgileX <script>alert(1)</script> [click](javascript:alert(1)) ![image](https://tracker.example/pixel)'}),sample('other',{model:'other/model',answer:'Other'})];run.actions=[{id:'a',title:'SHOULD NOT APPEAR',kind:'content',priority:'P1',rationale:'',queryIds:[],sampleIds:[],claimIds:[],acceptance:'',status:'proposed'}];
  const md=reportMarkdown(run,{model:'deepseek/test'});assert.match(md,/1\/1/);assert.ok(!md.includes('SHOULD NOT APPEAR'));assert.ok(!md.includes('### other'));const html=reportHtml(run);assert.ok(!html.includes('<script>'));assert.ok(!html.includes('href="javascript:'));assert.ok(!html.includes('<img'));assert.match(html,/&lt;script&gt;/);
 });
+test('reused local IDs across batches keep independent eligibility, sources and trends', () => {
+ const run=createRun(project,'replay');run.samples=[sample('same',{runGroup:'first'}),sample('same',{runGroup:'second',analysisStatus:'failed',answer:'Other'})];
+ const a=analyzeRun(run);assert.equal(a.quality.valid,1);assert.equal(a.quality.excluded,1);assert.equal(a.rows[0]?.mentioned,true);assert.equal(a.sources.cohorts.length,1);assert.equal(a.trends.flatMap(t=>t.points).length,1);
+});
+test('a selected record cannot inflate metrics through two frozen units', () => {
+ const run=createRun(project,'replay');run.samples=[sample('one')];run.measurementUnits=['u1','u2'].map(id=>({id,queryId:'q1',question:project.queries[0]!.text,targetId:'api',platform:'API',preferredChannel:'api',status:'completed',selectedSampleId:'one',attempts:[]}));
+ const a=analyzeRun(run);assert.equal(a.quality.valid,1);assert.equal(a.metrics.brands[0]?.visibility.denominator,1);assert.equal(a.sources.domains[0]?.citationCount,1);assert.equal(a.rows[1]?.reason,'duplicate-adopted-sample');
+});
+test('ambiguous frozen references fail explicitly rather than select the last record', () => {
+ const run=createRun(project,'replay');run.samples=[sample('same',{runGroup:'a'}),sample('same',{runGroup:'b'})];run.measurementUnits=[{id:'u1',queryId:'q1',question:project.queries[0]!.text,targetId:'api',platform:'API',preferredChannel:'api',status:'completed',selectedSampleId:'same',attempts:[]}];
+ const a=analyzeRun(run);assert.equal(a.quality.valid,0);assert.equal(a.rows[0]?.reason,'ambiguous-selected-sample');
+});
