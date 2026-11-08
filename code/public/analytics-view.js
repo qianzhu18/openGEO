@@ -32,3 +32,27 @@ function trendSvg(a, chart, t) {
   return `<svg class="da-chart" viewBox="0 0 600 270" role="img" aria-label="${t('按协议分组的实际观测','Observed values by protocol')}">${[0,25,50,75,100].map(v => `<line x1="50" y1="${225-v*1.9}" x2="560" y2="${225-v*1.9}" stroke="#e7ece9"/><text x="40" y="${229-v*1.9}" text-anchor="end">${v}%</text>`).join('')}${series.map((s,i) => `${s.points.length > 1 ? `<polyline points="${s.points.map(p => `${x(p.day)},${225-(p.value || 0)*190}`).join(' ')}" fill="none" stroke="${colors[i%5]}" stroke-width="2"/>` : ''}${s.points.map(p => `<circle cx="${x(p.day)}" cy="${225-(p.value || 0)*190}" r="${5+i%3}" fill="${colors[i%5]}" fill-opacity=".75"><title>${esc(s.label)} · ${p.day} · ${pct(p)} (${p.numerator}/${p.denominator})</title></circle>`).join('')}`).join('')}${days.map(day => `<text x="${x(day)}" y="255" text-anchor="middle">${esc(day.slice(5))}</text>`).join('')}</svg><p class="da-caption">${days.length === 1 ? t('仅一个观测日，显示实际点位。','One observed date; showing actual points.') : ''}</p><div class="da-legend">${series.map((s,i) => `<details><summary><span class="da-color-${i%5}">●</span> ${esc(s.label)}</summary><code>${esc(s.protocolId)}</code></details>`).join('')}</div>`;
 }
 export function analysisQuery(filters = {}) { const p = new URLSearchParams(); for (const [key,value] of Object.entries(filters)) if (value && value !== 'all') p.set(key,String(value)); return p.size ? '?' + p : ''; }
+
+
+// Saved run actions are immutable observations of the old planner. Project their
+// operational tasks separately, so a collector incident is not a brand strategy.
+export function brandActions(run) {
+  return (run?.actions || []).filter(action => action.kind !== 'measurement');
+}
+export function collectionStatusPanel(run, en = false) {
+  if (!run) return '';
+  const t = (zh, english) => en ? english : zh;
+  const units = run.measurementUnits || [];
+  const valid = sample => sample && sample.selected !== false && sample.collectionStatus === 'completed' && sample.analysisStatus === 'completed' && Boolean(sample.answer?.trim());
+  const records = run.samples || [];
+  const selected = units.length ? units.map(unit => {
+    const candidates = records.filter(s => s.id === unit.selectedSampleId);
+    const linked = candidates.filter(s => s.measurementUnitId === unit.id);
+    const choices = linked.length ? linked : candidates;
+    return choices.length === 1 ? choices[0] : null;
+  }) : records.filter(s => s.selected !== false);
+  const quality = run.analytics?.quality;
+  const planned = quality?.planned ?? selected.length;
+  const count = quality?.valid ?? selected.filter(valid).length;
+  return `<section class="panel section-gap collection-status"><div class="panel-head"><h2>${t('采集状态', 'Collection status')}</h2></div><div class="panel-body"><p>${t('本批次有效回答 / 计划单元', 'Valid answers / planned units in this saved run')}: <strong>${count}/${planned}</strong></p><p>${t('采集异常不属于品牌优化建议。失败、跳过与截断见原文和执行记录；切换采集路由仅影响新运行，不会重采或改写旧批次。', 'Collection incidents are separate from brand recommendations. Inspect failures, skipped attempts and truncation in the evidence and workflow. Route changes affect new runs; this saved run is not recollected or rewritten.')}</p><button class="${en ? 'button small' : 'btn small'}" ${en ? 'data-view="agent"' : 'data-nav="flow"'}>${t('查看执行记录', 'View workflow')}</button></div></section>`;
+}

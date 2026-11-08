@@ -52,7 +52,7 @@ test('diagnosis entry submits a frozen question set and platform matrix without 
     expect.objectContaining({ id: 'chatgpt', provider: 'cloro', model: 'chatgpt', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'gemini', provider: 'cloro', model: 'gemini', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'deepseek', provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash', preferredChannel: 'api' }),
-    expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3.8-flash', preferredChannel: 'api', searchMode: 'disabled', browserPreference: 'browser_first' }),
+    expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3.8-flash', preferredChannel: 'api', searchMode: 'disabled', browserPreference: 'api_only' }),
     expect.objectContaining({ id: 'seed', provider: 'openrouter', model: 'bytedance-seed/seed-2-1-turbo', preferredChannel: 'api' }),
   ]));
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('page-memory-key-not-persisted');

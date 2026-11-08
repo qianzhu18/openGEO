@@ -214,3 +214,24 @@ test('Chinese failed run selection keeps the displayed workflow polling', async 
  await expect.poll(()=>reads).toBeGreaterThan(before);
  await expect(page.getByRole('link',{name:'导出报告 ↗'})).toHaveAttribute('href',new RegExp(runIds[1]!));
 });
+
+
+test('saved collection failures stay out of brand actions on both surfaces', async ({ page }) => {
+  const run = await store.get<any>('runs', runIds[1]!);
+  run.actions.unshift({ id: 'legacy-failure', title: '复核失败样本，保留已有回答原文', kind: 'measurement', priority: 'P0', rationale: '78 条记录采集或分析未完成，不能作为未提及统计。', queryIds: ['stable-prompt-1'], sampleIds: Array(78).fill('answer-failed'), claimIds: [], acceptance: 'Retry only with an explicit new run.', status: 'proposed' });
+  run.actions[1].sampleIds = Array(78).fill('answer-b');
+  await store.save('runs', run);
+  await page.goto(`/workspace?project=${projectId}&run=${run.id}&view=actions`);
+  await expect(page.getByRole('heading', { name: 'Collection status', exact: true })).toBeVisible();
+  const business = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Evidence-backed actions', exact: true }) });
+  await expect(business.locator('.action-item')).toHaveCount(1);
+  await expect(business.getByRole('button', { name: 'View answer evidence' })).toHaveCount(1);
+  await expect(business.getByRole('heading', { name: 'Improve the product analytics evidence page' })).toBeVisible();
+  await expect(business).not.toContainText('78 条记录');
+  await page.goto(`/?project=${projectId}`);
+  await page.getByRole('button', { name: '策略任务', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '采集状态', exact: true })).toBeVisible();
+  await expect(page.locator('.task')).toHaveCount(1);
+  await expect(page.locator('.task')).toContainText('Improve the product analytics evidence page');
+  expect((await store.get<any>('runs', run.id)).actions[0].sampleIds).toHaveLength(78);
+});

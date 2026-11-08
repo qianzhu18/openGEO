@@ -54,7 +54,7 @@ function diagnosisTemplates() {
     { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'cloro', model: 'gemini', webSearch: false, searchMode: 'disabled' as const, browserPreference: 'api_only' as const, collectionNote: 'Cloro 远程网页监测 API；不等同于本机网页四件套。' },
     ...(['deepseek', 'qwen', 'seed'] as const).map(id => ({ id, platform: { deepseek: 'DeepSeek', qwen: '千问', seed: '豆包 Seed' }[id], preferredChannel: 'api' as const,
       provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV[id]] || OPENROUTER_DIAGNOSIS_MODELS[id], webSearch: false, searchMode: 'disabled' as const,
-      browserPreference: 'browser_first' as const, collectionNote: '浏览器优先；正式网页适配器未实现，当前明确降级为 OpenRouter API（默认不搜索）。' })),
+      browserPreference: 'api_only' as const, collectionNote: 'OpenRouter API 直接采样，默认不搜索；浏览器自动化后续单独验收。' })),
   ].map(target => ({ ...target, configured: hasProviderKey(target.provider) }));
 }
 function hostWebCollector(worker: HostBrowserMailbox) {

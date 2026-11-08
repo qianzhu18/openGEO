@@ -302,7 +302,7 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     assert.equal(status.version, manifest.version);
     assert.deepEqual(status.diagnosisTargets.map((target: any) => target.id), ['chatgpt', 'gemini', 'deepseek', 'qwen', 'seed']);
     assert.ok(status.diagnosisTargets.slice(0, 2).every((target: any) => target.provider === 'cloro'));
-    assert.ok(status.diagnosisTargets.slice(2).every((target: any) => target.provider === 'openrouter' && target.browserPreference === 'browser_first' && target.searchMode === 'disabled'));
+    assert.ok(status.diagnosisTargets.slice(2).every((target: any) => target.provider === 'openrouter' && target.browserPreference === 'api_only' && target.searchMode === 'disabled'));
     const project = await request('/api/projects', 'POST', { brand: '临界仪器', industry: '温度仪表', brief: '产品：温度探头' }) as Project;
     await request(`/api/projects/${project.id}/claims`, 'POST', { claimId: 'claim-1', sourceId: 'user-brief' });
     await request(`/api/projects/${project.id}/samples`, 'POST', { samples: [{ question: '温度探头怎么选？', answer: '可以考虑临界仪器，先核对规格。' }] });
