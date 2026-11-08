@@ -71,6 +71,13 @@ export interface Action {
   id: string; title: string; kind: 'fact' | 'content' | 'source' | 'measurement';
   priority: 'P0' | 'P1' | 'P2'; rationale: string; queryIds: string[]; sampleIds: string[];
   claimIds: string[]; acceptance: string; status: 'proposed' | 'in_progress' | 'done';
+  /** Optional content-opportunity fields. Older saved runs remain valid without them. */
+  contentType?: 'faq' | 'product_page' | 'comparison' | 'implementation_guide' | 'case_study' | 'selection_guide';
+  trigger?: string;
+  evidenceGap?: string;
+  recommendedFacts?: string[];
+  outline?: string[];
+  contentStatus?: 'ready' | 'needs-review' | 'blocked';
 }
 export interface Draft {
   title: string; markdown: string; claimIds: string[]; status: 'blocked' | 'draft' | 'reviewed';

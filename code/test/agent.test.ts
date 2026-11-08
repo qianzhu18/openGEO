@@ -8,7 +8,7 @@ import { loadCases, syntheticProject } from '../src/citekeel/cases.js';
 import { createRun, executeRun } from '../src/citekeel/engine.js';
 import { Store } from '../src/citekeel/storage.js';
 import { exportRun, redactExportText } from '../src/citekeel/report.js';
-import { validateModelActions } from '../src/citekeel/skills.js';
+import { planActions, validateModelActions } from '../src/citekeel/skills.js';
 import { createApp } from '../src/citekeel/server.js';
 import type { AgentRun, Project } from '../src/citekeel/types.js';
 
@@ -116,6 +116,21 @@ test('changing questions does not reuse answers from an incompatible question ve
 test('model plans with fabricated evidence IDs are rejected', () => {
   const run = createRun(syntheticProject(), 'replay');
   assert.throws(() => validateModelActions([{ title: 'test', rationale: 'test', acceptance: 'test', queryIds: [], sampleIds: ['invented'], claimIds: [] }], run));
+});
+
+test('content opportunities keep candidate comparisons separate and expose review gates', () => {
+  const project = syntheticProject();
+  project.market = 'china';
+  project.queries = [{ ...project.queries[0], id: 'candidate-q', text: '比较 PiPER、xArm 和 myCobot，按预算和 ROS 2 兼容性分段推荐。', intent: 'candidate_comparison', branded: true }];
+  const run = createRun(project, 'replay');
+  run.queries = structuredClone(project.queries);
+  run.samples = [];
+  run.audit = { planned: 0, collected: 0, analyzed: 0, collectionFailed: 0, analysisFailed: 0, mention: { numerator: 0, denominator: 0, value: null }, recommendation: { numerator: 0, denominator: 0, value: null }, judgments: [], providerCitations: 0, searchResults: 0, groundings: 0, answerUrls: 0, citationIntegrityFailures: 0, strata: [] };
+  const action = planActions(project, run).find(item => item.contentType === 'comparison');
+  assert.ok(action);
+  assert.equal(action?.queryIds[0], 'candidate-q');
+  assert.equal(action?.contentStatus, 'needs-review');
+  assert.ok(action?.outline?.includes('预算/任务/软件生态分段'));
 });
 
 test('live transport uses upstream provider, isolates measurement prompts, validates plans and strips secrets', async () => {

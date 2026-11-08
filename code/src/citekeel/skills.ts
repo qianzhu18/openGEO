@@ -15,7 +15,7 @@ export class ModelSession {
   async call(purpose: string, prompt: string, search = false): Promise<AnswerResult> {
     if (this.run.calls.length >= 64) throw new Error('已达到本轮 64 次请求上限');
     if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
-    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.5-flash-02-23', 'qwen/qwen3-32b'].includes(this.config.model);
+    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.8-flash', 'qwen/qwen3-32b'].includes(this.config.model);
     const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 1200;
     const call = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
       startedAt: new Date().toISOString(), status: 'running' as const,
@@ -81,7 +81,25 @@ export function planActions(project: Project, run: AgentRun): Action[] {
     rationale: `${missed.length} 条可判定的非品牌回答没有品牌名称；先补充适用场景、参数限制和选择依据。`,
     queryIds: [...new Set(missed.map(s => s.queryId))].slice(0, 6), sampleIds: missed.slice(0, 6).map(s => s.id),
     claimIds: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
-    acceptance: '产出一份含事实来源的选型内容，发布后使用原问题版本复测；不预设推荐提升。' });
+    acceptance: '产出一份含事实来源的选型内容，发布后使用原问题版本复测；不预设推荐提升。',
+    contentType: 'selection_guide', trigger: missed.map(s => s.question).join('；'),
+    evidenceGap: '有效回答未点名品牌，当前缺少能让读者比较适用场景、参数和限制的公开内容。',
+    recommendedFacts: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
+    outline: ['适用场景与排除条件', '关键参数与版本边界', '与替代方案的选择依据', '验证步骤与来源'],
+    contentStatus: project.claims.some(c => c.status !== 'confirmed') ? 'needs-review' : 'ready' });
+  const candidateQuery = run.queries.find(q => q.intent === 'candidate_comparison');
+  if (candidateQuery) {
+    const related = run.samples.filter(s => s.queryId === candidateQuery.id);
+    const confirmed = project.claims.filter(c => c.status === 'confirmed').map(c => c.id);
+    add({ title: '把候选比较题整理成分段选型页', priority: 'P1', kind: 'content',
+      rationale: '候选比较题已经给出比较集合，适合用预算、任务、软件生态和维护条件分段回答，避免生成无依据的单一排名。',
+      queryIds: [candidateQuery.id], sampleIds: related.map(s => s.id).slice(0, 6), claimIds: confirmed,
+      acceptance: '每个比较维度都能回到确认事实或明确标为待核对；发布后用同一候选集合复测。',
+      contentType: 'comparison', trigger: candidateQuery.text,
+      evidenceGap: '候选集合有明确题目来源，但品牌型号、兼容版本和性能差异尚未全部核验。',
+      recommendedFacts: confirmed, outline: ['比较范围与不适用条件', '预算/任务/软件生态分段', '候选产品证据表', '采购前验证清单'],
+      contentStatus: project.claims.some(c => c.status !== 'confirmed') ? 'needs-review' : 'ready' });
+  }
   if (!run.audit?.providerCitations || run.audit.answerUrls > run.audit.providerCitations) add({ title: '核对来源类型和页面证据', priority: 'P1', kind: 'source',
     rationale: `目前有 ${run.audit?.providerCitations || 0} 个 Provider 引用项，${run.audit?.answerUrls || 0} 个正文链接，二者需要分别核对。`,
     queryIds: [], sampleIds: run.samples.filter(s => s.citations.length).slice(0, 5).map(s => s.id), claimIds: [],
@@ -108,7 +126,13 @@ export function validateModelActions(value: unknown, run: AgentRun): Action[] {
     return { id: `model-action-${i + 1}`, title: row.title, rationale: row.rationale, acceptance: row.acceptance,
       kind: ['fact', 'content', 'source', 'measurement'].includes(row.kind) ? row.kind : 'content',
       priority: ['P0', 'P1', 'P2'].includes(row.priority) ? row.priority : 'P1',
-      queryIds: row.queryIds, sampleIds: row.sampleIds, claimIds: row.claimIds, status: 'proposed' };
+      queryIds: row.queryIds, sampleIds: row.sampleIds, claimIds: row.claimIds, status: 'proposed',
+      ...(typeof row.contentType === 'string' ? { contentType: row.contentType } : {}),
+      ...(typeof row.trigger === 'string' ? { trigger: row.trigger } : {}),
+      ...(typeof row.evidenceGap === 'string' ? { evidenceGap: row.evidenceGap } : {}),
+      ...(Array.isArray(row.recommendedFacts) ? { recommendedFacts: row.recommendedFacts.filter((id: unknown) => typeof id === 'string' && known.claimIds.has(id)) } : {}),
+      ...(Array.isArray(row.outline) ? { outline: row.outline.filter((item: unknown) => typeof item === 'string').slice(0, 8) } : {}),
+      ...(row.contentStatus === 'ready' || row.contentStatus === 'needs-review' || row.contentStatus === 'blocked' ? { contentStatus: row.contentStatus } : {}) };
   });
 }
 export function strategyPrompt(run: AgentRun): string {

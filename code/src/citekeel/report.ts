@@ -51,6 +51,22 @@ export function reportMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): str
     for (const [label, rows] of [[section('域名', 'Domain'), cohort.domains], ['URL', cohort.urls]] as const) report += table([label, section('证据类型/完整性', 'Kind/integrity'), section('来源项', 'Items'), section('使用率', 'Used'), section('同类型引用份额', 'Same-kind citation share'), section('样本', 'Samples')], rows.map(s => [s.source, `${s.kind}/${s.integrity}`, s.citationCount, rate(s.used), rate(s.citationShare), s.sampleIds.join(', ')])) + '\n\n';
   }
   report += `## ${section('测量明细与失败原因', 'Measurement details and failures')}\n\n` + table([section('问题','Question'),section('平台','Platform'),section('通道/模型','Channel / model'),section('状态','Status'),section('原因与尝试','Reason and attempts'),section('样本','Sample')], a.rows.map(r => [r.question, r.platform, `${r.channel || 'UNKNOWN'} / ${r.model || 'UNKNOWN'}`, r.status, [r.reason, ...r.attemptDetails.map(a => `${a.channel}/${a.status}${a.fallback ? '/fallback' : ''}: ${a.reason || a.model || '-'}`)].filter(Boolean).join('; '), r.sampleId || '-'])) + '\n\n';
+  report += `## ${section('策略与内容机会', 'Strategy and content opportunities')}\n\n`;
+  const contentActions = run.actions.filter(action => Boolean(action.contentType));
+  if (!contentActions.length) report += `${section('本轮没有生成结构化内容机会。', 'No structured content opportunities were generated in this run.')}\n\n`;
+  for (const action of contentActions) {
+    report += `### ${cell(action.priority)} · ${cell(action.title)}\n\n`;
+    report += `${cell(action.rationale)}\n\n`;
+    if (action.contentType) report += `- ${section('内容类型', 'Content type')}: ${cell(action.contentType)}\n`;
+    if (action.contentStatus) report += `- ${section('内容状态', 'Content status')}: ${cell(action.contentStatus)}\n`;
+    if (action.trigger) report += `- ${section('触发问题', 'Trigger')}: ${cell(action.trigger)}\n`;
+    if (action.evidenceGap) report += `- ${section('证据缺口', 'Evidence gap')}: ${cell(action.evidenceGap)}\n`;
+    if (action.recommendedFacts?.length) report += `- ${section('建议核对事实', 'Facts to review')}: ${action.recommendedFacts.map(cell).join(', ')}\n`;
+    if (action.outline?.length) report += `- ${section('推荐结构', 'Suggested outline')}: ${action.outline.map(cell).join(' → ')}\n`;
+    report += `- ${section('验收', 'Acceptance')}: ${cell(action.acceptance)}\n`;
+    report += `- ${section('证据 ID', 'Evidence IDs')}: ${[...action.queryIds, ...action.sampleIds, ...action.claimIds].map(cell).join(', ') || 'UNKNOWN'}\n\n`;
+  }
+  report += `${section('内容草稿只有在品牌事实确认后才会解除阻塞；制作单不等于已发布或已被 AI 引用。', 'Content drafts remain blocked until brand facts are reviewed; a content brief is not publication or AI citation evidence.')}\n\n`;
   report += `## ${section('指标定义与限制', 'Definitions and limitations')}\n\n` + Object.entries(a.metrics.formulas).map(([key, value]) => `- ${key}: ${value}`).join('\n') + '\n' + Object.entries(a.sources.formulas).map(([key, value]) => `- ${key}: ${value}`).join('\n') + `\n- metricVersion: ${a.version}; ${a.metrics.version}; ${a.metrics.matcherVersion}\n- ${section('首次出现序不是推荐排名。来源存在不证明其支持事实。未验证情绪、搜索量、转化和增长效果。', 'Appearance order is not recommendation rank. Source presence does not establish factual support. Sentiment, volume, conversion and uplift are unverified.')}\n\n`;
   report += `## ${section('证据附录：回答原文', 'Evidence appendix: original answers')}\n\n`;
   const unitIds = new Set(a.rows.map(r => r.id));
