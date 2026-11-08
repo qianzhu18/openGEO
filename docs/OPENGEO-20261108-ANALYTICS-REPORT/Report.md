@@ -49,3 +49,5 @@
 - 中文 Actions 页面展示内容类型、触发问题、证据缺口和推荐结构；模型设置默认值更新为用户提供的 `qwen/qwen3.8-flash`，实际可用性仍以本地 provider catalog 为准。
 - AgileX / 松灵 API 补测回放产物位于本机 `code/data/reports/AgileX-松灵机器人-诊断-API补测-20261108/`，15 个计划样本中 1 条有效、14 条失败；失败不进分母，报告没有将其包装成完整 v5 基线。
 - 面试采集记录已写入外部 Vault：`面试准备/数据采集-know how.md`，包含人工 → Playwright/Playwriter 探索 → Kimi WebBridge/Xue → API 混合的取舍与未完成项。
+
+AgileX 网页预检（`npm run --silent browser:probe`）返回 `profile_config_missing`：当前未配置 `data/browser-config.json` 的 `profileName: Xue`。因此本轮不回退其他 profile，也不把 API 结果写成网页结果；失败记录见 AgileX 报告目录的 `网页采样预检-失败.md`。
