@@ -84,3 +84,18 @@ test('website intake preserves returned evidence without confirming it or modify
     assert.deepEqual(outcome.project.queries, project.queries);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+test('local text originals are isolated by project and unsupported formats fail explicitly', async () => {
+ const root = await mkdtemp(join(tmpdir(), 'opengeo-files-'));
+ try {
+  const store=new Store(root), a=syntheticProject(), b={...syntheticProject(),id:'other-brand'};
+  a.sources=[]; b.sources=[]; await store.save('projects',a);await store.save('projects',b);
+  const service=new BrandSourceService(store), input={kind:'file',fileName:'spec.md',base64:Buffer.from('PiPER payload: 1.5 kg.').toString('base64')};
+  const left=await service.add(a.id,input),right=await service.add(b.id,input);
+  assert.notEqual(left.project.sources[0].localPath,right.project.sources[0].localPath);
+  assert.match(left.project.sources[0].localPath!,new RegExp(a.id));
+  assert.equal((await service.add(a.id,input)).result.added,0);
+  await assert.rejects(service.add(a.id,{...input,fileName:'spec.docx'}),/支持/);
+  assert.equal((await store.get<Project>('projects',b.id))!.sources.length,1);
+ } finally {await rm(root,{recursive:true,force:true});}
+});

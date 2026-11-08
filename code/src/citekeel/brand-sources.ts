@@ -49,16 +49,32 @@ export class BrandSourceService {
         }
         if (!sources.length) throw new Error('PDF 没有可提取文字，扫描件 OCR 未实现，请粘贴并核对原文');
       } finally { await task.destroy(); }
-      const directory = join(this.store.root, 'brand-documents');
+      const directory = join(this.store.root, 'brand-documents', projectId);
       await mkdir(directory, { recursive: true });
       const localPath = join(directory, `${sha256}.pdf`);
       await writeFile(localPath, bytes, { mode: 0o600, flag: 'wx' }).catch(error => { if (error.code !== 'EEXIST') throw error; });
       sources.forEach(source => { source.localPath = localPath; });
+    } else if (input.kind === 'file') {
+      const fileName = field(input.fileName, '文件名', 200).split(/[\\/]/).pop()!;
+      if (!/\.(txt|md)$/i.test(fileName)) throw new Error('本地文件支持 PDF、TXT、MD；其他格式请转换后导入');
+      const base64 = field(input.base64, '文件', 1_400_000);
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) throw new Error('文件编码无效');
+      const bytes = Buffer.from(base64, 'base64');
+      if (bytes.length > 1_000_000) throw new Error('请选择不超过 1MB 的文件');
+      let text: string;
+      try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { throw new Error('文本文件须为 UTF-8 编码'); }
+      text = field(text, '文件正文', 100_000);
+      if (text.includes('\0')) throw new Error('请选择文字文件');
+      const sha256 = hash(bytes), directory = join(this.store.root, 'brand-documents', projectId);
+      await mkdir(directory, { recursive: true });
+      const localPath = join(directory, `${sha256}${fileName.toLowerCase().endsWith('.md') ? '.md' : '.txt'}`);
+      await writeFile(localPath, bytes, { mode: 0o600, flag: 'wx' }).catch(error => { if (error.code !== 'EEXIST') throw error; });
+      sources = [{ id: `brand-file-${sha256.slice(0,24)}`, title: fileName, fileName, text, kind: 'text', sha256, importedAt, localPath }];
     } else if (input.kind === 'text') {
       const title = field(input.title, '资料标题', 200), text = field(input.text, '资料正文', 100_000);
       const sha256 = hash(text);
       sources = [{ id: `brand-text-${sha256.slice(0, 24)}`, title, text, kind: 'text', sha256, importedAt }];
-    } else throw new Error('资料类型应为 website、text 或 pdf');
+    } else throw new Error('资料类型应为 website、text、file 或 pdf');
     return this.store.updateProject(projectId, project => {
       const added = sources.filter(source => !project.sources.some(existing => existing.id === source.id));
       if (project.sources.length + added.length > 300) throw new Error('来源超过 300 项，请拆分项目');

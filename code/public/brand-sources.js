@@ -3,12 +3,13 @@ export function brandSourceForm(project, english = false) {
   const t = (zh, en) => english ? en : zh;
   const button = english ? 'button primary' : 'btn primary';
   return `<section class="panel section-gap"><div class="panel-head"><h2>${t('补充品牌资料', 'Add brand sources')}</h2></div><div class="panel-body">
-    <p>${t('导入官网、粘贴原文或上传文字 PDF。来源默认待核对，不自动变成产品事实。', 'Import public website text, pasted material or a text PDF. Sources require review before reuse as facts.')}</p>
+    <p>${t('上传本地 PDF / TXT / Markdown，或导入官网与粘贴原文。来源默认待核对，不自动变成产品事实。', 'Upload a local PDF, TXT or Markdown file, or import website / pasted text. Sources require review before reuse as facts.')}</p>
     <form data-brand-source data-project="${escapeText(project.id)}" class="form-grid">
-      <label>${t('资料类型', 'Source type')}<select name="kind"><option value="text">${t('粘贴原文', 'Pasted text')}</option><option value="website">${t('官网网址', 'Public website')}</option><option value="pdf">PDF</option></select></label>
-      <div data-source-kind="text"><label>${t('资料标题', 'Source title')}<input name="title" maxlength="200"></label><label>${t('资料原文', 'Source text')}<textarea name="text" rows="5" maxlength="100000"></textarea></label></div>
+      <label>${t('资料类型', 'Source type')}<select name="kind"><option value="file">${t('上传本地文件', 'Upload local file')}</option><option value="text">${t('粘贴原文', 'Pasted text')}</option><option value="website">${t('官网网址', 'Public website')}</option><option value="pdf">PDF</option></select></label>
+      <div data-source-kind="text" hidden><label>${t('资料标题', 'Source title')}<input name="title" maxlength="200"></label><label>${t('资料原文', 'Source text')}<textarea name="text" rows="5" maxlength="100000"></textarea></label></div>
       <div data-source-kind="website" hidden><label>${t('公开网址', 'Public URL')}<input name="url" type="url" placeholder="https://"></label></div>
-      <div data-source-kind="pdf" hidden><label>${t('文字 PDF（最多 1MB、40 页）', 'Text PDF (up to 1MB, 40 pages)')}<input name="file" type="file" accept="application/pdf,.pdf"></label><p>${t('扫描件 OCR 未实现；表格、型号和单位请对照原件核对。', 'OCR is not available. Check tables, model names and units against the original file.')}</p></div>
+      <div data-source-kind="file"><label>${t('本地品牌文件（PDF / TXT / MD，最多 1MB）', 'Local brand file (PDF / TXT / MD, up to 1MB)')}<input name="file" type="file" accept="application/pdf,text/plain,text/markdown,.pdf,.txt,.md"></label><p>${t('文件保存在当前项目的本地资料目录。文字 PDF 最多 40 页；OCR、Word 与复杂表格解析未实现。', 'Files stay in this project’s local document directory. Text PDFs support up to 40 pages. OCR, Word and complex table parsing are not available.')}</p></div>
+      <div data-source-kind="pdf" hidden><p>${t('请选择上方“上传本地文件”导入 PDF。', 'Choose Upload local file to import a PDF.')}</p></div>
       <p role="status" data-source-status></p><button class="${button}" type="submit">${t('导入来源', 'Import source')}</button>
     </form>
     <details class="section-gap"><summary>${t('从来源录入一项事实', 'Add a fact from a source')}</summary>
@@ -28,9 +29,11 @@ document.addEventListener('submit', async event => {
   button.disabled = true; status.textContent = english ? 'Importing…' : '正在导入…';
   try {
     const data = new FormData(form), payload = Object.fromEntries([...data].filter(([key]) => key !== 'file'));
-    if (payload.kind === 'pdf') {
+    if (payload.kind === 'file' || payload.kind === 'pdf') {
       const file = data.get('file');
-      if (!file?.size || file.size > 1_000_000) throw new Error(english ? 'Select a PDF up to 1MB.' : '请选择不超过 1MB 的 PDF');
+      if (!file?.size || file.size > 1_000_000) throw new Error(english ? 'Select a file up to 1MB.' : '请选择不超过 1MB 的文件');
+      if (!/\.(pdf|txt|md)$/i.test(file.name)) throw new Error(english ? 'Supported: PDF, TXT, MD.' : '支持 PDF、TXT、MD 文件');
+      payload.kind = /\.pdf$/i.test(file.name) ? 'pdf' : 'file';
       payload.fileName = file.name;
       payload.base64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(',')[1]); reader.onerror = () => reject(new Error('File read failed')); reader.readAsDataURL(file); });
     }
