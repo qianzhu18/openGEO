@@ -3,10 +3,9 @@ import { brandSourceForm } from './brand-sources.js';
 const $ = s => document.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? esc(u.toString()) : '#'; } catch { return '#'; } };
-const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, settings: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
+const state = { projects: [], project: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
 let runSelection = 0, projectSelection = 0;
-let showExamples = false;
-try { state.settings = JSON.parse(localStorage.getItem('citekeel-model') || '{}'); } catch {}
+let showExamples = localStorage.getItem('opengeo-show-examples') === 'true';
 const NAV = [['overview', '工作概览'], ['queries', '问题空间'], ['evidence', '回答与信源'], ['sources', '信源分析'], ['actions', '策略任务'], ['content', '内容与交付'], ['facts', '品牌事实'], ['flow', 'Agent 思路与历史']];
 const LABELS = { queued: '等待执行', running: '执行中', completed: '已完成', needs_review: '待处理', failed: '执行失败', interrupted: '已中断', pending: '待执行', blocked: '等待确认', confirmed: '已确认', unconfirmed: '待确认', conflict: '口径冲突', draft: '草稿', reviewed: '已审核' };
 const ORIGINS = { synthetic: '合成案例', archive: '历史归档', manual: '人工资料', api: 'API 实测' };
@@ -60,7 +59,13 @@ function overview() {
 }
 function sourcesPage() { return pageHeader('信源分析', '域名与 URL 分层，保留来源类型与原文入口。') + diagnosticView(state.analytics, { runs: state.history, sourceLevel: state.sourceLevel, sourcesOnly: true }); }
 async function refreshAnalysis() {
-  if (!state.run) { state.analytics = await api(`/api/projects/${state.project.id}/analytics${analysisQuery(state.analysisFilters)}`); return; }
+  if (!state.project) return;
+  if (!state.run) {
+    const projectId = state.project.id, selection = projectSelection, query = analysisQuery(state.analysisFilters);
+    const result = await api(`/api/projects/${projectId}/analytics${query}`);
+    if (state.project?.id === projectId && selection === projectSelection && !state.run && query === analysisQuery(state.analysisFilters)) state.analytics = result;
+    return;
+  }
   const id = state.run.id, projectId = state.project.id, selection = projectSelection, query = analysisQuery(state.analysisFilters);
   const result = await api(`/api/runs/${id}/analytics${query}`);
   if (state.project?.id === projectId && selection === projectSelection && state.run?.id === id && query === analysisQuery(state.analysisFilters)) state.analytics = result;
@@ -133,7 +138,7 @@ async function pollRun(id) {
   try {
     while (true) {
       const run = await api(`/api/runs/${id}`);
-      if (run.projectId !== state.project.id || state.run?.id !== id || selection !== runSelection) break;
+      if (run.projectId !== state.project?.id || state.run?.id !== id || selection !== runSelection) break;
       state.run = run; state.analytics = run.analytics; if (Object.keys(state.analysisFilters).length) await refreshAnalysis(); render();
       if (!['queued', 'running'].includes(run.status)) { state.history = await api(`/api/runs?projectId=${state.project.id}`); toast(run.status === 'failed' ? run.error || '本轮执行失败，已有证据保留' : '本轮已完成，结果与执行记录已保存在本地'); break; }
       await new Promise(resolve => setTimeout(resolve, 450));
@@ -204,7 +209,7 @@ function modelDialog(live) {
 async function projectManager() {
   const deleted = await api('/api/deleted-projects');
   showDialog('项目管理', '各项目的资料、问题、运行和报告独立。删除后进入本地回收站，可恢复；不会删除其他项目。',
-    `<label class="check-label"><input type="checkbox" name="examples" ${showExamples ? 'checked' : ''}>显示内置示例项目</label>${state.projects.filter(p => showExamples || !p.example).map(p => `<div class="actions"><strong>${esc(p.name)}</strong><button type="button" class="btn small" data-open-project="${esc(p.id)}">打开</button><button type="button" class="btn small" data-delete-project="${esc(p.id)}">删除项目</button></div>`).join('')}<h3>回收站</h3>${deleted.map(p => `<div class="actions"><span>${esc(p.name)}</span><button type="button" class="btn small" data-restore-project="${esc(p.id)}">恢复项目</button></div>`).join('') || '<p>暂无已删除项目</p>'}`, '保存显示偏好', async form => { showExamples = form.get('examples') === 'on'; render(); });
+    `<label class="check-label"><input type="checkbox" name="examples" ${showExamples ? 'checked' : ''}>显示内置示例项目</label>${state.projects.filter(p => showExamples || !p.example).map(p => `<div class="actions"><strong>${esc(p.name)}</strong><button type="button" class="btn small" data-open-project="${esc(p.id)}">打开</button><button type="button" class="btn small" data-delete-project="${esc(p.id)}">删除项目</button></div>`).join('')}<h3>回收站</h3>${deleted.map(p => `<div class="actions"><span>${esc(p.name)}</span><button type="button" class="btn small" data-restore-project="${esc(p.id)}">恢复项目</button></div>`).join('') || '<p>暂无已删除项目</p>'}`, '保存显示偏好', async form => { showExamples = form.get('examples') === 'on'; localStorage.setItem('opengeo-show-examples', String(showExamples)); render(); });
 }
 function newProjectDialog() {
   showDialog('新建一个自己的项目', '输入品牌与产品资料，再逐项确认事实。新项目不会自动生成或伪造回答数据。',

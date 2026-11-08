@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [0.3 本地使用链路](OPENGEO-20261108-PRODUCT-FLOW/TaskInfo.md) | 已完成，0.3.0 本地运行 | 117 单测 / 24 浏览器测试；Cloro 待配置后实测 | [Report](OPENGEO-20261108-PRODUCT-FLOW/Report.md) / [Todo](OPENGEO-20261108-PRODUCT-FLOW/Todo.md) |
 | [采样入口与 Cloro](OPENGEO-20261108-PROVIDER-STOP/TaskInfo.md) | Cloro 独立适配器与搜索策略分离已实施；实跑有覆盖缺口 | 核对本轮失败与有效原文，再优化国内截断和桥接 | [Report](OPENGEO-20261108-PROVIDER-STOP/Report.md) |
 | [工程细节与松灵补测](OPENGEO-20261108-ENGINEERING/TaskInfo.md) | 三项修复完成；新采样不足 | 修复已测试并回用；补测受地区限制与空回答中断，需恢复通道后重测 | [Report](OPENGEO-20261108-ENGINEERING/Report.md) / [Todo](OPENGEO-20261108-ENGINEERING/Todo.md) |
 | [数据分析看板与调研报告](OPENGEO-20261108-ANALYTICS-REPORT/TaskInfo.md) | 已完成本轮增量 | 共用分析投影、分组/覆盖/信源与 Markdown/HTML 导出 | [Report](OPENGEO-20261108-ANALYTICS-REPORT/Report.md) / [Todo](OPENGEO-20261108-ANALYTICS-REPORT/Todo.md) |
@@ -57,7 +58,7 @@
 | --- | --- | --- |
 | 产品形态 | 本地单用户 CLI + 本地 Web | [产品](产品.md) |
 | 官网研究 | 可用，失败显式 | [采集](采集.md) |
-| 补充品牌资料 | 官网、文本、文字 PDF 最小入口可用；原文事实仍需人工确认 | [资料入口任务](OPENGEO-20261108-ARCHITECTURE-INTERVIEW/Report.md) |
+| 补充品牌资料 | 官网、文本、TXT/MD/文字 PDF 入口可用；原文事实仍需人工确认 | [资料入口任务](OPENGEO-20261108-ARCHITECTURE-INTERVIEW/Report.md) |
 | ChatGPT 网页采样 | 工程链路已有，真实端到端仍需按任务验收 | [采集](采集.md) |
 | 品牌诊断 | 问题集净化已修复；净 v5 基线未重跑 | [V5 任务](OPENGEO-20261108-V5-QUESTION-VALIDATION/Report.md) |
 | 案例交付 | 首轮有部分基线；公司 PDF、别名和第 2 轮未完成 | [案例交付](案例交付.md) |

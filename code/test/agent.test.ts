@@ -324,3 +324,37 @@ test('diagnosis retains target failure state across questions and makes no furth
  globalThis.fetch=async (_url:unknown,init:any)=>{const p=JSON.parse(init.body);if(p.model==='blocked-model'){failedRouteCalls++;return new Response(JSON.stringify({error:{message:'Model is not available in your region'}}),{status:403});}return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'衡川传感'}}],usage:{cost:0.001}}),{status:200,headers:{'content-type':'application/json'}});};
  try{const p=syntheticProject();p.queries=p.queries.slice(0,3);const targets=[{id:'blocked',platform:'Blocked',provider:'deepseek',model:'blocked-model',preferredChannel:'api' as const}];const r=await executeRun(createRun(p,'live',p.goal,undefined,targets),store,undefined,undefined,{targets,apiKeys:{deepseek:'fixture'}});assert.equal(failedRouteCalls,1);assert.equal(r.measurementUnits?.length,3);assert.equal(r.samples.filter(s=>s.analysisStatus==='completed').length,0);assert.match(r.samples[1]?.error||'',/暂停后续模型调用/);}finally{globalThis.fetch=original;await cleanup();}
 });
+
+test('managed diagnosis resolves platform IDs on the server and provider settings never return credentials', async () => {
+ const {store,cleanup}=await temporaryStore();const original=globalThis.fetch;
+ const previousOpenRouter=process.env.OPENROUTER_API_KEY,previousCloro=process.env.CLORO_API_KEY;
+ const key='fixture-managed-key',cloroKey='fixture-monitor-key';const requests:any[]=[];
+ globalThis.fetch=async(url:any,init:any)=>{
+  if (!String(url).startsWith('https://openrouter.ai/'))return original(url,init);
+  const payload=JSON.parse(init.body);requests.push(payload);
+  const prompt=payload.messages[0].content;
+  const content=prompt.startsWith('你是 GEO')?'[]':prompt.startsWith('请写一份')?'No verified facts.':'A sourced observation of the robotics selection criteria.';
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content}}],usage:{cost:0.001}}),{headers:{'content-type':'application/json'}});
+ };
+ const {server}=await createApp(store);await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const base=`http://127.0.0.1:${(server.address() as {port:number}).port}`;
+ const post=(path:string,value:object)=>fetch(base+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)});
+ try {
+  const saved=await post('/api/provider-session',{openrouter:key,cloro:cloroKey});assert.equal(saved.status,200);
+  assert.ok(!(await saved.text()).includes(key));
+  const statusText=await(await fetch(base+'/api/status')).text();assert.ok(!statusText.includes(key));assert.ok(!statusText.includes(cloroKey));
+  const project=syntheticProject();await store.save('projects',project);
+  const response=await post('/api/runs',{projectId:project.id,mode:'live',diagnosis:true,queryIds:[project.queries[0].id],targetIds:['qwen']});
+  assert.equal(response.status,202);const {id}=await response.json();let run:AgentRun;
+  for(let i=0;;i++){run=await(await fetch(base+`/api/runs/${id}`)).json();if(!['queued','running'].includes(run.status))break;assert.ok(i<100);await new Promise(resolve=>setTimeout(resolve,10));}
+  assert.equal(run.measurementTargets?.[0].model,'qwen/qwen3.8-flash');assert.equal(run.measurementTargets?.[0].browserPreference,'api_only');
+  assert.equal(run.measurementUnits?.[0].attempts.length,1);assert.equal(run.measurementUnits?.[0].attempts[0].channel,'api');
+  assert.ok(requests.some(r=>r.model==='qwen/qwen3.8-flash'));
+  assert.ok(!(await readFile(join(store.root,'runs',id+'.json'),'utf8')).includes(key));
+ } finally {
+  globalThis.fetch=original;
+  if(previousOpenRouter===undefined)delete process.env.OPENROUTER_API_KEY;else process.env.OPENROUTER_API_KEY=previousOpenRouter;
+  if(previousCloro===undefined)delete process.env.CLORO_API_KEY;else process.env.CLORO_API_KEY=previousCloro;
+  server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await cleanup();
+ }
+});
