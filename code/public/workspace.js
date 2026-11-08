@@ -10,7 +10,7 @@ const viewNames = { agent: 'Agent', overview: 'Overview', prompts: 'Prompts', re
 const stepNames = { ground: 'Brand context', queries: 'Question set', audit: 'Answer collection', sources: 'Source analysis', strategy: 'Action planning', content: 'Content draft', monitor: 'Measurement notes', review: 'Review' };
 const params = new URLSearchParams(location.search);
 const state = { projectId: params.get('project'), view: viewNames[params.get('view')] ? params.get('view') : 'overview', project: null, status: null, run: null, runs: [], observations: [], excluded: 0, research: null, recordings: [], recordingSelected: new Set(), selected: new Set(), checkedPrompts: new Set(), promptStatus: 'active', promptSearch: '', topicFilter: '', promptPage: 1, tableSettings: {hiddenColumns:[],deltaDisplay:'full',version:1}, range: 'all', model: 'all', collapsed: false, provider: '', modelId: '', apiKey: '', webSearch: false, channel: 'api', starting: false, error: '', analytics: null, analysisFilters: {}, chartMetric: 'visibility', sourceLevel: 'domain' };
-let pollTimer = null, toastTimer = null;
+let pollTimer = null, toastTimer = null, runSelection = 0;
 async function api(path, method = 'GET', body) {
   const response = await fetch(path, { method, signal: AbortSignal.timeout(20_000), ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }) });
   const result = await response.json();
@@ -117,11 +117,18 @@ function render() {
 async function refreshEvidence() { const [runs, evidence] = await Promise.all([api(`/api/runs?projectId=${encodeURIComponent(state.projectId)}`), api(`/api/projects/${encodeURIComponent(state.projectId)}/observations`)]); state.runs = runs; state.observations = evidence.observations || []; state.excluded = evidence.excluded || 0; await refreshAnalysis(); }
 function schedulePoll() { clearTimeout(pollTimer); if (['queued','running'].includes(state.run?.status)) pollTimer = setTimeout(pollRun, 1500); }
 async function pollRun() {
-  const id = state.run?.id; if (!id) return;
-  try { const run = await api(`/api/runs/${encodeURIComponent(id)}`); if (state.run?.id !== id) return; state.run = run; state.error = ''; await refreshEvidence(); render(); schedulePoll(); }
+  const id = state.run?.id, selection = runSelection; if (!id) return;
+  try { const run = await api(`/api/runs/${encodeURIComponent(id)}`); if (state.run?.id !== id || selection !== runSelection) return; state.run = run; state.error = ''; await refreshEvidence(); render(); schedulePoll(); }
   catch { state.error = 'The workflow connection was interrupted. Saved evidence is retained. Retry to reconnect.'; render(); }
 }
-async function openRun(id) { clearTimeout(pollTimer); state.run = await api(`/api/runs/${encodeURIComponent(id)}`); state.view = 'agent'; await refreshAnalysis(); setLocation(); render(); schedulePoll(); }
+async function openRun(id, view = 'agent') {
+  const selection = ++runSelection; clearTimeout(pollTimer);
+  const run = await api(`/api/runs/${encodeURIComponent(id)}`);
+  if (selection !== runSelection) return;
+  state.run = run; state.view = view; await refreshAnalysis();
+  if (selection !== runSelection) return;
+  setLocation(); render(); schedulePoll();
+}
 function dialog(content) { const element = $('#evidence-dialog'); element.innerHTML = content; if (!element.open) element.showModal(); }
 function openSample(id) {
   const sample = state.observations.find(item => item.id === id) || state.run?.samples.find(item => item.id === id);
@@ -160,7 +167,7 @@ document.addEventListener('click', async event => {
 });
 document.addEventListener('change', async event => {
   const input = event.target;
-  if (input.matches('[data-analysis-run],[data-analysis-model],[data-analysis-channel],[data-analysis-days]')) { try { if (input.hasAttribute('data-analysis-run')) state.run = await api(`/api/runs/${input.value}`); else { const key = input.hasAttribute('data-analysis-model') ? 'model' : input.hasAttribute('data-analysis-channel') ? 'channel' : 'days'; state.analysisFilters[key] = input.value; } await refreshAnalysis(); render(); } catch (error) { toast(error.message); } return; }
+  if (input.matches('[data-analysis-run],[data-analysis-model],[data-analysis-channel],[data-analysis-days]')) { try { if (input.hasAttribute('data-analysis-run')) { await openRun(input.value, state.view); return; } else { const key = input.hasAttribute('data-analysis-model') ? 'model' : input.hasAttribute('data-analysis-channel') ? 'channel' : 'days'; state.analysisFilters[key] = input.value; } await refreshAnalysis(); render(); } catch (error) { toast(error.message); } return; }
   if (input.dataset.selectPrompt) { if(input.checked)state.checkedPrompts.add(input.dataset.selectPrompt);else state.checkedPrompts.delete(input.dataset.selectPrompt);setPromptChecks();$('#selection-count').textContent=`${state.checkedPrompts.size} selected · max 5 per measurement`; }
   else if (input.dataset.selectRecording) { const id = input.dataset.selectRecording; if (input.checked && state.recordingSelected.size >= 5) { input.checked = false; toast('Select up to five URLs.'); return; } input.checked ? state.recordingSelected.add(id) : state.recordingSelected.delete(id); render(); }
   else if (input.hasAttribute('data-check-visible')) { const rows=promptLibraryRows().slice((state.promptPage-1)*50,state.promptPage*50);for(const q of rows)input.checked?state.checkedPrompts.add(q.id):state.checkedPrompts.delete(q.id);setPromptChecks();render(); }

@@ -169,3 +169,29 @@ test('analysis scope and exported report agree, with inert HTML and usable mobil
   await page.setViewportSize({ width: 1280, height: 1000 });
   await page.screenshot({ path: 'data/browser-tests/analytics-preview/report-desktop.png', fullPage: true });
 });
+
+test('analysis run choice survives reload and ignores an older slow selection', async ({ page }) => {
+ await page.goto(`/workspace?project=${projectId}`);
+ await expect(page.getByLabel('Analysis run', {exact:true})).toBeVisible();
+ let release: () => void = () => {}; const gate = new Promise<void>(resolve => { release = resolve; });
+ await page.route(`**/api/runs/${runIds[0]}`, async route => { await gate; await route.continue(); });
+ const first = page.waitForRequest(r => r.url().endsWith(`/api/runs/${runIds[0]}`));
+ await page.getByLabel('Analysis run', {exact:true}).selectOption(runIds[0]!); await first;
+ await page.getByLabel('Analysis run', {exact:true}).selectOption(runIds[1]!);
+ await expect(page).toHaveURL(new RegExp(`run=${runIds[1]}`));
+ release(); await page.unrouteAll({behavior:'wait'});
+ await expect(page.getByLabel('Analysis run', {exact:true})).toHaveValue(runIds[1]!);
+ await page.reload(); await expect(page.getByLabel('Analysis run', {exact:true})).toHaveValue(runIds[1]!);
+ await expect(page.getByRole('link',{name:'Export report ↗'})).toHaveAttribute('href',new RegExp(runIds[1]!));
+});
+test('Chinese dashboard keeps the latest choice when run requests finish out of order', async ({page}) => {
+ await page.goto(`/?project=${projectId}`);await expect(page.locator('[data-analysis-run]')).toBeVisible();
+ let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});
+ await page.route(`**/api/runs/${runIds[0]}`,async route=>{await gate;await route.continue();});
+ const first=page.waitForRequest(r=>r.url().endsWith(`/api/runs/${runIds[0]}`));
+ await page.locator('[data-analysis-run]').selectOption(runIds[0]!);await first;
+ await page.locator('[data-analysis-run]').selectOption(runIds[1]!);
+ await expect(page.getByRole('link',{name:'导出报告 ↗'})).toHaveAttribute('href',new RegExp(runIds[1]!));
+ release();await page.unrouteAll({behavior:'wait'});
+ await expect(page.locator('[data-analysis-run]')).toHaveValue(runIds[1]!);
+});
