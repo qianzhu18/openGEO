@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [采样入口与 Cloro](OPENGEO-20261108-PROVIDER-STOP/TaskInfo.md) | Cloro 独立适配器与搜索策略分离已实施；实跑有覆盖缺口 | 核对本轮失败与有效原文，再优化国内截断和桥接 | [Report](OPENGEO-20261108-PROVIDER-STOP/Report.md) |
 | [工程细节与松灵补测](OPENGEO-20261108-ENGINEERING/TaskInfo.md) | 三项修复完成；新采样不足 | 修复已测试并回用；补测受地区限制与空回答中断，需恢复通道后重测 | [Report](OPENGEO-20261108-ENGINEERING/Report.md) / [Todo](OPENGEO-20261108-ENGINEERING/Todo.md) |
 | [数据分析看板与调研报告](OPENGEO-20261108-ANALYTICS-REPORT/TaskInfo.md) | 已完成本轮增量 | 共用分析投影、分组/覆盖/信源与 Markdown/HTML 导出 | [Report](OPENGEO-20261108-ANALYTICS-REPORT/Report.md) / [Todo](OPENGEO-20261108-ANALYTICS-REPORT/Todo.md) |
 | [国内外竞品与版本规划](OPENGEO-20261108-COMPETITOR-ROADMAP/TaskInfo.md) | 研究与规划已完成，功能未实施 | 按版本队列推进；先净基线与事实，再策略与内容 | [Report](OPENGEO-20261108-COMPETITOR-ROADMAP/Report.md) / [里程碑](todo/版本里程碑.md) |

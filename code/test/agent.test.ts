@@ -214,7 +214,7 @@ test('browser-first policy falls back to API without relabeling the sample as we
   };
   try {
     const project = syntheticProject(); project.queries = project.queries.slice(0, 1);
-    const target = { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: 'qwen/qwen3.8-flash', webSearch: false, searchMode: 'browser_ui' as const, browserPreference: 'browser_first' as const };
+    const target = { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: 'qwen/qwen3.8-flash', webSearch: false, searchMode: 'disabled' as const, browserPreference: 'browser_first' as const };
     const run = await executeRun(createRun(project, 'live', project.goal, undefined, [target]), store, undefined, undefined, {
       targets: [target], apiKeys: { openrouter: 'fixture' },
     });
@@ -224,7 +224,7 @@ test('browser-first policy falls back to API without relabeling the sample as we
     assert.equal(run.measurementUnits?.[0]?.attempts[1]?.fallback, true);
     const selected = run.samples.find(sample => sample.selected);
     assert.equal(selected?.origin, 'api');
-    assert.match(selected?.protocolId || '', /mode=browser_ui/);
+    assert.match(selected?.protocolId || '', /mode=disabled/);
     assert.doesNotMatch(selected?.protocolId || '', /browser-ui\/v2/);
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });

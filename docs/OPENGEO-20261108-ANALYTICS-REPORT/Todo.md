@@ -19,7 +19,10 @@
 ## 采样入口决策（2026-11-08）
 
 - [x] 海外默认矩阵收敛为 ChatGPT + Gemini。
-- [x] ChatGPT 网页失败与 OpenRouter API fallback 分开计数，API 结果不冒充网页。
+- [x] 本机网页与 API fallback 分开计数；Cloro remote-monitor 不冒充 Xue 网页四件套。
 - [x] 国内平台以浏览器优先为策略记录；DeepSeek、千问、豆包网页 adapter 未实现时降级 OpenRouter。
-- [x] Cloro 作为外部监测适配器候选记录，未确认官方协议前不进入可执行 ProviderCatalog。
-- [ ] 真实 Xue 核验后，使用 2–3 条冻结问题做一轮国内外小样本；失败样本保留、有效分母只计采纳回答。
+- [x] Cloro 官方 SDK 合约已核验并接入独立监测适配器；不进入通用模型 ProviderCatalog。
+- [x] 按 10 条净题 × 5 平台执行本轮，2/50 有效、48 排除；失败与截断保留，不称完整基线。
+- [ ] 恢复 Kimi/Xue 桥接并实现一个国内网页 adapter 后，再验收真实国内网页。
+- [ ] 用单独版本的 token 上限协议验证千问截断；旧 1200 token 记录不可静默改为成功。
+- [ ] 处理 Cloro Gemini 429 与 ChatGPT 超时，恢复后手动新建单元/批次，不自动重放整批。

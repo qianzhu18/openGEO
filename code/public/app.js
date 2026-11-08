@@ -164,24 +164,25 @@ function showDialog(title, description, fields, submitLabel, onSubmit) {
 function diagnosisDialog() {
   const defaults = state.settings;
   const templates = state.status?.diagnosisTargets || [];
+  const measurementProviders = [...state.status.providers, ...(state.status.monitorProviders || [])];
   const activeQueries = state.project.queries.filter(q => !q.status || q.status === 'active').slice(0, 10);
   const fallbackProvider = defaults.provider || 'openrouter';
   const fallbackModel = templates.find(target => target.id === 'chatgpt')?.model || defaults.model || '';
   const questionFields = activeQueries.map((query, index) => `<label class="check-label question-option"><input type="checkbox" name="queryIds" value="${esc(query.id)}" ${index < 5 ? 'checked' : ''}><span><strong>${esc(query.branded ? '品牌核验' : '供应商发现')}</strong><small>${esc(query.text)}</small></span></label>`).join('');
-  const providerOptions = provider => state.status.providers.map(item => `<option value="${esc(item.id)}" ${item.id === provider ? 'selected' : ''}>${esc(item.id)}${item.configured ? '（已配置）' : ''}</option>`).join('');
+  const providerOptions = provider => measurementProviders.map(item => `<option value="${esc(item.id)}" ${item.id === provider ? 'selected' : ''}>${esc(item.id)}${item.configured ? '（已配置）' : ''}</option>`).join('');
   const targetFields = templates.map(target => {
     const isWeb = target.preferredChannel === 'web';
     const enabled = isWeb || (target.configured && target.model);
     const model = isWeb ? fallbackModel : target.model || '';
-    const browserFirst = target.searchMode === 'browser_ui' || target.browserPreference === 'browser_first';
-    const channelNote = isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : browserFirst ? 'API 通道；浏览器优先策略已记录，当前适配器不可用时使用 API' : 'API 通道';
-    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${channelNote}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
+    const browserFirst = target.browserPreference === 'browser_first';
+    const channelNote = target.provider === 'cloro' ? 'Cloro 远程网页监测 API；实际模型与搜索执行待返回证据' : isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : browserFirst ? 'API 通道；浏览器优先策略已记录，当前适配器不可用时使用 API' : 'API 通道';
+    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${channelNote}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" ${target.provider === 'cloro' ? 'disabled' : ''} name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
   }).join('');
-  const keyFields = state.status.providers.map(provider => {
+  const keyFields = measurementProviders.map(provider => {
     return `<label>${esc(provider.id)} API Key（本页内存）<input type="password" name="key-${esc(provider.id)}" autocomplete="off" placeholder="${provider.configured ? '本地环境已配置，可留空' : '未配置时填写'}"></label>`;
   }).join('');
   showDialog('运行一轮品牌诊断', '一轮冻结问题版本和平台矩阵。网页端通过 Xue + Kimi 串行提交；API 平台并行执行；网页失败只对当前题、当前平台做 API 降级。',
-    `<section><h3>本轮问题集</h3><p class="dialog-note">默认勾选前 5 条 active 问题，最多 10 条。同一问题会在所有启用平台各形成一个计划单元。</p><div class="question-list">${questionFields || '<p class="dialog-note">没有 active 问题，请先保存问题集。</p>'}</div></section><section><h3>平台矩阵</h3><div class="target-grid">${targetFields}</div><p class="dialog-note">ChatGPT 是当前唯一正式网页适配器；其他平台先按 API 通道执行，不冒充网页结果。API Key 只留在本页内存，环境变量由本地服务端解析。</p><div class="form-row api-key-grid">${keyFields}</div></section><p class="dialog-note">并发规则：平台任务同时启动；同一个 API 平台内部按题串行，网页采集全局串行并保留平台限速。每个单元最多采纳一条有效回答，失败尝试不进分母。</p>`,
+    `<section><h3>本轮问题集</h3><p class="dialog-note">默认勾选前 5 条 active 问题，最多 10 条。同一问题会在所有启用平台各形成一个计划单元。</p><div class="question-list">${questionFields || '<p class="dialog-note">没有 active 问题，请先保存问题集。</p>'}</div></section><section><h3>平台矩阵</h3><div class="target-grid">${targetFields}</div><p class="dialog-note">海外 ChatGPT/Gemini 使用 Cloro 监测 API；国内网页适配器未实现时明确降级 OpenRouter。Cloro 只做监测，不用于策略或内容生成。API Key 只留在本页内存，环境变量由本地服务端解析。</p><div class="form-row api-key-grid">${keyFields}</div></section><p class="dialog-note">并发规则：平台任务同时启动；同一个 API 平台内部按题串行，网页采集全局串行并保留平台限速。每个单元最多采纳一条有效回答，失败尝试不进分母。</p>`,
     '确认问题并运行', async form => {
       const queryIds = form.getAll('queryIds').map(String);
       if (!queryIds.length || queryIds.length > 10) throw new Error('请选择 1–10 个问题');
@@ -196,7 +197,7 @@ function diagnosisDialog() {
           if (key) apiKeys[provider] = key;
         }
         if (target.preferredChannel !== 'web' && !model) throw new Error(`${target.platform} 需要模型 ID`);
-        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on', ...(target.searchMode ? { searchMode: target.searchMode } : {}), ...(target.browserPreference ? { browserPreference: target.browserPreference } : {}) };
+        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on', searchMode: form.get(`search-${target.id}`) === 'on' ? 'provider_native' : 'disabled', ...(target.browserPreference ? { browserPreference: target.browserPreference } : {}) };
       });
       state.apiKeys = { ...state.apiKeys, ...apiKeys };
       await startRun({ mode: 'live', diagnosis: true, queryIds, maxQuestions: queryIds.length, targets, apiKeys });

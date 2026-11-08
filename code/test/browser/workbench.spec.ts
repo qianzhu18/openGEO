@@ -41,16 +41,18 @@ test('diagnosis entry submits a frozen question set and platform matrix without 
   });
   await page.getByRole('button', { name: '⇶ 运行品牌诊断' }).click();
   await expect(page.getByRole('heading', { name: '运行一轮品牌诊断' })).toBeVisible();
+  await page.locator('input[name=targetIds][value=chatgpt]').check();
+  await page.locator('input[name=targetIds][value=gemini]').check();
   await page.getByRole('checkbox', { name: '千问 API 通道' }).check();
   await page.locator('input[name="key-openrouter"]').fill('page-memory-key-not-persisted');
   await page.getByRole('button', { name: '确认问题并运行' }).click();
   await expect.poll(() => payload?.diagnosis).toBe(true);
   expect((payload?.queryIds as string[]).length).toBe(5);
   expect(payload?.targets).toEqual(expect.arrayContaining([
-    expect.objectContaining({ id: 'chatgpt', preferredChannel: 'web' }),
-    expect.objectContaining({ id: 'gemini', provider: 'openrouter', model: 'google/gemini-3.8-flash', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'chatgpt', provider: 'cloro', model: 'chatgpt', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'gemini', provider: 'cloro', model: 'gemini', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'deepseek', provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash', preferredChannel: 'api' }),
-    expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3.8-flash', preferredChannel: 'api' }),
+    expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3.8-flash', preferredChannel: 'api', searchMode: 'disabled', browserPreference: 'browser_first' }),
     expect.objectContaining({ id: 'seed', provider: 'openrouter', model: 'bytedance-seed/seed-2-1-turbo', preferredChannel: 'api' }),
   ]));
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('page-memory-key-not-persisted');

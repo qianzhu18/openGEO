@@ -21,6 +21,7 @@ export interface Sample {
   origin: Origin; model: string; observedAt: string; runGroup: string; protocolId: string;
   collectionStatus: 'completed' | 'failed'; analysisStatus: 'completed' | 'failed' | 'unknown';
   answer: string; rawResponse?: unknown; citations: Citation[]; error?: string;
+  observation?: { transport: 'cloro-monitor-api'; engine: string; requestedCountry: string; actualModel: 'UNKNOWN'; searchExecution: 'UNKNOWN' };
   upstreamAttemptId?: string; search?: unknown; costUsd?: number; latencyMs?: number;
   recommendationEvidence?: string; sourceJudgment?: string;
   measurementUnitId?: string; attemptId?: string; selected?: boolean; fallback?: boolean;

@@ -1,0 +1,16 @@
+[
+  {
+    "url": "https://raw.githubusercontent.com/cloro-dev/cloro-python/main/README.md",
+    "sha256": "8fc0386041992a0b927e7e952f9b747da83c2697e1047b28b3a2dbdf2b4cde34",
+    "evidenceLevel": "DOC",
+    "note": "Official SDK source read 2026-11-08"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/cloro-dev/cloro-python/main/cloro/resources/monitor.py",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "url": "https://raw.githubusercontent.com/cloro-dev/cloro-python/main/cloro/_client.py",
+    "error": "HTTP Error 404: Not Found"
+  }
+]

@@ -4,6 +4,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { splitLines, stripMatchingQuotes } from "../utils/text.js";
 
 const PROVIDER_ENV_KEYS: Record<string, string[]> = {
+  cloro: ["CLORO_API_KEY"],
   openrouter: ["OPENROUTER_API_KEY", "OPENROUTER_KEY"],
   openai: ["OPENAI_API_KEY"],
   anthropic: ["ANTHROPIC_API_KEY"],

@@ -22,8 +22,8 @@ export function searchPolicy(project: Project, query: Query, mode: SearchMode): 
   return {
     mode,
     requested,
-    language: project.language || query.language || 'unknown',
-    requestedCountry: project.country || query.country || 'unknown',
+    language: query.language || project.language || 'unknown',
+    requestedCountry: query.country || project.country || 'unknown',
     queryStrategy: 'original_question',
     note: `${channel}；只发送冻结后的原始问题，不把品牌事实、策略或内容草稿注入采样上下文。`,
   };

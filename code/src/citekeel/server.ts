@@ -20,10 +20,8 @@ import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
 import { parseQuestionSet } from './question-set.js';
 
-// Cloro is an external monitoring adapter candidate, not a niubigeo Provider.
-// Keep it out of the executable provider list until its official HTTP contract
-// is confirmed and an adapter can preserve the raw evidence safely.
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
+const MEASUREMENT_PROVIDERS = [...PROVIDERS, 'cloro'];
 const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
   chatgpt: 'OPENGEO_CHATGPT_API_MODEL', gemini: 'OPENGEO_GEMINI_MODEL', perplexity: 'OPENGEO_PERPLEXITY_MODEL',
   deepseek: 'OPENGEO_DEEPSEEK_MODEL', qwen: 'OPENGEO_QWEN_MODEL', seed: 'OPENGEO_SEED_MODEL',
@@ -51,12 +49,12 @@ function send(res: ServerResponse, status: number, value: unknown) {
 function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.brand, origin: p.origin, domain: p.domain, description: p.description, sampleCount: p.samples.length, queryCount: p.queries.length }; }
 function diagnosisTemplates() {
   return [
-    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.chatgpt] || OPENROUTER_DIAGNOSIS_MODELS.chatgpt, webSearch: true, searchMode: 'browser_ui' as const, fallbackNote: '优先采集 Xue + Kimi 的真实网页；网页不可用时才补测 OpenRouter API。Cloro 监测适配器待官方协议确认。' },
-    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.gemini] || OPENROUTER_DIAGNOSIS_MODELS.gemini, webSearch: true, searchMode: 'provider_native' as const, fallbackNote: '当前通过 OpenRouter 的 Gemini 模型做可执行基线；Cloro Gemini 监测适配器待官方协议确认。' },
-    { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.deepseek] || OPENROUTER_DIAGNOSIS_MODELS.deepseek, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
-    { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.qwen] || OPENROUTER_DIAGNOSIS_MODELS.qwen, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
-    { id: 'seed', platform: '豆包 Seed', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.seed] || OPENROUTER_DIAGNOSIS_MODELS.seed, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
-  ].map(target => ({ ...target, configured: target.provider ? hasProviderKey(target.provider) : false }));
+    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'api' as const, provider: 'cloro', model: 'chatgpt', webSearch: false, searchMode: 'disabled' as const, browserPreference: 'api_only' as const, collectionNote: 'Cloro 远程网页监测 API；搜索是否执行以返回证据为准，实际底层模型未知。' },
+    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'cloro', model: 'gemini', webSearch: false, searchMode: 'disabled' as const, browserPreference: 'api_only' as const, collectionNote: 'Cloro 远程网页监测 API；不等同于本机网页四件套。' },
+    ...(['deepseek', 'qwen', 'seed'] as const).map(id => ({ id, platform: { deepseek: 'DeepSeek', qwen: '千问', seed: '豆包 Seed' }[id], preferredChannel: 'api' as const,
+      provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV[id]] || OPENROUTER_DIAGNOSIS_MODELS[id], webSearch: false, searchMode: 'disabled' as const,
+      browserPreference: 'browser_first' as const, collectionNote: '浏览器优先；正式网页适配器未实现，当前明确降级为 OpenRouter API（默认不搜索）。' })),
+  ].map(target => ({ ...target, configured: hasProviderKey(target.provider) }));
 }
 function hostWebCollector(worker: HostBrowserMailbox) {
   return { engine: 'chatgpt', ask: async (prompt: string) => {
@@ -116,7 +114,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
       }
       if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: '0.1.0', upstream: 'niubigeo v0.3.2', skills: SKILLS,
         providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
-        diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
+        monitorProviders: [{ id: 'cloro', configured: hasProviderKey('cloro') }], diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
       if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(projectSummary));
       if (path === '/api/projects' && method === 'POST') {
         const input = await body(req), brand = textField(input.brand, '品牌', 80), industry = textField(input.industry, '行业', 100);
@@ -284,7 +282,9 @@ export async function createApp(store = new Store(), options: { research?: typeo
             const provider = value?.provider === undefined || value?.provider === null || value?.provider === '' ? undefined : textField(value.provider, 'Provider', 30);
             const model = value?.model === undefined || value?.model === null || value?.model === '' ? undefined : textField(value.model, '模型', 200);
             if (!/^[a-z0-9][a-z0-9-]*$/.test(id) || !platform) throw new WorkspaceError('Invalid diagnosis platform.');
-            if (provider && !PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
+            if (provider && !MEASUREMENT_PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
+            if (provider === 'cloro' && (value?.webSearch === true || value?.searchMode === 'provider_native' || value?.browserPreference === 'browser_first')) throw new WorkspaceError('Cloro monitor search execution is not a caller-controlled model search toggle.');
+            if (provider === 'cloro' && (preferredChannel !== 'api' || !['chatgpt', 'gemini'].includes(model || ''))) throw new WorkspaceError('Cloro only supports the chatgpt and gemini monitor targets.');
             if ((provider && !model) || (!provider && model)) throw new WorkspaceError('API fallback needs both provider and model.');
             if (preferredChannel === 'web' && value?.webEngine && value.webEngine !== 'chatgpt') throw new WorkspaceError('Only the ChatGPT web adapter is implemented.');
             const searchMode = value?.searchMode === 'browser_ui' || value?.searchMode === 'provider_native' || value?.searchMode === 'disabled'

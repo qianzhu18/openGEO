@@ -145,6 +145,6 @@ JS：新增 `brand-sources.ts`、两套页面共享 `brand-sources.js`，沿用�
 
 ## 新增面试证据：入口策略与失败边界
 
-当前系统把“平台名称”“采样通道”“搜索策略”“实际 Provider/模型”拆开记录：ChatGPT 通过 Xue + Kimi 网页采样，Gemini 先用 OpenRouter API 做稳定基线；国内平台先记录浏览器优先意图，适配器未实现时降级 API。这样做的关键是让 API fallback 可被审计，而不是把它包装成网页结果。
+海外收敛为 Cloro ChatGPT/Gemini 监测 API；国内保存浏览器优先策略，adapter 未实现或桥接失败时明确降级 OpenRouter。浏览器优先意图与 API 搜索开关分开，避免把未执行的网页搜索写进 API 协议。
 
-Cloro 的 Python 示例说明了它可能提供网页监测能力，但官方 Gemini 的 HTTP 合约尚未核实。工程上没有猜 endpoint 或响应字段，也没有把密钥写入仓库，而是将 Cloro 留作独立外部适配器候选。这个取舍体现了“先保证证据身份，再扩展覆盖”的原则。
+Cloro 官网 docs 403 后，没有猜 endpoint：从官方 PyPI/GitHub SDK 核实了 ChatGPT/Gemini 合约，做独立监测适配器，密钥不入库，返回来源不自动冒充引用。失败后停止同目标，并用离线 fixture 验证空回答、错误 envelope、脱敏与策略不误用 monitor。模型、地区和美元费用未知仍标 UNKNOWN。这是从采样工具拼接走向可审计观测系统的工程取舍。
