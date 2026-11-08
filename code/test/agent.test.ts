@@ -138,6 +138,7 @@ test('live transport uses upstream provider, isolates measurement prompts, valid
   const prompts: string[] = []; const key = 'citekeel-test-key-not-a-real-credential';
   globalThis.fetch = async (_url: any, init: any) => {
     const payload = JSON.parse(init.body), prompt = payload.messages[0].content; prompts.push(prompt);
+    if (!prompt.startsWith('你是 GEO') && !prompt.startsWith('请写一份')) assert.equal(payload.max_tokens, 2500);
     const content = prompt.startsWith('你是 GEO') ? JSON.stringify([{ title: '补选型说明', kind: 'content', priority: 'P1', rationale: '关联确认量程', queryIds: [], sampleIds: [], claimIds: ['c-range'], acceptance: '保留参数来源' }]) : prompt.startsWith('请写一份') ? '# 选型说明\n测试量程为 -40 至 250℃。〔c-range〕' : '可考虑衡川传感，但需核验量程。';
     return new Response(JSON.stringify({ choices: [{ message: { content } }], model: 'mock-model', usage: { cost: 0.001, total_tokens: 30 }, api_key: key }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
@@ -296,6 +297,12 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     assert.ok(response.ok, await response.clone().text()); return response.json();
   };
   try {
+    const status = await request('/api/status');
+    const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    assert.equal(status.version, manifest.version);
+    assert.deepEqual(status.diagnosisTargets.map((target: any) => target.id), ['chatgpt', 'gemini', 'deepseek', 'qwen', 'seed']);
+    assert.ok(status.diagnosisTargets.slice(0, 2).every((target: any) => target.provider === 'cloro'));
+    assert.ok(status.diagnosisTargets.slice(2).every((target: any) => target.provider === 'openrouter' && target.browserPreference === 'browser_first' && target.searchMode === 'disabled'));
     const project = await request('/api/projects', 'POST', { brand: '临界仪器', industry: '温度仪表', brief: '产品：温度探头' }) as Project;
     await request(`/api/projects/${project.id}/claims`, 'POST', { claimId: 'claim-1', sourceId: 'user-brief' });
     await request(`/api/projects/${project.id}/samples`, 'POST', { samples: [{ question: '温度探头怎么选？', answer: '可以考虑临界仪器，先核对规格。' }] });

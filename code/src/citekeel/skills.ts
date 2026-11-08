@@ -16,7 +16,9 @@ export class ModelSession {
     if (this.run.calls.length >= 64) throw new Error('已达到本轮 64 次请求上限');
     if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
     const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.8-flash', 'qwen/qwen3-32b'].includes(this.config.model);
-    const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 1200;
+    // The AgileX run truncated 9/10 Qwen observations at 1200 tokens. Keep the
+    // larger observation budget in the persisted protocol; never join old cohorts.
+    const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 2500;
     const call = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
       startedAt: new Date().toISOString(), status: 'running' as const,
       promptHash: createHash('sha256').update(prompt).digest('hex'),

@@ -31,3 +31,13 @@ NET / 2026-11-08：run `d1b47a76-c680-4dea-9d5c-56bd7f2cb7ab`，v6 净 10 题 ×
 本机配置已指定 Xue，但 `browser:probe` 和 `browser:check` 均返回 bridge_unreachable；`kimi-webbridge start` 报守护进程已有，未升级/重启、不切换 profile。国内网页 adapter 仍未实现。SDK 更新提示已转告用户。
 
 报告在用户本地忽略数据目录 `code/data/reports/AgileX-vNext-API-20261108/`：HTML/Markdown 调研报告、公开证据 JSON、策略与内容制作建议、local-store 原始脱敏响应。没有新发布与后测；完整双市场可信基线尚未达到。下一步先缩小采样验收、改善千问 token 协议、恢复 Cloro 限流与桥接，再谈内容自动化。
+
+## 整合版本与本地交接
+
+`codex/opengeo-vnext` 为本轮整合分支，包含分析投影、报告、来源入口、问题校验、运行选择与样本身份修复、同目标停止保护、内容机会及 Cloro。历史 diagnosis 分支中的自动重试和无确认事实观察稿没有整段回并：与当前失败即停和品牌事实门禁冲突；其临时 ChatGPT 检查页改动已取回。分支存在不代表远程 main 已合并。
+
+服务版本改为从 package.json 读取现有 0.2.0，中文侧栏同源显示，消除硬编码 0.1.0。针对本轮截断，观测预算改为 2500，写入协议；未再次调用收费 API，不声称已验证质量改善。构建与 113 项单测通过；22 项浏览器测试通过。`browser:probe` / `browser:check` 仍为 bridge_unreachable，没有采新网页样本。
+
+确认原 8847 进程属于本工作树且 activeRunCount=0 后，停止旧服务，用整合分支启动本地 8847，数据目录沿用用户 Vault 的 `code/data/citekeel`。未覆盖主目录中的未提交代码。状态已返回五目标及 Cloro monitorProviders；中英文看板、Actions、HTML 导出读取新 run 的冒烟检查通过，没有额外采样请求。Cloro Key 未存储，后续可临时填写。
+
+用户指定所有面试材料统一放到 Vault 的 `面试准备/`：阅读入口、项目总答、亮点追问、真实性审计和数据采集 know-how。工程事实仍以本任务和生效规格为准，面试资料链接证据，不另立工程路线图。

@@ -20,6 +20,7 @@ import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
 import { parseQuestionSet } from './question-set.js';
 
+const { version: APP_VERSION } = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as { version: string };
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
 const MEASUREMENT_PROVIDERS = [...PROVIDERS, 'cloro'];
 const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
@@ -112,7 +113,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
         }
         return send(res, 405, { error: 'Unsupported research operation.' });
       }
-      if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: '0.1.0', upstream: 'niubigeo v0.3.2', skills: SKILLS,
+      if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: APP_VERSION, upstream: 'niubigeo v0.3.2', skills: SKILLS,
         providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
         monitorProviders: [{ id: 'cloro', configured: hasProviderKey('cloro') }], diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
       if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(projectSummary));
