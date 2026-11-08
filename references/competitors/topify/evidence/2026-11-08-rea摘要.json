@@ -1,0 +1,37 @@
+{
+  "kind": "REA evidence summary, not the complete Evidence record",
+  "observed_on": "2026-11-08",
+  "tool": "rea-agents 6.8.0 CLI",
+  "evidence_id": "ev_4143d7d618e58fdbf130795c159d7f5676f563114ce30473994912cbb312fc90",
+  "complete_evidence_sha256": "497dc0e1bccac3881496b9d14524e96dbb200f77d4be5966717032bbbb0c3d42",
+  "complete_evidence_local_path": "code/data/competitor-research/20261108/topify/rea-evidence.json",
+  "artifact": {
+    "url": "https://app.topify.ai/_next/static/chunks/app/(dashboard)/%5Bworkspace%5D/optimization/actions/page-561af9133ffdfd73.js",
+    "file": "page-0.js",
+    "bytes": 230755,
+    "sha256": "922a08b276e9716a6e6913f77cf1e479bdfa31d0cf0c9c751f5c619f632f8055"
+  },
+  "statistics": {
+    "relevant_files": 1,
+    "nested_asar_containers": 0,
+    "text_bytes_read": 230755,
+    "invalid_utf8_files": 0,
+    "parsed_javascript_files": 1,
+    "skipped_javascript_files": 0,
+    "visited_ast_nodes": 53239,
+    "findings": 447,
+    "modules": 23,
+    "parse_failures": 0
+  },
+  "confidence": "derived",
+  "authority": "shipped-artifact",
+  "limitations": [
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ],
+  "runtime_backend_verified": false
+}
