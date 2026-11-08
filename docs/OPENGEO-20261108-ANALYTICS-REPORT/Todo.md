@@ -15,3 +15,11 @@
 - [x] 在中文 Actions 页面展示触发问题、证据缺口和推荐结构。
 - [ ] 为英文 Actions 页面补同等内容机会字段展示并增加浏览器回归。
 - [ ] 在至少一条 AgileX 内容链完成人工事实确认后，再解除 `needs-review/blocked`。
+
+## 采样入口决策（2026-11-08）
+
+- [x] 海外默认矩阵收敛为 ChatGPT + Gemini。
+- [x] ChatGPT 网页失败与 OpenRouter API fallback 分开计数，API 结果不冒充网页。
+- [x] 国内平台以浏览器优先为策略记录；DeepSeek、千问、豆包网页 adapter 未实现时降级 OpenRouter。
+- [x] Cloro 作为外部监测适配器候选记录，未确认官方协议前不进入可执行 ProviderCatalog。
+- [ ] 真实 Xue 核验后，使用 2–3 条冻结问题做一轮国内外小样本；失败样本保留、有效分母只计采纳回答。

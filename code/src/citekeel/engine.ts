@@ -6,11 +6,17 @@ import { SKILLS } from './types.js';
 import { answerTruncated, auditSamples, normalizeCitation } from './analysis.js';
 import { Store } from './storage.js';
 import { ModelSession, makeDraft, parseObject, planActions, strategyPrompt, validateDraft, validateModelActions } from './skills.js';
+import { searchPolicy, searchPolicyId } from './search-strategy.js';
+import type { SearchMode } from './search-strategy.js';
 
 export interface MeasurementRuntime {
   targets: MeasurementTarget[];
   apiKeys: Record<string, string>;
   browser?: { ask: BrowserAsk; engine: string };
+}
+
+function targetSearchMode(target: MeasurementTarget): SearchMode {
+  return target.searchMode || (target.webSearch === true ? 'provider_native' : 'disabled');
 }
 
 export function createRun(project: Project, mode: 'replay' | 'live', goal = project.goal, config?: LiveConfig, measurementTargets?: MeasurementTarget[]): AgentRun {
@@ -58,8 +64,8 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             origin: channel === 'web' ? 'browser' : 'api', model: channel === 'web' ? `${target.platform} Web` : `${target.provider}/${target.model}`,
             observedAt: new Date().toISOString(), runGroup: run.id,
             protocolId: channel === 'web'
-              ? `browser-ui/v2;platform=${target.id};engine=${target.webEngine || 'unimplemented'};transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN`
-              : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};search=${target.webSearch === true}`,
+              ? `browser-ui/v2;platform=${target.id};engine=${target.webEngine || 'unimplemented'};transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN;${searchPolicyId(searchPolicy(project, query, 'browser_ui'))}`
+              : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};${searchPolicyId(searchPolicy(project, query, targetSearchMode(target)))}`,
             collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [],
             measurementUnitId: `${query.id}--${target.id}`, attemptId: randomUUID(), selected: false, fallback,
           };
@@ -91,7 +97,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           const sample = makeSample(query, target, 'api', fallback);
           await persist();
           const attempt = makeAttempt(sample, target, 'api');
-          const apiConfig: LiveConfig = { provider: target.provider!, model: target.model!, apiKey: measurement.apiKeys[target.provider!] || '', maxQuestions: run.queries.length, webSearch: target.webSearch === true };
+          const apiConfig: LiveConfig = { provider: target.provider!, model: target.model!, apiKey: measurement.apiKeys[target.provider!] || '', maxQuestions: run.queries.length, webSearch: targetSearchMode(target) === 'provider_native' };
           let targetSession = targetSessions.get(target.id);
           if (!targetSession) { targetSession = new ModelSession(apiConfig, run, persist); targetSessions.set(target.id, targetSession); }
           try {
@@ -118,9 +124,19 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           for (const query of run.queries) {
             const unit = run.measurementUnits!.find(item => item.queryId === query.id && item.targetId === target.id)!;
             const canApi = Boolean(target.provider && target.model);
-            const webUsable = target.preferredChannel === 'web' && target.webEngine === measurement.browser?.engine;
+            const browserRequested = target.preferredChannel === 'web' || targetSearchMode(target) === 'browser_ui';
+            const webUsable = browserRequested && Boolean(target.webEngine) && target.webEngine === measurement.browser?.engine;
             if (!webUsable && canApi) {
-              const result = await collectApi(query, target, target.preferredChannel === 'web');
+              // Preserve the intended browser-first strategy as an explicit skipped
+              // attempt. The API result below is a fallback and never a web result.
+              if (browserRequested) {
+                const skipped = makeSample(query, target, 'web', false);
+                skipped.error = `平台 ${target.platform} 的网页适配器当前不可用，已降级到 API；API 结果不代表网页结果。`;
+                const browserAttempt = makeAttempt(skipped, target, 'web');
+                browserAttempt.status = 'skipped'; browserAttempt.reason = skipped.error;
+                finishUnit(skipped, false);
+              }
+              const result = await collectApi(query, target, browserRequested);
               if (!result.completed) unit.status = 'failed';
               continue;
             }
@@ -189,7 +205,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
         for (const query of run.queries) {
           const sample: Sample = { id: randomUUID(), queryId: query.id, question: query.text, intent: query.intent, branded: query.branded,
             origin: 'api', model: `${config.provider}/${config.model}`, observedAt: new Date().toISOString(), runGroup: run.id,
-            protocolId: project.market === 'international' ? `api-question/v2;search=${config.webSearch};language=${project.language || 'en'};requestedCountry=${project.country || 'unknown'};regionEnforced=false` : `api-question/v1;search=${config.webSearch}`, collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [] };
+            protocolId: project.market === 'international' ? `api-question/v2;${searchPolicyId(searchPolicy(project, query, config.webSearch ? 'provider_native' : 'disabled'))};regionEnforced=false` : `api-question/v1;${searchPolicyId(searchPolicy(project, query, config.webSearch ? 'provider_native' : 'disabled'))}`, collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [] };
           run.samples.push(sample); await persist();
           try {
             // The observation model receives only the selected question, not the target brand's private facts or the desired result.

@@ -49,7 +49,6 @@ test('diagnosis entry submits a frozen question set and platform matrix without 
   expect(payload?.targets).toEqual(expect.arrayContaining([
     expect.objectContaining({ id: 'chatgpt', preferredChannel: 'web' }),
     expect.objectContaining({ id: 'gemini', provider: 'openrouter', model: 'google/gemini-3.8-flash', preferredChannel: 'api' }),
-    expect.objectContaining({ id: 'perplexity', provider: 'openrouter', model: 'perplexity/sonar', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'deepseek', provider: 'openrouter', model: 'deepseek/deepseek-v4.1-flash', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'qwen', provider: 'openrouter', model: 'qwen/qwen3.8-flash', preferredChannel: 'api' }),
     expect.objectContaining({ id: 'seed', provider: 'openrouter', model: 'bytedance-seed/seed-2-1-turbo', preferredChannel: 'api' }),

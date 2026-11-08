@@ -173,7 +173,9 @@ function diagnosisDialog() {
     const isWeb = target.preferredChannel === 'web';
     const enabled = isWeb || (target.configured && target.model);
     const model = isWeb ? fallbackModel : target.model || '';
-    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : 'API 通道'}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
+    const browserFirst = target.searchMode === 'browser_ui' || target.browserPreference === 'browser_first';
+    const channelNote = isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : browserFirst ? 'API 通道；浏览器优先策略已记录，当前适配器不可用时使用 API' : 'API 通道';
+    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${channelNote}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
   }).join('');
   const keyFields = state.status.providers.map(provider => {
     return `<label>${esc(provider.id)} API Key（本页内存）<input type="password" name="key-${esc(provider.id)}" autocomplete="off" placeholder="${provider.configured ? '本地环境已配置，可留空' : '未配置时填写'}"></label>`;
@@ -194,7 +196,7 @@ function diagnosisDialog() {
           if (key) apiKeys[provider] = key;
         }
         if (target.preferredChannel !== 'web' && !model) throw new Error(`${target.platform} 需要模型 ID`);
-        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on' };
+        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on', ...(target.searchMode ? { searchMode: target.searchMode } : {}), ...(target.browserPreference ? { browserPreference: target.browserPreference } : {}) };
       });
       state.apiKeys = { ...state.apiKeys, ...apiKeys };
       await startRun({ mode: 'live', diagnosis: true, queryIds, maxQuestions: queryIds.length, targets, apiKeys });

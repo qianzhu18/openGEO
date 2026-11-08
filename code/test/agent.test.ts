@@ -206,6 +206,29 @@ test('diagnosis runs platforms concurrently, keeps web failures separate and ado
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });
 
+test('browser-first policy falls back to API without relabeling the sample as web', async () => {
+  const { store, cleanup } = await temporaryStore(); const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url: unknown, init: any) => {
+    const payload = JSON.parse(init.body);
+    return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: `API answer for ${payload.model}` } }], usage: { cost: 0.001 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  try {
+    const project = syntheticProject(); project.queries = project.queries.slice(0, 1);
+    const target = { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: 'qwen/qwen3.8-flash', webSearch: false, searchMode: 'browser_ui' as const, browserPreference: 'browser_first' as const };
+    const run = await executeRun(createRun(project, 'live', project.goal, undefined, [target]), store, undefined, undefined, {
+      targets: [target], apiKeys: { openrouter: 'fixture' },
+    });
+    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.channel, 'web');
+    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.status, 'skipped');
+    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.channel, 'api');
+    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.fallback, true);
+    const selected = run.samples.find(sample => sample.selected);
+    assert.equal(selected?.origin, 'api');
+    assert.match(selected?.protocolId || '', /mode=browser_ui/);
+    assert.doesNotMatch(selected?.protocolId || '', /browser-ui\/v2/);
+  } finally { globalThis.fetch = originalFetch; await cleanup(); }
+});
+
 test('web diagnosis asks the browser even when no API fallback is configured', async () => {
   const { store, cleanup } = await temporaryStore();
   try {

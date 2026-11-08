@@ -29,6 +29,9 @@ export interface Sample {
 export interface MeasurementTarget {
   id: string; platform: string; preferredChannel: 'web' | 'api';
   webEngine?: 'chatgpt'; provider?: string; model?: string; webSearch?: boolean;
+  searchMode?: 'provider_native' | 'browser_ui' | 'disabled';
+  /** Desired transport order; does not claim a browser adapter exists. */
+  browserPreference?: 'browser_first' | 'api_only';
 }
 export interface MeasurementAttemptRecord {
   id: string; unitId: string; targetId: string; platform: string; channel: 'web' | 'api';

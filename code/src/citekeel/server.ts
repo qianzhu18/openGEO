@@ -20,6 +20,9 @@ import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
 import { parseQuestionSet } from './question-set.js';
 
+// Cloro is an external monitoring adapter candidate, not a niubigeo Provider.
+// Keep it out of the executable provider list until its official HTTP contract
+// is confirmed and an adapter can preserve the raw evidence safely.
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
 const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
   chatgpt: 'OPENGEO_CHATGPT_API_MODEL', gemini: 'OPENGEO_GEMINI_MODEL', perplexity: 'OPENGEO_PERPLEXITY_MODEL',
@@ -48,12 +51,11 @@ function send(res: ServerResponse, status: number, value: unknown) {
 function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.brand, origin: p.origin, domain: p.domain, description: p.description, sampleCount: p.samples.length, queryCount: p.queries.length }; }
 function diagnosisTemplates() {
   return [
-    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.chatgpt] || OPENROUTER_DIAGNOSIS_MODELS.chatgpt, webSearch: true },
-    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.gemini] || OPENROUTER_DIAGNOSIS_MODELS.gemini, webSearch: true },
-    { id: 'perplexity', platform: 'Perplexity', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.perplexity] || OPENROUTER_DIAGNOSIS_MODELS.perplexity, webSearch: true },
-    { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.deepseek] || OPENROUTER_DIAGNOSIS_MODELS.deepseek, webSearch: false },
-    { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.qwen] || OPENROUTER_DIAGNOSIS_MODELS.qwen, webSearch: false },
-    { id: 'seed', platform: '豆包 Seed', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.seed] || OPENROUTER_DIAGNOSIS_MODELS.seed, webSearch: false },
+    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.chatgpt] || OPENROUTER_DIAGNOSIS_MODELS.chatgpt, webSearch: true, searchMode: 'browser_ui' as const, fallbackNote: '优先采集 Xue + Kimi 的真实网页；网页不可用时才补测 OpenRouter API。Cloro 监测适配器待官方协议确认。' },
+    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.gemini] || OPENROUTER_DIAGNOSIS_MODELS.gemini, webSearch: true, searchMode: 'provider_native' as const, fallbackNote: '当前通过 OpenRouter 的 Gemini 模型做可执行基线；Cloro Gemini 监测适配器待官方协议确认。' },
+    { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.deepseek] || OPENROUTER_DIAGNOSIS_MODELS.deepseek, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
+    { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.qwen] || OPENROUTER_DIAGNOSIS_MODELS.qwen, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
+    { id: 'seed', platform: '豆包 Seed', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.seed] || OPENROUTER_DIAGNOSIS_MODELS.seed, webSearch: false, searchMode: 'browser_ui' as const, fallbackNote: '国内平台优先尝试真实浏览器；当前网页适配器未实现时降级到 OpenRouter API。' },
   ].map(target => ({ ...target, configured: target.provider ? hasProviderKey(target.provider) : false }));
 }
 function hostWebCollector(worker: HostBrowserMailbox) {
@@ -285,7 +287,11 @@ export async function createApp(store = new Store(), options: { research?: typeo
             if (provider && !PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
             if ((provider && !model) || (!provider && model)) throw new WorkspaceError('API fallback needs both provider and model.');
             if (preferredChannel === 'web' && value?.webEngine && value.webEngine !== 'chatgpt') throw new WorkspaceError('Only the ChatGPT web adapter is implemented.');
-            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: value?.webSearch === true };
+            const searchMode = value?.searchMode === 'browser_ui' || value?.searchMode === 'provider_native' || value?.searchMode === 'disabled'
+              ? value.searchMode : (value?.webSearch === true ? 'provider_native' : 'disabled');
+            const browserPreference = value?.browserPreference === 'browser_first' || value?.browserPreference === 'api_only'
+              ? value.browserPreference : (searchMode === 'browser_ui' || preferredChannel === 'web' ? 'browser_first' : 'api_only');
+            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: searchMode === 'provider_native', searchMode, browserPreference };
           });
           if (new Set(parsedTargets.map(target => target.id)).size !== parsedTargets.length) throw new WorkspaceError('Diagnosis platforms must be unique.');
           if (!parsedTargets.some(target => target.preferredChannel === 'web' || target.provider)) throw new WorkspaceError('Select at least one collectable platform.');
