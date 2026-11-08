@@ -118,6 +118,17 @@ export async function createApp(store = new Store(), options: { research?: typeo
       if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: APP_VERSION, upstream: 'niubigeo v0.3.2', skills: SKILLS,
         providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
         monitorProviders: [{ id: 'cloro', configured: hasProviderKey('cloro') }], diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
+      if (path === '/api/provider-session' && method === 'POST') {
+        const input = await body(req);
+        // Process memory only: no credential is returned or persisted.
+        for (const provider of ['openrouter', 'cloro']) {
+          if (input[provider] !== undefined) {
+            const key = textField(input[provider], 'API Key', 2000);
+            if (key) process.env[provider === 'cloro' ? 'CLORO_API_KEY' : 'OPENROUTER_API_KEY'] = key;
+          }
+        }
+        return send(res, 200, { ok: true });
+      }
       if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(project => ({ ...projectSummary(project), example: exampleIds.has(project.id) })));
       if (path === '/api/deleted-projects' && method === 'GET') return send(res, 200, await store.deletedProjects());
       const restoreMatch = path.match(/^\/api\/deleted-projects\/([a-zA-Z0-9_-]+)\/restore$/);
@@ -285,6 +296,10 @@ export async function createApp(store = new Store(), options: { research?: typeo
           } else selectedQueries = activeQueries.slice(0, maxQuestions);
           project.queries = selectedQueries;
 
+          if (Array.isArray(input.targetIds)) {
+            if (input.targetIds.some((id: unknown) => !diagnosisTemplates().some(t => t.id === id))) throw new WorkspaceError('Unknown diagnosis platform.');
+            input.targets = input.targetIds.map((id: string) => diagnosisTemplates().find(t => t.id === id));
+          }
           if (!Array.isArray(input.targets) || !input.targets.length || input.targets.length > 6) throw new WorkspaceError('Select 1–6 diagnosis platforms.');
           const parsedTargets: MeasurementTarget[] = input.targets.map((value: any): MeasurementTarget => {
             const id = textField(value?.id, '平台 ID', 40), platform = textField(value?.platform, '平台名称', 80);

@@ -65,23 +65,18 @@ test('international workspace keeps cohorts separate and opens cross-run origina
   expect(errors).toEqual([]);
 });
 
-test('measurement setup uses explicit model selection and never stores the key in browser storage', async ({ page }) => {
+test('measurement chooses platforms with managed models and no browser or model fields', async ({ page }) => {
   await page.goto(`/workspace?project=${projectId}&view=agent`);
   await expect(page.getByRole('heading', { name: 'Measure, review, improve' })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Model ID', exact: true })).toHaveValue('');
+  await expect(page.locator('input[name=model],select[name=channel]')).toHaveCount(0);
   let payload: Record<string, unknown> | undefined;
   await page.route('**/api/runs', async route => { if (route.request().method() !== 'POST') { await route.continue(); return; } payload = route.request().postDataJSON(); await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ id: runIds[1] }) }); });
-  await page.getByLabel('Provider', { exact: true }).selectOption('openrouter');
-  await page.getByRole('textbox', { name: 'Model ID', exact: true }).fill('fixture-model');
-  await page.getByLabel('API key', { exact: true }).fill('fixture-key-only-in-memory');
-  await page.getByRole('button', { name: 'Start API measurement', exact: true }).click();
-  await expect.poll(() => payload?.mode).toBe('live');
+  await page.getByRole('button', { name: 'Start brand diagnosis', exact: true }).click();
+  await expect.poll(() => payload?.diagnosis).toBe(true);
   expect(payload?.maxQuestions).toBe(5);
-  expect(payload?.apiKey).toBe('fixture-key-only-in-memory');
-  expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('fixture-key-only-in-memory');
-  await expect(page.getByRole('button', { name: 'Start API measurement', exact: true })).toBeEnabled();
-  await page.reload();
-  await expect(page.getByLabel('API key', { exact: true })).toHaveValue('');
+  expect(payload?.targetIds).toEqual(['chatgpt','gemini','deepseek','qwen','seed']);
+  expect(payload?.model).toBeUndefined();
+  await expect(page.getByRole('button', { name: 'Start brand diagnosis', exact: true })).toBeEnabled();
 });
 
 test('mobile project review and failure evidence remain usable at 320px', async ({ page }) => {

@@ -49,7 +49,7 @@ function originBanner() {
   return `<div class="source-banner">${badge(mixedLive ? '网页 + API' : apiArchive ? 'API 观察回放' : ORIGINS[origin], origin)}<p>${esc(displayNote)}</p></div>`;
 }
 function runBox() {
-  return `<div class="goal-box"><label>本轮目标<textarea id="goal" rows="2" aria-label="本轮目标">${esc(state.run?.goal || state.project.goal)}</textarea></label><div class="actions"><button class="btn primary" data-diagnosis ${running() ? 'disabled' : ''}>${running() ? '执行中…' : '⇶ 运行品牌诊断'}</button><button class="btn" data-live ${running() ? 'disabled' : ''}>单模型实测</button><button class="btn quiet" data-run ${running() ? 'disabled' : ''}>仅回放</button></div></div>`;
+  return `<div class="goal-box"><label>本轮目标<textarea id="goal" rows="2" aria-label="本轮目标">${esc(state.run?.goal || state.project.goal)}</textarea></label><div class="actions"><button class="btn primary" data-diagnosis ${running() ? 'disabled' : ''}>${running() ? '执行中…' : '⇶ 运行品牌诊断'}</button><button class="btn quiet" data-run ${running() ? 'disabled' : ''}>仅回放</button></div></div>`;
 }
 function trace() {
   const steps = state.run?.steps || state.status.skills.map(([id, label, skill]) => ({ id, label, skill, status: 'pending', executor: 'rules', summary: '' }));
@@ -71,7 +71,7 @@ function factsPage() {
 }
 function queriesPage() {
   return pageHeader('先确认要覆盖的问题', `当前问题集 v${state.project.queryVersion}。修改后建立新版本；没有对应回答的新问题需要重新采样。`) +
-    `<div class="two-col"><div class="panel"><div class="panel-head"><h2>本轮问题清单</h2>${badge(`${state.project.queries.length} 个问题`)}</div><div class="panel-body"><p class="subtle">每行一个问题。品牌核验与不带品牌的供应商发现分开观察。</p><textarea id="query-editor" rows="18" aria-label="问题清单">${esc(state.project.queries.map(q => q.text).join('\n'))}</textarea><div class="actions section-gap"><button class="btn primary" data-save-queries>保存并确认问题</button><button class="btn" data-live>用模型实测</button></div></div></div><aside class="panel"><div class="panel-head"><h2>问题的依据</h2></div><div class="panel-body"><p class="subtle">${state.project.origin === 'archive' ? '这些问题来自上游归档的原始探针。域名识别带有目标提示，不能称作自然发现。' : '初始候选由案例或本地模板提供。你可以按实际采购场景调整；系统不会把候选问题描述成有搜索量证据的热词。'}</p><div class="note section-gap">确认的单位是问题版本与实际文本。更换问题后，不沿用旧回答计算新版本表现。</div></div></aside></div>`;
+    `<div class="two-col"><div class="panel"><div class="panel-head"><h2>本轮问题清单</h2>${badge(`${state.project.queries.length} 个问题`)}</div><div class="panel-body"><p class="subtle">每行一个问题。品牌核验与不带品牌的供应商发现分开观察。</p><textarea id="query-editor" rows="18" aria-label="问题清单">${esc(state.project.queries.map(q => q.text).join('\n'))}</textarea><div class="actions section-gap"><button class="btn primary" data-save-queries>保存并确认问题</button><button class="btn" data-confirm-diagnosis>保存并开始品牌诊断</button></div></div></div><aside class="panel"><div class="panel-head"><h2>问题的依据</h2></div><div class="panel-body"><p class="subtle">${state.project.origin === 'archive' ? '这些问题来自上游归档的原始探针。域名识别带有目标提示，不能称作自然发现。' : '初始候选由案例或本地模板提供。你可以按实际采购场景调整；系统不会把候选问题描述成有搜索量证据的热词。'}</p><div class="note section-gap">确认的单位是问题版本与实际文本。更换问题后，不沿用旧回答计算新版本表现。</div></div></aside></div>`;
 }
 function sampleRows(samples) {
   return samples.map(sample => {
@@ -124,7 +124,7 @@ function render() {
   const pages = { overview, facts: factsPage, queries: queriesPage, evidence: evidencePage, sources: sourcesPage, actions: actionsPage, content: contentPage, flow: flowPage };
   const label = NAV.find(n=>n[0]===state.view)?.[1] || '工作概览';
   const section = ['actions','content'].includes(state.view) ? '优化' : state.view === 'facts' ? '项目' : state.view === 'flow' ? 'Agent' : '分析';
-  $('#app').innerHTML = `<div class="shell ${state.collapsed?'rail-collapsed':''}"><aside class="sidebar"><div class="brand"><div class="brand-symbol" aria-hidden="true">O</div><div><div class="wordmark">OpenGEO</div><div class="brand-caption">GEO WORKSPACE</div></div></div><div class="project-picker"><label for="project-picker">当前项目</label><select id="project-picker">${state.projects.filter(p=>showExamples || !p.example || p.id===state.project.id).map(p=>`<option value="${esc(p.id)}" ${state.project.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div><nav class="nav" aria-label="工作台导航">${navItem('flow','♧')}<div class="nav-group">分析 <span>Analysis</span></div>${navItem('overview','▦')}<div class="tracking-label"><span aria-hidden="true">⌁</span> 监测 <span class="tracking-chevron">⌄</span></div>${navItem('queries','',true)}${navItem('evidence','',true)}${navItem('sources','',true)}<div class="nav-group">优化 <span>Optimization</span></div>${navItem('actions','♧')}${navItem('content','▤')}<div class="nav-group">项目 <span>Management</span></div>${navItem('facts','⚑')}</nav><div class="side-bottom"><a class="side-button" href="/create-workspace">＋ Create workspace</a><button class="side-button" data-new>＋ 新建项目</button><button class="side-button" data-projects>项目管理</button><button class="side-button" data-settings>⚙ 模型设置</button><div class="local-profile"><span class="profile-avatar">O</span><div>本地工作空间<small>OpenGEO · ${esc(state.status?.version || '未知版本')}</small></div><span class="dot"></span></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb"><button class="sidebar-toggle" data-toggle-sidebar aria-label="切换侧边栏">◫</button><span class="breadcrumb-section">${section}</span><span>›</span><strong>${esc(label)}</strong></div><div class="actions">${downloadActions() || '<button class="btn small" data-nav="flow">Agent 工作流</button>'}</div></header><main class="content" id="main">${(pages[state.view]||overview)()}<footer class="footer-note"><span><span class="dot"></span> 本地运行 · 数据保存在本机</span><span>${state.run?`本轮 ${esc(fmtTime(state.run.createdAt))}`:'从一个案例开始'}</span></footer></main></div></div>`;
+  $('#app').innerHTML = `<div class="shell ${state.collapsed?'rail-collapsed':''}"><aside class="sidebar"><div class="brand"><div class="brand-symbol" aria-hidden="true">O</div><div><div class="wordmark">OpenGEO</div><div class="brand-caption">GEO WORKSPACE</div></div></div><div class="project-picker"><label for="project-picker">当前项目</label><select id="project-picker">${state.projects.filter(p=>showExamples || !p.example || p.id===state.project.id).map(p=>`<option value="${esc(p.id)}" ${state.project.id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div><nav class="nav" aria-label="工作台导航">${navItem('flow','♧')}<div class="nav-group">分析 <span>Analysis</span></div>${navItem('overview','▦')}<div class="tracking-label"><span aria-hidden="true">⌁</span> 监测 <span class="tracking-chevron">⌄</span></div>${navItem('queries','',true)}${navItem('evidence','',true)}${navItem('sources','',true)}<div class="nav-group">优化 <span>Optimization</span></div>${navItem('actions','♧')}${navItem('content','▤')}<div class="nav-group">项目 <span>Management</span></div>${navItem('facts','⚑')}</nav><div class="side-bottom"><a class="side-button" href="/create-workspace">＋ Create workspace</a><button class="side-button" data-new>＋ 新建项目</button><button class="side-button" data-projects>项目管理</button><button class="side-button" data-settings>⚙ 服务商设置</button><div class="local-profile"><span class="profile-avatar">O</span><div>本地工作空间<small>OpenGEO · ${esc(state.status?.version || '未知版本')}</small></div><span class="dot"></span></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb"><button class="sidebar-toggle" data-toggle-sidebar aria-label="切换侧边栏">◫</button><span class="breadcrumb-section">${section}</span><span>›</span><strong>${esc(label)}</strong></div><div class="actions">${downloadActions() || '<button class="btn small" data-nav="flow">Agent 工作流</button>'}</div></header><main class="content" id="main">${(pages[state.view]||overview)()}<footer class="footer-note"><span><span class="dot"></span> 本地运行 · 数据保存在本机</span><span>${state.run?`本轮 ${esc(fmtTime(state.run.createdAt))}`:'从一个案例开始'}</span></footer></main></div></div>`;
 }
 async function pollRun(id) {
   const selection = runSelection;
@@ -169,66 +169,36 @@ function showDialog(title, description, fields, submitLabel, onSubmit) {
   };
   dialog.showModal();
 }
+async function saveQuestions() {
+  const editor = $('#query-editor');
+  if (!editor) return;
+  state.project = await api(`/api/projects/${state.project.id}/queries`, { method: 'PUT', body: JSON.stringify({ questions: editor.value.split('\n') }) });
+}
 function diagnosisDialog() {
-  const defaults = state.settings;
-  const templates = state.status?.diagnosisTargets || [];
-  const measurementProviders = [...state.status.providers, ...(state.status.monitorProviders || [])];
-  const activeQueries = state.project.queries.filter(q => !q.status || q.status === 'active').slice(0, 10);
-  const fallbackProvider = defaults.provider || 'openrouter';
-  const fallbackModel = templates.find(target => target.id === 'chatgpt')?.model || defaults.model || '';
-  const questionFields = activeQueries.map((query, index) => `<label class="check-label question-option"><input type="checkbox" name="queryIds" value="${esc(query.id)}" ${index < 5 ? 'checked' : ''}><span><strong>${esc(query.branded ? '品牌核验' : '供应商发现')}</strong><small>${esc(query.text)}</small></span></label>`).join('');
-  const providerOptions = provider => measurementProviders.map(item => `<option value="${esc(item.id)}" ${item.id === provider ? 'selected' : ''}>${esc(item.id)}${item.configured ? '（已配置）' : ''}</option>`).join('');
-  const targetFields = templates.map(target => {
-    const isWeb = target.preferredChannel === 'web';
-    const enabled = isWeb || (target.configured && target.model);
-    const model = isWeb ? fallbackModel : target.model || '';
-    const browserFirst = target.browserPreference === 'browser_first';
-    const channelNote = target.provider === 'cloro' ? 'Cloro 远程网页监测 API；实际模型与搜索执行待返回证据' : isWeb ? 'Xue + Kimi 网页优先；可配 API 降级' : browserFirst ? 'API 通道；浏览器优先策略已记录，当前适配器不可用时使用 API' : 'API 通道';
-    return `<article class="target-card"><label class="check-label"><input type="checkbox" name="targetIds" value="${esc(target.id)}" ${enabled ? 'checked' : ''}><span><strong>${esc(target.platform)}</strong><small>${channelNote}</small></span></label>${isWeb ? `<div class="form-row"><label>降级 Provider<select name="provider-${esc(target.id)}">${providerOptions(fallbackProvider)}</select></label><label>降级模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" placeholder="留空则网页失败后保留空缺"></label></div>` : target.provider ? `<div class="form-row"><label>Provider<select name="provider-${esc(target.id)}">${providerOptions(target.provider)}</select></label><label>模型 ID<input name="model-${esc(target.id)}" value="${esc(model)}" required></label></div>` : ''}<label class="check-label"><input type="checkbox" ${target.provider === 'cloro' ? 'disabled' : ''} name="search-${esc(target.id)}" ${target.webSearch !== false ? 'checked' : ''}>请求 Provider 搜索能力</label></article>`;
+  const templates = state.status.diagnosisTargets || [];
+  const queries = state.project.queries.filter(q => !q.status || q.status === 'active');
+  const keyFields = ['openrouter', 'cloro'].map(id => {
+    const configured = [...state.status.providers, ...(state.status.monitorProviders || [])].find(p => p.id === id)?.configured;
+    return `<label>${id} API Key（${configured ? '本地已配置，可留空' : '本次需要填写'}）<input type="password" autocomplete="off" name="key-${id}" value="${esc(state.apiKeys[id] || '')}"></label>`;
   }).join('');
-  const keyFields = measurementProviders.map(provider => {
-    return `<label>${esc(provider.id)} API Key（本页内存）<input type="password" name="key-${esc(provider.id)}" autocomplete="off" placeholder="${provider.configured ? '本地环境已配置，可留空' : '未配置时填写'}"></label>`;
-  }).join('');
-  showDialog('运行一轮品牌诊断', '一轮冻结问题版本和平台矩阵。当前默认国内外均直接使用 API；不同平台并行，同平台问题串行。浏览器自动化留待后续验收。',
-    `<section><h3>本轮问题集</h3><p class="dialog-note">默认勾选前 5 条 active 问题，最多 10 条。同一问题会在所有启用平台各形成一个计划单元。</p><div class="question-list">${questionFields || '<p class="dialog-note">没有 active 问题，请先保存问题集。</p>'}</div></section><section><h3>平台矩阵</h3><div class="target-grid">${targetFields}</div><p class="dialog-note">海外 ChatGPT/Gemini 使用 Cloro 监测 API；国内 DeepSeek/千问/豆包直接使用 OpenRouter API。Cloro 只做监测，不用于策略或内容生成。API Key 只留在本页内存，环境变量由本地服务端解析。</p><div class="form-row api-key-grid">${keyFields}</div></section><p class="dialog-note">并发规则：平台任务同时启动；同一个 API 平台内部按题串行，本轮默认不连接本机浏览器。每个单元最多采纳一条有效回答，失败尝试不进分母。</p>`,
-    '确认问题并运行', async form => {
-      const queryIds = form.getAll('queryIds').map(String);
-      if (!queryIds.length || queryIds.length > 10) throw new Error('请选择 1–10 个问题');
-      const selectedIds = form.getAll('targetIds').map(String);
-      if (!selectedIds.length || selectedIds.length > 6) throw new Error('请选择 1–6 个平台');
+  showDialog('运行一轮品牌诊断', '问题已保存。选择平台即可开始；模型由系统维护。海外使用 Cloro，国内使用 OpenRouter，全程 API。',
+    `<h3>已确认问题（每轮最多 10 条）</h3>${queries.map((q,i) => `<label class="check-label"><input type="checkbox" name="queryIds" value="${esc(q.id)}" ${i<10?'checked':''}>${esc(q.text)}</label>`).join('')}<h3>诊断平台</h3>${templates.map(t => `<label class="check-label"><input type="checkbox" name="targetIds" value="${esc(t.id)}" checked>${esc(t.platform)} · ${t.provider === 'cloro' ? 'Cloro 监测 API' : 'OpenRouter API'}</label>`).join('')}<details><summary>服务商密钥（已有本地配置可直接运行）</summary>${keyFields}</details>`,
+    '开始品牌诊断', async form => {
+      const queryIds = form.getAll('queryIds').map(String), targetIds = form.getAll('targetIds').map(String);
+      if (!queryIds.length || queryIds.length>10) throw new Error('请选择 1–10 个问题');
+      if (!targetIds.length) throw new Error('请选择至少一个平台');
       const apiKeys = {};
-      const targets = templates.filter(target => selectedIds.includes(target.id)).map(target => {
-        const provider = target.preferredChannel === 'web' ? String(form.get(`provider-${target.id}`) || '') : target.provider ? String(form.get(`provider-${target.id}`) || target.provider) : undefined;
-        let model = target.preferredChannel === 'web' ? String(form.get(`model-${target.id}`) || '').trim() : String(form.get(`model-${target.id}`) || '').trim();
-        if (provider) {
-          const key = String(form.get(`key-${provider}`) || '').trim();
-          if (key) apiKeys[provider] = key;
-        }
-        if (target.preferredChannel !== 'web' && !model) throw new Error(`${target.platform} 需要模型 ID`);
-        return { id: target.id, platform: target.platform, preferredChannel: target.preferredChannel, ...(target.webEngine ? { webEngine: target.webEngine } : {}), ...(provider && model ? { provider, model } : {}), webSearch: form.get(`search-${target.id}`) === 'on', searchMode: form.get(`search-${target.id}`) === 'on' ? 'provider_native' : 'disabled', ...(target.browserPreference ? { browserPreference: target.browserPreference } : {}) };
-      });
-      state.apiKeys = { ...state.apiKeys, ...apiKeys };
-      await startRun({ mode: 'live', diagnosis: true, queryIds, maxQuestions: queryIds.length, targets, apiKeys });
+      for (const id of ['openrouter','cloro']) { const key = String(form.get(`key-${id}`)||'').trim(); if(key) apiKeys[id]=key; }
+      state.apiKeys = {...state.apiKeys,...apiKeys};
+      await startRun({mode:'live',diagnosis:true,queryIds,maxQuestions:queryIds.length,targetIds,apiKeys});
     });
   $('#dialog').classList.add('wide');
 }
 function modelDialog(live) {
-  const defaults = state.settings;
-  const neutral = state.project.queries.filter(q => !q.branded).slice(0, 2), branded = state.project.queries.filter(q => q.branded).slice(0, 1);
-  const qs = [...neutral, ...branded].length ? [...neutral, ...branded] : state.project.queries.slice(0, 3);
-  showDialog(live ? '运行一次新的 API 观察' : '模型设置', '密钥仅用于本次本地会话，不写入浏览器存储或项目文件。回放案例无需配置。',
-    `<div class="form-row"><label>Provider<select name="provider">${state.status.providers.map(p => `<option value="${p.id}" ${p.id === (defaults.provider || 'openrouter') ? 'selected' : ''}>${p.id}${p.configured ? '（已有环境配置）' : ''}</option>`).join('')}</select></label><label>模型 ID<input name="model" placeholder="填写账号当前可用的模型 ID" value="${esc(defaults.model || ((!defaults.provider || defaults.provider === 'openrouter') ? 'qwen/qwen3.8-flash' : ''))}" required></label></div><label>API Key<input name="apiKey" id="api-key" type="password" autocomplete="off" placeholder="已有环境变量时可以留空"></label><label class="check-label"><input name="webSearch" type="checkbox" ${defaults.webSearch ? 'checked' : ''}>请求 Provider 支持的搜索能力</label>${live ? `<label>确认本轮问题（每行一条，最多 5 条）<textarea name="questions" rows="5" required>${esc(qs.map(q => q.text).join('\n'))}</textarea></label><p class="dialog-note">最多 5 次采样，另有策略和内容调用，总计最多 8 次请求。搜索是否实际执行以返回证据为准；费用未知时暂停后续调用。公开案例用于回放，模型实测适合你的真实品牌。</p>` : `<p class="dialog-note">只保存 Provider、模型 ID 和搜索偏好。API Key 留在当前页面内存，刷新后清除。</p>`}`,
-    live ? '确认问题并实测' : '保存设置', async form => {
-      const config = { provider: String(form.get('provider')), model: String(form.get('model')).trim(), webSearch: form.get('webSearch') === 'on' };
-      state.settings = config; state.apiKeys[config.provider] = String(form.get('apiKey') || '').trim() || state.apiKeys[config.provider] || '';
-      localStorage.setItem('citekeel-model', JSON.stringify(config));
-      if (live) {
-        const questions = String(form.get('questions')).split('\n').map(x => x.trim()).filter(Boolean);
-        if (questions.length < 1 || questions.length > 5) throw new Error('请确认 1–5 个采样问题');
-        await startRun({ mode: 'live', ...config, apiKey: state.apiKeys[config.provider] || '', maxQuestions: questions.length, questions });
-      } else toast('模型偏好已保存，密钥仅保留在本页面内存');
-    });
-  $('#api-key').value = state.apiKeys[defaults.provider || 'openrouter'] || '';
+  if (live) { diagnosisDialog(); return; }
+  showDialog('服务商设置', '仅配置 OpenRouter 和 Cloro。密钥保存在本地服务进程内存，重启后清除；不会写入项目或浏览器存储。模型由系统管理。',
+    ['openrouter','cloro'].map(id => `<label>${id} API Key<input type="password" name="${id}" autocomplete="off" placeholder="留空保留当前配置"></label>`).join('') + '<p><a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener noreferrer">OpenRouter 密钥</a> · <a href="https://dashboard.cloro.dev/" target="_blank" rel="noopener noreferrer">Cloro 控制台</a></p>',
+    '保存服务商配置', async form => { await api('/api/provider-session',{method:'POST',body:JSON.stringify(Object.fromEntries(form))}); state.status=await api('/api/status'); render(); toast('服务商配置已在本地进程内生效'); });
 }
 async function projectManager() {
   const deleted = await api('/api/deleted-projects');
@@ -264,7 +234,7 @@ document.addEventListener('click', async event => {
     if (button.dataset.sourceLevel) { state.sourceLevel = button.dataset.sourceLevel; render(); return; }
     if (button.dataset.nav) { state.view = button.dataset.nav; render(); return; }
     if (button.dataset.prompt) { state.view = 'queries'; render(); return; }
-    if (button.hasAttribute('data-diagnosis')) { button.disabled = true; diagnosisDialog(); return; }
+    if (button.hasAttribute('data-diagnosis')) { diagnosisDialog(); return; }
     if (button.hasAttribute('data-run')) { button.disabled = true; await startRun(); return; }
     if (button.hasAttribute('data-live')) { modelDialog(true); return; }
     if (button.hasAttribute('data-settings')) { modelDialog(false); return; }
@@ -274,6 +244,7 @@ document.addEventListener('click', async event => {
       button.disabled = true; state.project = await api(`/api/projects/${state.project.id}/claims`, { method: 'POST', body: JSON.stringify({ claimId: button.dataset.confirm, sourceId: button.dataset.source }) });
       render(); toast('事实已确认。重新运行会使用新资料，历史结果保留。'); return;
     }
+    if (button.hasAttribute('data-confirm-diagnosis')) { await saveQuestions(); render(); diagnosisDialog(); return; }
     if (button.hasAttribute('data-save-queries')) {
       state.project = await api(`/api/projects/${state.project.id}/queries`, { method: 'PUT', body: JSON.stringify({ questions: $('#query-editor').value.split('\n').map(x => x.trim()).filter(Boolean) }) }); render(); toast(`问题集 v${state.project.queryVersion} 已保存`); return;
     }
@@ -317,6 +288,7 @@ try {
   const selected = state.projects.find(p => p.id === requested) || state.projects.find(p => !p.example);
   if (selected) await selectProject(selected.id); else render();
   if (new URLSearchParams(location.search).get('manage') === '1') await projectManager();
+  if (new URLSearchParams(location.search).get('settings') === '1') modelDialog(false);
   if (new URLSearchParams(location.search).get('measure') === '1') modelDialog(true);
 } catch (error) { $('#app').innerHTML = `<div class="boot"><h1>工作台暂时无法读取项目</h1><p>${esc(error.message)}</p><p>请确认本地服务正在运行，然后刷新页面。</p></div>`; }
 
@@ -330,4 +302,4 @@ document.addEventListener('click', event => {
   if (event.target.closest('[data-toggle-sidebar]')) { state.collapsed = !state.collapsed; render(); }
 });
 
-document.addEventListener('brand-sources-updated', event => { state.project = event.detail; render(); toast('资料已保存，请逐项核对事实；历史运行快照保持原样。'); });
+document.addEventListener('brand-sources-updated', event => { if (event.detail.id !== state.project?.id) return; state.project = event.detail; render(); toast('资料已保存，请逐项核对事实；历史运行快照保持原样。'); });
