@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRun } from '../src/citekeel/engine.js';
 import { analyzeRun } from '../src/citekeel/analytics.js';
-import { reportMarkdown, reportHtml } from '../src/citekeel/report.js';
+import { evidenceMarkdown, reportMarkdown, reportHtml } from '../src/citekeel/report.js';
 import type { Project, Sample } from '../src/citekeel/types.js';
 const project: Project = { id:'analysis-fixture', name:'松灵', brand:'松灵机器人', aliases:['AgileX'], domain:'agilex.ai',industry:'机器人', description:'',origin:'manual',goal:'测量',sources:[],claims:[],queries:[{id:'q1',text:'机器人底盘怎么选？',intent:'选型',branded:false,origin:'manual'}],queryVersion:5,samples:[],createdAt:'2026-11-08T00:00:00Z',updatedAt:'2026-11-08T00:00:00Z' };
 const sample = (id:string, patch:Partial<Sample>={}): Sample => ({ id,queryId:'q1',question:'机器人底盘怎么选？',intent:'选型',branded:false,origin:'api',model:'deepseek/test',observedAt:'2026-11-08T00:00:00Z',runGroup:'baseline',protocolId:'api/v1',collectionStatus:'completed',analysisStatus:'completed',answer:'AgileX 可以列入核对范围。',citations:[{url:'https://agilex.ai/page',kind:'provider_citation',source:'provider',integrity:'matched'}],...patch });
@@ -31,4 +31,11 @@ test('a selected record cannot inflate metrics through two frozen units', () => 
 test('ambiguous frozen references fail explicitly rather than select the last record', () => {
  const run=createRun(project,'replay');run.samples=[sample('same',{runGroup:'a'}),sample('same',{runGroup:'b'})];run.measurementUnits=[{id:'u1',queryId:'q1',question:project.queries[0]!.text,targetId:'api',platform:'API',preferredChannel:'api',status:'completed',selectedSampleId:'same',attempts:[]}];
  const a=analyzeRun(run);assert.equal(a.quality.valid,0);assert.equal(a.rows[0]?.reason,'ambiguous-selected-sample');
+});
+
+test('diagnostic report is concise while full evidence remains separately available', () => {
+ const run=createRun(project,'replay');run.status='completed';run.samples=[sample('brief',{answer:'AgileX '+ '原文证据 '.repeat(3000)})];
+ const brief=reportMarkdown(run), full=evidenceMarkdown(run);
+ assert.ok(brief.length < full.length/3);assert.match(brief,/诊断结论/);assert.match(brief,/优先行动/);assert.match(brief,/验收/);assert.match(full,/原文证据/);
+ assert.ok(!reportMarkdown(run,{model:'absent'}).includes('制作选型问题'));
 });

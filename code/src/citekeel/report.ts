@@ -1,3 +1,4 @@
+import { diagnoseRun } from './diagnosis.js';
 import { marked } from 'marked';
 import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import type { AgentRun, Metric } from './types.js';
@@ -23,7 +24,7 @@ function sanitizeExport<T>(value: T): T {
 const cell = (value: unknown) => String(value ?? 'UNKNOWN').replace(/\\/g, '\\\\').replace(/\|/g, '\uFF5C').replace(/[\r\n]+/g, ' ');
 const rate = (m: { value: number | null; numerator: number; denominator: number }) => m.value === null ? 'UNKNOWN' : `${(m.value * 100).toFixed(1)}% (${m.numerator}/${m.denominator})`;
 const table = (heads: string[], rows: unknown[][]) => `| ${heads.join(' | ')} |\n| ${heads.map(() => '---').join(' | ')} |\n${rows.map(row => `| ${row.map(cell).join(' | ')} |`).join('\n')}`;
-export function reportMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): string {
+export function evidenceMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): string {
   const a = analyzeRun(run, filter), en = run.projectSnapshot.market === 'international';
   const title = en ? 'AI visibility diagnostic' : 'GEO 数据调研报告';
   const section = (zh: string, english: string) => en ? english : zh;
@@ -78,13 +79,44 @@ export function reportMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): str
   }
   return redactExportText(report);
 }
-export function reportHtml(run: AgentRun, filter: AnalyticsFilter = {}): string {
+export function reportMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): string {
+  const a = analyzeRun(run, filter), d = diagnoseRun(run, filter), en = run.projectSnapshot.market === 'international';
+  const t = (zh: string, english: string) => en ? english : zh;
+  const out = [`# ${run.projectSnapshot.brand} · ${t('品牌诊断报告', 'AI visibility diagnostic')}`,
+    `${t('运行', 'Run')}: ${run.id} · ${run.createdAt} · ${a.status} · ${a.quality.label}  \n${t('问题版本', 'Question version')}: v${a.queryVersion} · ${a.mode}/${a.origin}  \n${t('筛选', 'Filters')}: ${filter.model || 'all models'} / ${filter.channel || 'all channels'} / ${filter.days || 'all'} days`,
+    `## ${t('诊断结论', 'Diagnosis')}`, d.conclusion,
+    `**${t('有效回答 / 计划', 'Valid / planned')}: ${a.quality.valid}/${a.quality.planned}** · ${t('有效覆盖', 'Valid coverage')}: ${a.quality.coverage == null ? 'UNKNOWN' : (a.quality.coverage*100).toFixed(1)+'%'} · ${t('排除 / 待完成', 'Excluded / pending')}: ${a.quality.excluded}/${a.quality.pending}`,
+    t('覆盖表示采集质量，不是品牌表现得分。失败不算未提及；混合条件不合并一个提及率。', 'Coverage measures data availability, not brand performance. Failures are not non-mentions. Mixed cohorts have no combined visibility rate.'),
+    ...(a.quality.planBasis === 'saved-records' ? [t('未保存冻结计划，覆盖只描述已有记录，原始采样覆盖未知。','No frozen plan is stored. Coverage describes saved records only; original coverage is UNKNOWN.')] : []),
+    `## ${t('关键发现与解释', 'Findings and interpretation')}`];
+  if (!d.findings.length) out.push(t('没有可判定的测量组。', 'No eligible measurement cohorts.'));
+  for (const f of d.findings) out.push(`### ${cell(f.title)}`, f.detail, f.implication, `${t('原文 ID', 'Evidence ID')}: ${f.sampleId || 'UNKNOWN'}`);
+  out.push(`## ${t('优先行动与内容制作单', 'Prioritized actions and content briefs')}`, d.nextStep);
+  if (!d.actions.length) out.push(t('当前没有具备有效证据的品牌行动建议。', 'No brand actions supported by valid evidence in this scope.'));
+  for (const action of d.actions.slice(0, 10)) out.push(`### ${action.priority} · ${cell(action.title)}`, action.rationale,
+    ...(action.trigger ? [`**${t('目标问题', 'Target question')}**: ${cell(action.trigger)}`] : []),
+    ...(action.evidenceGap ? [`**${t('待核验', 'Review gap')}**: ${cell(action.evidenceGap)}`] : []),
+    ...(action.outline?.length ? [`**${t('制作结构', 'Brief outline')}**: ${action.outline.map(cell).join(' → ')}`] : []),
+    `**${t('验收', 'Acceptance')}**: ${cell(action.acceptance)}`,
+    `${t('状态', 'Status')}: ${action.status} · ${t('依据', 'Evidence')}: ${[...action.queryIds,...action.sampleIds,...action.claimIds].map(cell).join(', ')}`);
+  out.push(`## ${t('问题覆盖与观察', 'Question coverage')}`,table([t('问题','Question'),t('有效/计划','Valid/planned'),t('提及条数','Mentioned answers')], a.questions.map(q => [q.question,`${q.valid}/${q.planned}`,q.mentioned])));
+  const cited = a.rows.filter(r => r.status === 'valid' && r.providerCitations > 0).length;
+  out.push(`## ${t('信源诊断', 'Citation diagnosis')}`, t(`${cited}/${a.quality.valid} 条有效回答带有可统计的 Provider 引用。引用缺失不能推出模型没有搜索；有链接也不证明链接支持产品事实。完整域名、URL 与来源类型见独立证据导出。`, `${cited}/${a.quality.valid} valid answers contain countable provider citations. Absence does not prove no search occurred; links do not establish factual support. Full domains, URLs and source types are in the separate evidence export.`));
+  const reasons = new Map<string,number>(); for(const r of a.rows.filter(r=>r.status!=='valid')) reasons.set(r.reason || r.status,(reasons.get(r.reason || r.status)||0)+1);
+  if(reasons.size) out.push(`## ${t('影响结论的数据缺口', 'Gaps affecting conclusions')}`,table([t('原因','Reason'),t('单元数','Units')],[...reasons].map(([r,n])=>[r,n])));
+  out.push(`## ${t('原文摘录与复核入口', 'Evidence excerpts')}`,t('以下仅为定位摘录，不替代完整回答。JSON 证据导出和完整证据附录保留全部原文、引用、协议与失败。', 'Excerpts locate evidence; they do not replace full answers. JSON and the full evidence appendix retain answers, citations, protocols and failures.'));
+  for(const r of a.rows.filter(r=>r.status==='valid').slice(0,5)) out.push(`### ${cell(r.sampleId)}`,`${cell(r.model)} · ${cell(r.question)}`, '> '+(r.quote || run.samples.find(s=>s.id===r.sampleId && s.model===r.model)?.answer || '').slice(0,280).replace(/\n/g,'\n> '));
+  out.push(`## ${t('范围与复测', 'Scope and follow-up')}`,t('这些建议由已保存数据的确定性规则生成，未审计官网页面是否存在内容缺口，也未证明任何内容会增加曝光。先核对事实、人工制作与发布，再以相同问题、入口和协议复测。首次出现序不是推荐排名；不估算搜索量、情绪、转化或增长。','Suggestions are deterministic briefs from saved observations. Existing website gaps and future uplift have not been verified. Review facts, produce and publish manually, then repeat the same questions, entry points and protocols. Appearance order is not recommendation rank. Search volume, sentiment, conversion and uplift remain unverified.'),
+    en ? 'API region is not verified.' : 'API 地区真实性未验证。', `${a.version} · ${a.metrics.version} · ${a.metrics.matcherVersion}`);
+  return redactExportText(out.join('\n\n')+'\n');
+}
+export function reportHtml(run: AgentRun, filter: AnalyticsFilter = {}, fullEvidence = false): string {
   const esc = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
   const renderer = new marked.Renderer();
   renderer.html = ({ text }) => esc(text);
   renderer.image = ({ text }) => esc(text);
   renderer.link = ({ href, text }) => { try { const u = new URL(href); return ['http:', 'https:'].includes(u.protocol) && !u.username && !u.password ? `<a href="${esc(href)}" rel="noreferrer">${esc(text)}</a>` : esc(text); } catch { return esc(text); } };
-  const body = marked.parse(reportMarkdown(run, filter), { renderer, async: false });
+  const body = marked.parse(fullEvidence ? evidenceMarkdown(run, filter) : reportMarkdown(run, filter), { renderer, async: false });
   return `<!doctype html><html lang="${run.projectSnapshot.market === 'international' ? 'en' : 'zh-CN'}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${esc(run.projectSnapshot.brand)} · OpenGEO</title><style>body{font:15px/1.7 system-ui,sans-serif;color:#202824;max-width:1120px;margin:40px auto;padding:0 24px}h1{font-size:30px}h2{margin-top:42px;border-bottom:1px solid #d9dfdc;padding-bottom:10px}table{border-collapse:collapse;width:100%;font-size:13px;display:block;overflow:auto}th,td{text-align:left;vertical-align:top;padding:10px;border-bottom:1px solid #e1e5e3;min-width:80px;overflow-wrap:anywhere}th{background:#edf2ef}blockquote{margin:16px 0;padding:14px 20px;background:#f3f6f4;white-space:pre-wrap;overflow-wrap:anywhere}a{color:#12634d}code{overflow-wrap:anywhere}@media print{body{margin:0;max-width:none;font-size:10pt}h2,h3{break-after:avoid}tr{break-inside:avoid}table{display:table;font-size:8pt}a{color:inherit}}</style><body><main>${body}</main></body></html>`;
 }
 export function exportRun(run: AgentRun) {

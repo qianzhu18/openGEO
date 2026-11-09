@@ -15,7 +15,8 @@ import { researchWebsite } from './onboarding.js';
 import { enrichWebsiteResearch } from './semantic-research.js';
 import { createRun, executeRun } from './engine.js';
 import { validateImport } from './analysis.js';
-import { exportRun, reportMarkdown, reportHtml } from './report.js';
+import { diagnoseRun } from './diagnosis.js';
+import { exportRun, reportMarkdown, reportHtml, evidenceMarkdown } from './report.js';
 import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
 import { parseQuestionSet } from './question-set.js';
@@ -394,16 +395,19 @@ export async function createApp(store = new Store(), options: { research?: typeo
         })();
         return send(res, 202, { id: run.id });
       }
-      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|report-html|analytics|export|actions|draft|publications))?$/);
+      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|report-html|report-evidence|analytics|export|actions|draft|publications))?$/);
       if (runMatch) {
         const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run || (url.searchParams.has('projectId') && url.searchParams.get('projectId') !== run.projectId)) return send(res, 404, { error: '运行不存在或不属于当前项目' });
         const action = runMatch[2];
         const days = Number(url.searchParams.get('days'));
         const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
-        if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter) });
+        if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter) });
         if (method === 'GET' && action === 'analytics') return send(res, 200, analyzeRun(run, filter));
         if (method === 'GET' && action === 'report-html') {
           res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-${run.id}.html"`, 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(reportHtml(run, filter));
+        }
+        if (method === 'GET' && action === 'report-evidence') {
+          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-evidence-${run.id}.md"` }); return res.end(evidenceMarkdown(run, filter));
         }
         if (method === 'GET' && action === 'export') return send(res, 200, exportRun(run));
         if (method === 'GET' && action === 'report') {
