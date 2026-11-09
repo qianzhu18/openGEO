@@ -5,24 +5,43 @@ import { OpenAICompatibleProvider } from '../../vendor/niubigeo/src/providers/op
 import { dedupeCitations, extractAnnotationCitations, extractPerplexityCitations } from '../../vendor/niubigeo/src/providers/citation-extractors.js';
 import { openRouterNativeWebSearch } from '../../vendor/niubigeo/src/providers/openrouter-native-search.js';
 import { withRequestProviderKeys } from '../../vendor/niubigeo/src/config/env.js';
-import { withProviderHttpAttempts } from '../../vendor/niubigeo/src/providers/http.js';
+import { withProviderHttpAttempts, withProviderHttpObserver } from '../../vendor/niubigeo/src/providers/http.js';
 import type { AnswerResult } from '../../vendor/niubigeo/src/core/types.js';
-import type { Action, AgentRun, Draft, LiveConfig, Project } from './types.js';
+import type { Action, AgentRun, Draft, LiveConfig, Project, ModelCall } from './types.js';
+import { newReceipt, retainApiResponse, redactApiEvidence, apiAnswerProblem, diagnoseApiFailure, type CallContext } from './api-receipts.js';
+import { answerTruncated } from './analysis.js';
+
+// Public model catalog checked 2026-11-09: these models allow optional reasoning.
+export function disablesOptionalReasoning(provider: string, model: string) {
+  return provider === 'openrouter' && ['deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-flash', 'qwen/qwen3-32b', 'bytedance-seed/seed-2-1-turbo'].includes(model);
+}
 
 export class ModelSession {
   private unknownCost = false;
+  private unusableAnswer = false;
   constructor(private config: LiveConfig, private run: AgentRun, private persist: () => Promise<void>) {}
-  async call(purpose: string, prompt: string, search = false): Promise<AnswerResult> {
-    if (this.run.calls.length >= 64) throw new Error('已达到本轮 64 次请求上限');
-    if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
-    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.8-flash', 'qwen/qwen3-32b'].includes(this.config.model);
+  async call(purpose: string, prompt: string, search = false, context: CallContext = {}): Promise<AnswerResult> {
+    const blocked = this.run.calls.length >= 64 ? '已达到本轮 64 次请求上限'
+      : this.unknownCost ? '上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用'
+      : this.unusableAnswer ? '上次回答不可用或不完整，已暂停后续模型调用；先复核原文与请求预算，不自动重试' : null;
+    if (blocked) {
+      if (purpose === 'measurement') {
+        this.run.calls.push({ id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
+          startedAt: new Date().toISOString(), status: 'failed', promptHash: createHash('sha256').update(prompt).digest('hex'),
+          error: blocked, receipt: { ...newReceipt(context, search), finishedAt: new Date().toISOString(), failure: diagnoseApiFailure({ error: blocked, stage: 'preflight' }) } });
+        await this.persist();
+      }
+      throw new Error(blocked);
+    }
+    const optionalThinking = disablesOptionalReasoning(this.config.provider, this.config.model);
     // The AgileX run truncated 9/10 Qwen observations at 1200 tokens. Keep the
     // larger observation budget in the persisted protocol; never join old cohorts.
     const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : 2500;
-    const call = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
+    const call: ModelCall = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
       startedAt: new Date().toISOString(), status: 'running' as const,
       promptHash: createHash('sha256').update(prompt).digest('hex'),
-      requestParameters: { maxTokens, temperature: 0, webSearch: search, responseFormat: purpose === 'strategy' ? 'json_object' : 'text', ...(optionalThinking ? { reasoning: { effort: 'none', exclude: true } } : {}) } };
+      receipt: newReceipt(context, search),
+      requestParameters: { maxTokens, temperature: 0, webSearch: search, httpAttempts: 1, responseFormat: purpose === 'strategy' ? 'json_object' : 'text', ...(optionalThinking ? { reasoning: { effort: 'none', exclude: true } } : {}) } };
     this.run.calls.push(call);
     await this.persist();
     try {
@@ -32,26 +51,43 @@ export class ModelSession {
       const provider = optionalThinking
         ? new OpenAICompatibleProvider({ definition: catalogProvider.definition, endpoint: 'https://openrouter.ai/api/v1/chat/completions',
             extraHeaders: { 'X-Title': 'CiteKeel', 'X-OpenRouter-Metadata': 'enabled' },
-            extraBody: { reasoning: { effort: 'none', exclude: true } }, nativeWebSearch: openRouterNativeWebSearch,
+            extraBody: { reasoning: { effort: 'none', enabled: false, exclude: true } }, nativeWebSearch: openRouterNativeWebSearch,
             citationExtractor: raw => dedupeCitations([...extractAnnotationCitations(raw), ...extractPerplexityCitations(raw)]) })
         : catalogProvider;
       const answer = await withRequestProviderKeys({ [this.config.provider]: this.config.apiKey }, () =>
-        withProviderHttpAttempts(1, () => provider.run({
+        withProviderHttpObserver(async event => {
+          if (event.phase === 'attempted') call.receipt!.dispatch = 'attempted';
+          else retainApiResponse(call, event.data, event.status, event.requestId, this.config.apiKey);
+          await this.persist();
+        }, () => withProviderHttpAttempts(1, () => provider.run({
           prompt, model: this.config.model, apiKey: this.config.apiKey, temperature: 0,
           maxTokens, webSearchEnabled: search,
           ...(search ? { webSearchMode: 'provider_native' as const } : {}),
           ...(purpose === 'strategy' ? { responseFormat: 'json_object' as const } : {}),
-        })));
-      Object.assign(call, { status: 'completed', response: answer.rawProviderResponse, answer: answer.text,
-        ...(typeof answer.costUsd === 'number' ? { costUsd: answer.costUsd } : {}) });
-      this.unknownCost = typeof answer.costUsd !== 'number';
+        }))));
+      const safeAnswer = redactApiEvidence(answer, this.config.apiKey) as AnswerResult;
+      const answerProblem = purpose === 'measurement' ? apiAnswerProblem(safeAnswer.text, safeAnswer.rawProviderResponse) : null;
+      const cost = safeAnswer.costUsd ?? call.costUsd;
+      const costKnown = typeof cost === 'number' && Number.isFinite(cost) && cost >= 0;
+      Object.assign(call, { status: 'completed', response: safeAnswer.rawProviderResponse, answer: safeAnswer.text,
+        ...(costKnown ? { costUsd: cost } : {}) });
+      Object.assign(call.receipt!, { costStatus: costKnown ? 'reported' : 'unknown',
+        ...(answerProblem ? { failure: diagnoseApiFailure({ provider: this.config.provider, raw: safeAnswer.rawProviderResponse, answer: safeAnswer.text, stage: 'answer_validation' }) } : {}),
+        answerState: answerTruncated(safeAnswer.rawProviderResponse) ? 'partial' : answerProblem ? 'rejected' : 'complete',
+        searchState: safeAnswer.search?.used === true && safeAnswer.search?.executionMode !== 'unverified' ? 'confirmed' : search ? 'unconfirmed' : 'not_requested',
+        finishedAt: new Date().toISOString() });
+      this.unusableAnswer = call.receipt!.answerState !== 'complete';
+      this.unknownCost = !costKnown;
       if (this.unknownCost) this.run.limitations.push('Provider 未返回本次费用，后续模型调用已停止。');
+      if (this.unusableAnswer) this.run.limitations.push('Provider 回答不可用或不完整，已保留响应并停止同目标后续调用，避免继续产生不可用费用。');
       await this.persist();
-      return answer;
+      return safeAnswer;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const safe = this.config.apiKey ? message.split(this.config.apiKey).join('[REDACTED]') : message;
+      const safe = redactApiEvidence(message, this.config.apiKey) as string;
       Object.assign(call, { status: 'failed', error: safe });
+      call.receipt!.finishedAt = new Date().toISOString();
+      if (!call.receipt!.failure) call.receipt!.failure = diagnoseApiFailure({ provider: this.config.provider, error: safe });
       // A failed request can have incurred an unknown upstream charge.
       this.unknownCost = true;
       await this.persist();

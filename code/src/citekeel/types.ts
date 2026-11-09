@@ -24,7 +24,7 @@ export interface Sample {
   observation?: { transport: 'cloro-monitor-api'; engine: string; requestedCountry: string; actualModel: 'UNKNOWN'; searchExecution: 'UNKNOWN' };
   upstreamAttemptId?: string; search?: unknown; costUsd?: number; latencyMs?: number;
   recommendationEvidence?: string; sourceJudgment?: string;
-  measurementUnitId?: string; attemptId?: string; selected?: boolean; fallback?: boolean;
+  measurementUnitId?: string; attemptId?: string; selected?: boolean; fallback?: boolean; modelCallId?: string;
 }
 
 export interface MeasurementTarget {
@@ -101,6 +101,7 @@ export interface ModelCall {
   status: 'running' | 'completed' | 'failed'; promptHash: string; response?: unknown;
   requestParameters?: Record<string, unknown>;
   answer?: string; costUsd?: number; error?: string;
+  receipt?: import('./api-receipts.js').ApiReceipt;
 }
 export interface Publication { id: string; url: string; recordedAt: string; note: string; state: 'recorded_not_verified' }
 export interface AgentRun {

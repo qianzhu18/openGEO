@@ -1,4 +1,10 @@
 import type { Citation } from './types.js';
+import type { ProviderHttpEvent } from '../../vendor/niubigeo/src/providers/http.js';
+import { apiAnswerProblem, redactApiEvidence } from './api-receipts.js';
+
+// Personal workbench: one shared slot also covers ChatGPT and Gemini together.
+// Free Cloro plans allow one monitor job; a timeout releases only our local slot.
+let monitorQueue: Promise<void> = Promise.resolve();
 
 /** Official contract: cloro-dev/cloro-python 0.4.0, resources/monitor.py.
  * Monitoring is deliberately separate from ModelSession (strategy/content).
@@ -9,22 +15,35 @@ export class CloroMonitor {
   private requests = 0;
   constructor(private readonly key: string) {}
 
-  async ask(engine: string, prompt: string, country: string) {
+  ask(engine: string, prompt: string, country: string, observe?: (event: ProviderHttpEvent) => Promise<void>) {
+    const work = monitorQueue.then(() => this.perform(engine, prompt, country, observe));
+    monitorQueue = work.then(() => {}, () => {});
+    return work;
+  }
+
+  private async perform(engine: string, prompt: string, country: string, observe?: (event: ProviderHttpEvent) => Promise<void>) {
     if (this.stopped) throw new Error('Cloro 上次请求失败，本目标后续问题已停止；不会自动重试。');
     if (this.requests >= 10) throw new Error('Cloro 已达到单目标每轮 10 次监测上限。');
     if (!['chatgpt', 'gemini'].includes(engine) || !/^[A-Z]{2}$/.test(country) || !this.key) throw new Error('Cloro 需要有效的引擎、两位国家代码与 API Key。');
     const started = Date.now();
     try {
       this.requests++;
+      await observe?.({ phase: 'attempted' });
       const response = await fetch(`https://api.cloro.dev/v1/monitor/${engine}`, {
         method: 'POST', redirect: 'error', signal: AbortSignal.timeout(300_000),
         headers: { authorization: `Bearer ${this.key}`, 'content-type': 'application/json', accept: 'application/json' },
         body: JSON.stringify({ prompt, country, include: { markdown: true } }),
       });
-      // Never retain error bodies: they may contain request credentials or account data.
+      const body = await response.text();
+      let parsed: unknown;
+      try { parsed = JSON.parse(body); } catch { parsed = { unparsedBody: body }; }
+      const raw = redactApiEvidence(parsed, this.key) as any;
+      await observe?.({ phase: 'response', status: response.status, data: raw,
+        requestId: response.headers.get('x-request-id') || response.headers.get('request-id') || undefined });
       if (!response.ok) throw new Error(`Cloro HTTP ${response.status}；本目标已停止。`);
-      const raw = this.redact(await response.json()) as any;
       if (raw?.success !== true || typeof raw.result?.text !== 'string' || !raw.result.text.trim()) throw new Error('Cloro 未返回成功且非空的 result.text；原文未计为有效回答。');
+      const answerProblem = apiAnswerProblem(raw.result.text, raw);
+      if (answerProblem) throw new Error(answerProblem);
       const citations: Citation[] = [];
       for (const [index, source] of (Array.isArray(raw.result.sources) ? raw.result.sources : []).entries()) {
         if (typeof source?.url !== 'string') continue;
@@ -44,11 +63,4 @@ export class CloroMonitor {
     }
   }
 
-  private redact(value: unknown): unknown {
-    if (typeof value === 'string') return value.split(this.key).join('[REDACTED]');
-    if (Array.isArray(value)) return value.map(item => this.redact(item));
-    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([name, item]) => [name,
-      /^(authorization|api[_-]?key|cookie|set-cookie|access[_-]?token|password|secret)$/i.test(name) ? '[REDACTED]' : this.redact(item)]));
-    return value;
-  }
 }

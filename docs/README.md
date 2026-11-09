@@ -1,6 +1,6 @@
 # OpenGEO 文档入口
 
-更新：2026-11-08。这个入口回答三个问题：项目现在做什么、哪些规格仍然生效、下一步谁做什么。历史方案只做背景，不覆盖本页和三份生效规格。
+更新：2026-11-09。这个入口回答三个问题：项目现在做什么、哪些规格仍然生效、下一步谁做什么。历史方案只做背景，不覆盖本页和三份生效规格。
 
 ## 阅读路径
 
@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [0.4.1 API 请求与内容对账](OPENGEO-20261109-API-RECEIPTS/Report.md) | 已实现并通过离线回归 | 130 单测 / 27 浏览器测试；保留付费错误响应、关联费用与原文；真实账单核销未实现 | [验收记录](OPENGEO-20261109-API-RECEIPTS/Report.md) |
 | [0.4.0 报告与行动中心](OPENGEO-20261109-REPORT-ACTIONS/Report.md) | 已完成 | 120 单测 / 26 浏览器测试；分支合入 0.4.0 | [验收记录](OPENGEO-20261109-REPORT-ACTIONS/Report.md) |
 | [诊断空间与执行状态](OPENGEO-20261109-SPACE-PROGRESS/Report.md) | 已完成，0.3.1 本地运行 | 118 单测 / 25 浏览器测试；空间持久化与前置进度 | [验收记录](OPENGEO-20261109-SPACE-PROGRESS/Report.md) |
 | [0.3 本地使用链路](OPENGEO-20261108-PRODUCT-FLOW/TaskInfo.md) | 已完成，0.3.0 本地运行 | 117 单测 / 24 浏览器测试；Cloro 待配置后实测 | [Report](OPENGEO-20261108-PRODUCT-FLOW/Report.md) / [Todo](OPENGEO-20261108-PRODUCT-FLOW/Todo.md) |

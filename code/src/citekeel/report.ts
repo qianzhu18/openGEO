@@ -1,6 +1,7 @@
 import { diagnoseRun } from './diagnosis.js';
 import { marked } from 'marked';
 import { analyzeRun, type AnalyticsFilter } from './analytics.js';
+import { apiReceipts, apiReceiptsMarkdown } from './api-receipts.js';
 import type { AgentRun, Metric } from './types.js';
 export function formatMetric(m: Metric): string { return m.value === null ? '无数据' : `${(m.value * 100).toFixed(1)}%（${m.numerator}/${m.denominator}）`; }
 export function redactExportText(text: string): string {
@@ -35,6 +36,7 @@ export function evidenceMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): s
   report += `- ${section('实际有效通道', 'Valid channels')}: ` + [...new Set(a.rows.filter(r => r.status === 'valid').map(r => r.channel))].map(c => `${c}: ${a.rows.filter(r => r.status === 'valid' && r.channel === c).length}`).join('; ') + `\n- ${section('可分析测量组', 'Measurement cohorts')}: ${a.metrics.cohorts.filter(c => c.eligibleObservationIds.length).length}\n- ${section('注意', 'Note')}: ${section('采样不足或有选择性缺失时，提及率只反映已成功取得的回答。', 'Coverage gaps may be selective. Mention rates describe only the answers successfully obtained.')}\n\n`;
 
   report += en ? 'API region is not verified. Failed or incomplete answers are excluded, never counted as 0% mention.\n\n' : '失败不算未提及；品牌提及以同组有效原文为分母。网页与 API、不同模型和协议分别分析。混合组不出一个总提及率。\n\n';
+  report += apiReceiptsMarkdown(run, en);
   report += `## ${section('本轮数据解读', 'What the data shows')}\n\n- ${section('至少有一条有效回答的问题','Questions with at least one valid answer')}: ${a.summary.coveredQuestions}/${a.summary.questionCount}\n- ${section('覆盖不完整的问题','Questions with incomplete coverage')}: ${a.summary.gaps.length}\n\n`;
   for (const f of a.summary.cohortFindings) report += `- ${cell(f.model)} / ${cell(f.origin)} / ${f.branded ? 'branded' : 'unbranded'} / ${cell(f.intent)}: ${section('品牌提及','Brand mentions')} ${rate(f.mention)}; ${section('原文','Evidence')}: ${f.sampleId || 'UNKNOWN'}; ${f.source ? `${section('本组 Provider 引用项最多域名','Most frequent provider-citation domain')}: ${f.source.domain}, ${f.source.items} items, ${rate(f.source.used)} used, ${f.source.integrity}` : section('无可计入的 Provider 引用','No eligible provider citations')}。\n`;
   report += '\n';
@@ -89,6 +91,7 @@ export function reportMarkdown(run: AgentRun, filter: AnalyticsFilter = {}): str
     t('覆盖表示采集质量，不是品牌表现得分。失败不算未提及；混合条件不合并一个提及率。', 'Coverage measures data availability, not brand performance. Failures are not non-mentions. Mixed cohorts have no combined visibility rate.'),
     ...(a.quality.planBasis === 'saved-records' ? [t('未保存冻结计划，覆盖只描述已有记录，原始采样覆盖未知。','No frozen plan is stored. Coverage describes saved records only; original coverage is UNKNOWN.')] : []),
     `## ${t('关键发现与解释', 'Findings and interpretation')}`];
+  out.splice(out.length - 1, 0, apiReceiptsMarkdown(run, en, false));
   if (!d.findings.length) out.push(t('没有可判定的测量组。', 'No eligible measurement cohorts.'));
   for (const f of d.findings) out.push(`### ${cell(f.title)}`, f.detail, f.implication, `${t('原文 ID', 'Evidence ID')}: ${f.sampleId || 'UNKNOWN'}`);
   out.push(`## ${t('优先行动与内容制作单', 'Prioritized actions and content briefs')}`, d.nextStep);
@@ -123,7 +126,7 @@ export function exportRun(run: AgentRun) {
   // Explicitly export derived business evidence; never credentials or raw provider payloads.
   return sanitizeExport({ schemaVersion: 'citekeel-public-run/v1', id: run.id, createdAt: run.createdAt, mode: run.mode,
     project: { name: run.projectSnapshot.name, brand: run.projectSnapshot.brand, origin: run.projectSnapshot.origin, market: run.projectSnapshot.market, language: run.projectSnapshot.language, requestedCountry: run.projectSnapshot.country },
-    analysis: analyzeRun(run), goal: run.goal, audit: run.audit, queries: run.queries, actions: run.actions, actionStates: run.actionStates, diagnosis: diagnoseRun(run), draft: run.draft,
+    analysis: analyzeRun(run), apiReceipts: apiReceipts(run), goal: run.goal, audit: run.audit, queries: run.queries, actions: run.actions, actionStates: run.actionStates, diagnosis: diagnoseRun(run), draft: run.draft,
     measurementTargets: run.measurementTargets, measurementUnits: run.measurementUnits,
     samples: run.samples.map(({ rawResponse, search, ...s }) => s),
     calls: run.calls.map(({ response, answer, ...c }) => c), steps: run.steps, limitations: run.limitations, review: run.review });
