@@ -1,3 +1,4 @@
+let pendingSubmission;
 import { actionCenter, diagnosisPanel, diagnosticView, analysisQuery, executionPanel } from './analytics-view.js';
 import { brandSourceForm } from './brand-sources.js';
 'use strict';
@@ -144,6 +145,14 @@ document.addEventListener('pointerdown', () => document.body.classList.remove('k
 document.addEventListener('click', async event => {
   const button = event.target.closest('button'); if (!button) return;
   try {
+    if(button.dataset.queueAction) {
+      const action=button.dataset.queueAction;
+      if(action==='redrive' && !confirm('The previous request may have incurred charges. Redriving preserves its history and may incur new charges. Have you reviewed the receipt and want to proceed?')) return;
+      button.disabled=true;
+      await api(`/api/runs/${state.run.id}/${action}`, 'POST', {jobIds:[button.dataset.queueJob],acknowledgeCost:action==='redrive'});
+      await openRun(state.run.id);
+      return;
+    }
     if (button.dataset.sourceLevel) { state.sourceLevel = button.dataset.sourceLevel; render(); return; }
     if (button.dataset.acFilter) { state[{category:'actionCategory',status:'actionStatus',priority:'actionPriority'}[button.dataset.acFilter]]=button.dataset.acValue; render(); return; }
     if (button.dataset.acAction) { button.disabled=true; const saved=await api(`/api/runs/${encodeURIComponent(state.run.id)}/actions`, 'PATCH', {id:button.dataset.acAction,status:button.dataset.acStatus}); state.run={...state.run,...saved}; render(); toast('Action status saved.'); return; }
@@ -194,7 +203,9 @@ document.addEventListener('submit', async event => {
   state.starting = true; render();
   try {
     const payload = {projectId:state.projectId,mode:'live',diagnosis:true,targetIds,queryIds:selected.map(q=>q.id),maxQuestions:selected.length};
-    const run = await api('/api/runs', 'POST', payload); state.run = await api(`/api/runs/${encodeURIComponent(run.id)}`); await refreshEvidence(); state.error = ''; setLocation(); }
+    const signature=JSON.stringify(payload);
+    if(pendingSubmission?.signature!==signature) pendingSubmission={signature,key:crypto.randomUUID()};
+    const run = await api('/api/runs', 'POST', {...payload,requestKey:pendingSubmission.key}); pendingSubmission=undefined; state.run = await api(`/api/runs/${encodeURIComponent(run.id)}`); await refreshEvidence(); state.error = ''; setLocation(); }
   catch (error) { state.error = error.message || 'The measurement could not start. No result is assumed.'; }
   finally { state.starting = false; render(); schedulePoll(); }
 });

@@ -58,11 +58,19 @@ export function collectionStatusPanel(run, en = false) {
 }
 
 // Execution progress is work processed, never a visibility or success percentage.
+function queuePanel(run,en,active) {
+  const jobs=run.samplingQueue?.jobs;
+  if(!jobs) return '';
+  const t=(zh,english)=>en?english:zh;
+  const labels={queued:t('排队','Queued'),leased:t('请求中','In flight'),retry_wait:t('退避等待','Backoff'),succeeded:t('成功','Succeeded'),dead_letter:t('死信','Dead letter'),review_required:t('待核对','Review required'),paused:t('暂停','Paused')};
+  return `<div class="queue-status"><p>${Object.entries(labels).map(([state,label])=>`${label}: ${jobs.filter(j=>j.state===state).length}`).join(' · ')}</p><p>${t('任务、回执与结果持久保存在本机。停止只阻止后续发送，已提交请求可能仍在计费。','Jobs, receipts and results are stored locally. Stopping prevents later dispatch; in-flight calls may still incur charges.')}</p>${active?`<button class="ac-button" data-queue-action="stop" ${run.samplingQueue.stopRequested?'disabled':''}>${run.samplingQueue.stopRequested?t('正在停止后续发送','Stopping later dispatch'):t('停止后续发送','Stop later dispatch')}</button>`:jobs.some(j=>['queued','retry_wait'].includes(j.state)||j.state==='paused'&&j.reason==='用户停止了后续发送。')?`<button class="ac-button" data-queue-action="resume">${t('继续未发送任务','Resume pending jobs')}</button>`:''}<details><summary>${t('逐题任务与恢复','Jobs and recovery')}</summary>${jobs.map(j=>`<div class="queue-job"><strong>${esc(j.targetId)} · ${esc(j.queryId)} · ${labels[j.state]||esc(j.state)}</strong><p>${t('已领取尝试','Claimed attempts')}: ${j.attempts} · ${esc(j.reason||'')}${j.nextAttemptAt?` · ${esc(j.nextAttemptAt)}`:''}</p>${!active&&['dead_letter','review_required','paused'].includes(j.state)&&j.redrives<1?`<button class="ac-button" data-queue-action="redrive" data-queue-job="${esc(j.id)}">${t('核对后重投（可能额外收费）','Redrive after review (may incur charges)')}</button>`:''}</div>`).join('')}</details></div>`;
+}
+
 export function executionPanel(run, en = false) {
   if (!run) return '';
   const t = (zh, english) => en ? english : zh;
   const active = ['queued', 'running'].includes(run.status), units = run.measurementUnits || [];
-  const done = units.filter(u => u.status !== 'planned').length;
+  const done = run.samplingQueue ? run.samplingQueue.jobs.filter(j=>['succeeded','dead_letter','review_required','paused'].includes(j.state)).length : units.filter(u => u.status !== 'planned').length;
   const steps = run.steps || [], settled = steps.filter(s => ['completed','blocked','failed'].includes(s.status)).length;
   const current = steps.find(s => s.status === 'running');
   const work = steps.reduce((sum,s) => sum + (['completed','blocked','failed'].includes(s.status) ? 1 : s.id === 'audit' && s.status === 'running' && units.length ? done/units.length : 0), 0);
@@ -71,7 +79,7 @@ export function executionPanel(run, en = false) {
   const quality = run.analytics?.quality;
   const failures = units.filter(u=>u.status === 'failed').length;
   const summary = active ? t('结果将在本轮结束后展示。可以离开此页面，返回后继续查看保存的状态。','Results appear when this run finishes. You may leave and return to the saved state.') : `${t('有效回答','Valid answers')}: ${quality?.valid ?? 'UNKNOWN'}/${quality?.planned ?? (units.length || 'UNKNOWN')} · ${t('失败单元','Failed units')}: ${failures} · ${t('已保存原文','Saved answer records')}: ${(run.samples || []).filter(s=>s.answer?.trim()).length}`;
-  return `<section class="execution-panel ${active?'is-running':'is-settled'}" aria-label="${t('诊断执行状态','Diagnosis execution status')}" aria-busy="${active}"><div class="execution-heading"><div><small>${t('本轮执行状态','Run status')} · ${esc(run.id.slice(0,8))}</small><h2>${esc(labels[run.status] || run.status)}</h2></div><strong>${percent}%</strong></div><progress max="100" value="${percent}" aria-label="${t('诊断执行进度','Diagnosis progress')}"></progress><p>${active ? `${t('当前阶段','Current stage')}: ${esc(current?.label || t('准备执行','Preparing'))} · ${units.length ? `${t('已处理','Processed')} ${done}/${units.length} ${t('个单元','units')}` : `${settled}/${steps.length} ${t('个阶段','steps')}`}` : t('执行进度不代表采集成功率；结果中的失败与未知仍保留。','Execution progress is not collection success. Failures and unknowns remain in the results.')}</p><p>${esc(summary)}</p>${run.error?`<p class="execution-error">${esc(run.error)}</p>`:''}${!active && steps.some(s=>['blocked','failed'].includes(s.status))?`<p>${t('待处理阶段','Stages to review')}: ${steps.filter(s=>['blocked','failed'].includes(s.status)).map(s=>esc(s.label)).join(' · ')}</p>`:''}</section>`;
+  return `<section class="execution-panel ${active?'is-running':'is-settled'}" aria-label="${t('诊断执行状态','Diagnosis execution status')}" aria-busy="${active}"><div class="execution-heading"><div><small>${t('本轮执行状态','Run status')} · ${esc(run.id.slice(0,8))}</small><h2>${esc(labels[run.status] || run.status)}</h2></div><strong>${percent}%</strong></div><progress max="100" value="${percent}" aria-label="${t('诊断执行进度','Diagnosis progress')}"></progress><p>${active ? `${t('当前阶段','Current stage')}: ${esc(current?.label || t('准备执行','Preparing'))} · ${units.length ? `${t('已处理','Processed')} ${done}/${units.length} ${t('个单元','units')}` : `${settled}/${steps.length} ${t('个阶段','steps')}`}` : t('执行进度不代表采集成功率；结果中的失败与未知仍保留。','Execution progress is not collection success. Failures and unknowns remain in the results.')}</p><p>${esc(summary)}</p>${run.error?`<p class="execution-error">${esc(run.error)}</p>`:''}${queuePanel(run,en,active)}${!active && steps.some(s=>['blocked','failed'].includes(s.status))?`<p>${t('待处理阶段','Stages to review')}: ${steps.filter(s=>['blocked','failed'].includes(s.status)).map(s=>esc(s.label)).join(' · ')}</p>`:''}</section>`;
 }
 
 export function diagnosisPanel(d, en = false) {

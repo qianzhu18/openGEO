@@ -31,8 +31,8 @@ export function bodyLinks(text: string): Citation[] {
 export function answerTruncated(raw: unknown): boolean {
   if (!raw || typeof raw !== 'object') return false;
   const data = raw as any;
-  const reason = data.choices?.[0]?.finish_reason || data.choices?.[0]?.native_finish_reason;
-  return ['length', 'max_tokens', 'max_output_tokens'].includes(reason) || (data.status === 'incomplete' && ['max_output_tokens', 'max_tokens'].includes(data.incomplete_details?.reason));
+  const reasons = [data.choices?.[0]?.finish_reason, data.choices?.[0]?.native_finish_reason, data.stop_reason, data.candidates?.[0]?.finishReason];
+  return reasons.some(reason => ['length', 'max_tokens', 'max_output_tokens'].includes(String(reason).toLowerCase())) || data.status === 'incomplete';
 }
 export function findMention(answer: string, aliases: string[]): { quote: string; start: number; end: number } | null {
   const folded = answer.replace(/https?:\/\/[^\s"<>]+/gi, url => ' '.repeat(url.length)).toLocaleLowerCase();

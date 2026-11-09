@@ -1,16 +1,21 @@
 import { internationalContentPrompt } from './international.js';
 import { randomUUID, createHash } from 'node:crypto';
-import type { Action, AgentRun, LiveConfig, MeasurementAttemptRecord, MeasurementTarget, Project, Query, Sample } from './types.js';
+import type { Action, AgentRun, LiveConfig, MeasurementAttemptRecord, MeasurementTarget, Project, Query, Sample, ModelCall } from './types.js';
 import type { BrowserAsk } from './browser/collector.js';
 import { SKILLS } from './types.js';
 import { answerTruncated, auditSamples, normalizeCitation } from './analysis.js';
 import { Store } from './storage.js';
-import { ModelSession, makeDraft, parseObject, planActions, strategyPrompt, validateDraft, validateModelActions } from './skills.js';
+import { ModelSession, makeDraft, parseObject, planActions, strategyPrompt, validateDraft, validateModelActions, disablesOptionalReasoning } from './skills.js';
 import { searchPolicy, searchPolicyId } from './search-strategy.js';
 import { CloroMonitor } from './cloro-monitor.js';
 import type { SearchMode } from './search-strategy.js';
+import { newReceipt, retainApiResponse, attachApiEvidence, apiAnswerProblem, diagnoseApiFailure } from './api-receipts.js';
+
+import { initializeSamplingQueue, drainTarget, type QueueClock } from './sampling-queue.js';
 
 export interface MeasurementRuntime {
+  durableQueue?: boolean;
+  queueClock?: QueueClock;
   targets: MeasurementTarget[];
   apiKeys: Record<string, string>;
   browser?: { ask: BrowserAsk; engine: string };
@@ -39,7 +44,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
   const persist = () => store.save('runs', run);
   const primaryMeasurement = measurement?.targets.find(target => target.provider && target.provider !== 'cloro' && target.model);
   const analysisConfig = config || (primaryMeasurement ? { ...primaryMeasurement, apiKey: measurement!.apiKeys[primaryMeasurement.provider!] || '', maxQuestions: run.projectSnapshot.queries.length, webSearch: targetSearchMode(primaryMeasurement) === 'provider_native' } : undefined);
-  const session = analysisConfig ? new ModelSession(analysisConfig as LiveConfig, run, persist) : null;
+  const session = analysisConfig && !measurement?.durableQueue ? new ModelSession(analysisConfig as LiveConfig, run, persist) : null;
   const step = async (id: string, executor: 'rules' | 'archive' | 'llm' | 'browser', work: () => Promise<{ summary: string; ids?: string[]; blocked?: boolean }>) => {
     const current = run.steps.find(s => s.id === id)!;
     Object.assign(current, { status: 'running', startedAt: new Date().toISOString(), executor }); await persist();
@@ -51,17 +56,20 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
   try {
     await step('ground', 'rules', async () => ({ summary: `读取 ${project.claims.length} 项事实，${project.claims.filter(c => c.status === 'conflict').length} 项冲突，${project.claims.filter(c => c.status === 'unconfirmed').length} 项待确认。`, ids: project.claims.map(c => c.id) }));
     await step('queries', 'rules', async () => {
-      run.queries = structuredClone(project.queries);
+      if (!run.samplingQueue) run.queries = structuredClone(project.queries);
       if (config) run.queries = run.queries.slice(0, config.maxQuestions);
       return { summary: `采用问题集 v${project.queryVersion}，本轮 ${run.queries.length} 个问题。候选来自${project.origin === 'archive' ? '上游协议' : '本地问题模板与人工输入'}，不推断搜索量。`, ids: run.queries.map(q => q.id) };
     });
     await step('audit', measurement ? (measurement.targets.some(target => target.preferredChannel === 'web') ? 'browser' : 'llm') : browser ? 'browser' : config ? 'llm' : 'archive', async () => {
       if (measurement) {
+        if (!run.samplingQueue) {
         run.samples = [];
         run.measurementUnits = run.queries.flatMap(query => measurement.targets.map(target => ({
           id: `${query.id}--${target.id}`, queryId: query.id, question: query.text, targetId: target.id,
           platform: target.platform, preferredChannel: target.preferredChannel, status: 'planned' as const, attempts: [],
         })));
+        if (measurement.durableQueue) initializeSamplingQueue(run);
+        }
         await persist();
 
         const makeSample = (query: Query, target: MeasurementTarget, channel: 'web' | 'api', fallback: boolean): Sample => {
@@ -73,7 +81,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
               ? `remote-monitor/v1;provider=cloro;engine=${target.model};model=UNKNOWN;country=${query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question`
               : channel === 'web'
               ? `browser-ui/v2;platform=${target.id};engine=${target.webEngine || 'unimplemented'};transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN;${searchPolicyId(searchPolicy(project, query, 'browser_ui'))}`
-              : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};${searchPolicyId(searchPolicy(project, query, apiSearchMode(target)))};browserPreference=${target.browserPreference || (target.preferredChannel === 'web' ? 'browser_first' : 'api_only')}`,
+              : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};${searchPolicyId(searchPolicy(project, query, apiSearchMode(target)))};browserPreference=${target.browserPreference || (target.preferredChannel === 'web' ? 'browser_first' : 'api_only')}${disablesOptionalReasoning(target.provider || '', target.model || '') ? ';reasoning=none;maxTokens=2500' : ''}`,
             collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [],
             measurementUnitId: `${query.id}--${target.id}`, attemptId: randomUUID(), selected: false, fallback,
           };
@@ -102,7 +110,9 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
         const targetSessions = new Map<string, ModelSession>();
         const monitors = new Map<string, CloroMonitor>();
         if (primaryMeasurement && session) targetSessions.set(primaryMeasurement.id, session);
-        const collectApi = async (query: Query, target: MeasurementTarget, fallback: boolean) => {
+        const collectApi = async (query: Query, target: MeasurementTarget, fallback: boolean, retry = false) => {
+          if (retry) { targetSessions.delete(target.id); monitors.get(target.id)?.allowQueueRetry(); }
+          const jobLease = run.samplingQueue?.jobs.find(j=>j.queryId===query.id && j.targetId===target.id)?.leaseToken;
           const sample = makeSample(query, target, 'api', fallback);
           await persist();
           const attempt = makeAttempt(sample, target, 'api');
@@ -111,34 +121,49 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             if (target.provider === 'cloro') {
               let monitor = monitors.get(target.id);
               if (!monitor) { monitor = new CloroMonitor(apiConfig.apiKey); monitors.set(target.id, monitor); }
-              const call = { id: randomUUID(), purpose: 'measurement', provider: 'cloro', model: target.model!,
+              const call: ModelCall = { id: randomUUID(), purpose: 'measurement', provider: 'cloro', model: target.model!,
                 startedAt: new Date().toISOString(), status: 'running' as 'running' | 'completed' | 'failed',
                 promptHash: createHash('sha256').update(query.text).digest('hex'),
+                receipt: { ...newReceipt({ sampleId: sample.id, queryId: query.id, unitId: sample.measurementUnitId, jobLease }), searchState: 'unknown' },
                 requestParameters: { engine: target.model, country: query.country || project.country || 'US', include: { markdown: true }, httpAttempts: 1, maxMonitorRequests: 10 } };
               run.calls.push(call); await persist();
               let observation;
               try {
-                observation = await monitor.ask(target.model!, query.text, query.country || project.country || 'US');
+                observation = await monitor.ask(target.model!, query.text, query.country || project.country || 'US', async event => {
+                  if (event.phase === 'attempted') {
+                    if(run.samplingQueue?.stopRequested) throw new Error('用户停止了后续发送。');
+                    call.receipt!.dispatch = 'attempted';
+                  }
+                  else { retainApiResponse(call, event.data, event.status, event.requestId, apiConfig.apiKey); call.receipt!.retryAfterMs = event.retryAfterMs; }
+                  await persist();
+                });
                 Object.assign(call, { status: 'completed', response: observation.rawResponse, answer: observation.answer });
+                Object.assign(call.receipt!, { answerState: 'complete', finishedAt: new Date().toISOString() });
+                await persist();
               } catch (error) {
                 Object.assign(call, { status: 'failed', error: error instanceof Error ? error.message : 'Cloro 请求失败' });
+                call.receipt!.finishedAt = new Date().toISOString();
+                if (!call.receipt!.failure) call.receipt!.failure = diagnoseApiFailure({ provider: 'cloro', error: call.error });
                 throw error;
               }
               Object.assign(sample, observation, { collectionStatus: 'completed', analysisStatus: 'completed',
                 protocolId: `remote-monitor/v1;provider=cloro;engine=${target.model};model=UNKNOWN;country=${query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question` });
+              attachApiEvidence(sample, run);
               attempt.status = 'completed'; select(sample); finishUnit(sample, true);
               attempt.finishedAt = new Date().toISOString(); await persist();
               return { sample, completed: true };
             }
             let targetSession = targetSessions.get(target.id);
             if (!targetSession) { targetSession = new ModelSession(apiConfig, run, persist); targetSessions.set(target.id, targetSession); }
-            const answer = await targetSession.call('measurement', query.text, apiConfig.webSearch);
+            const answer = await targetSession.call('measurement', query.text, apiConfig.webSearch,
+              { sampleId: sample.id, queryId: query.id, unitId: sample.measurementUnitId, jobLease });
             Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: answer.text,
               rawResponse: answer.rawProviderResponse, observedAt: answer.createdAt, search: answer.search,
               costUsd: answer.costUsd, latencyMs: answer.latencyMs,
               citations: answer.citations.map(c => normalizeCitation(c, answer.rawProviderResponse)).filter(Boolean) });
-            if (answerTruncated(answer.rawProviderResponse)) {
-              sample.analysisStatus = 'failed'; sample.error = 'Provider 输出达到长度上限，原文已保留，本次不进入有效分析。';
+            const answerProblem = apiAnswerProblem(answer.text, answer.rawProviderResponse);
+            if (answerProblem) {
+              sample.analysisStatus = 'failed'; sample.error = answerProblem;
               attempt.status = 'failed'; attempt.reason = sample.error;
             } else attempt.status = 'completed';
             select(sample); finishUnit(sample, attempt.status === 'completed');
@@ -147,11 +172,16 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             attempt.status = 'failed'; attempt.reason = sample.error;
             select(sample); finishUnit(sample, false);
           }
+          attachApiEvidence(sample, run);
           attempt.finishedAt = new Date().toISOString(); await persist();
           return { sample, completed: attempt.status === 'completed' };
         };
 
-        await Promise.all(measurement.targets.map(async target => {
+        const settledTargets = await Promise.allSettled(measurement.targets.map(async target => {
+          if (run.samplingQueue) {
+            await drainTarget(run,store,target,(queryId,retry)=>collectApi(run.queries.find(q=>q.id===queryId)!,target,false,retry),measurement.queueClock);
+            return;
+          }
           for (const query of run.queries) {
             const unit = run.measurementUnits!.find(item => item.queryId === query.id && item.targetId === target.id)!;
             const canApi = Boolean(target.provider && target.model);
@@ -204,13 +234,15 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           }
         }));
 
-        const selected = run.measurementUnits.map(unit => run.samples.find(sample => sample.id === unit.selectedSampleId)).filter(Boolean) as Sample[];
+        const rejectedTarget = settledTargets.find(result=>result.status==='rejected');
+        if (rejectedTarget?.status==='rejected') throw rejectedTarget.reason;
+        const selected = run.measurementUnits!.map(unit => run.samples.find(sample => sample.id === unit.selectedSampleId)).filter(Boolean) as Sample[];
         run.audit = auditSamples(selected, project);
-        run.audit.planned = run.measurementUnits.length;
-        run.audit.plannedUnits = run.measurementUnits.length;
-        run.audit.attemptCount = run.measurementUnits.reduce((count, unit) => count + unit.attempts.length, 0);
+        run.audit.planned = run.measurementUnits!.length;
+        run.audit.plannedUnits = run.measurementUnits!.length;
+        run.audit.attemptCount = run.measurementUnits!.reduce((count, unit) => count + unit.attempts.length, 0);
         const channels = [...new Set(run.samples.map(sample => sample.origin === 'browser' ? 'web' : 'api'))];
-        return { summary: `计划 ${run.measurementUnits.length} 个问题×平台单元，执行 ${run.audit.attemptCount} 次尝试；采纳 ${run.audit.collected} 条有效原文。实际通道：${channels.join(' / ') || '无'}。`, ids: run.samples.map(s => s.id) };
+        return { summary: `计划 ${run.measurementUnits!.length} 个问题×平台单元，执行 ${run.audit.attemptCount} 次尝试；采纳 ${run.audit.collected} 条有效原文。实际通道：${channels.join(' / ') || '无'}。`, ids: run.samples.map(s => s.id) };
       }
 
       if (browser) {
@@ -240,14 +272,16 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           run.samples.push(sample); await persist();
           try {
             // The observation model receives only the selected question, not the target brand's private facts or the desired result.
-            const answer = await session.call('measurement', query.text, config.webSearch);
+            const answer = await session.call('measurement', query.text, config.webSearch, { sampleId: sample.id, queryId: query.id });
             Object.assign(sample, { collectionStatus: 'completed', analysisStatus: 'completed', answer: answer.text,
               rawResponse: answer.rawProviderResponse, observedAt: answer.createdAt, search: answer.search,
               costUsd: answer.costUsd, latencyMs: answer.latencyMs,
               citations: answer.citations.map(c => normalizeCitation(c, answer.rawProviderResponse)).filter(Boolean) });
-            if (answerTruncated(answer.rawProviderResponse)) { sample.analysisStatus = 'failed'; sample.error = 'Provider 输出达到长度上限，原文已保留，本次不进入有效分析。'; }
+            const answerProblem = apiAnswerProblem(answer.text, answer.rawProviderResponse);
+            if (answerProblem) { sample.analysisStatus = 'failed'; sample.error = answerProblem; }
             await persist();
-          } catch (error) { sample.error = error instanceof Error ? error.message : String(error); await persist(); }
+          } catch (error) { sample.error = error instanceof Error ? error.message : String(error); }
+          attachApiEvidence(sample, run); await persist();
         }
       } else {
         run.samples = structuredClone(project.samples.filter(s => run.queries.some(q => q.id === s.queryId && q.text === s.question)));
@@ -292,7 +326,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
       const groups = new Set(run.samples.map(s => s.runGroup));
       const hasWeb = measurement ? run.samples.some(s => s.origin === 'browser' && s.collectionStatus === 'completed') : Boolean(browser);
       const hasApi = measurement ? run.samples.some(s => s.origin === 'api') : Boolean(config);
-      if (measurement?.targets.some(t => t.provider === 'cloro')) run.limitations.push('Cloro 为远程网页监测 API：保留原始响应与来源；实际模型、搜索执行、地区真实性和美元费用未知；不是本机 Xue 网页四件套。单目标最多 10 次请求，失败即停且无自动重试。');
+      if (measurement?.targets.some(t => t.provider === 'cloro')) run.limitations.push('Cloro 为远程网页监测 API：保留原始响应与来源；实际模型、搜索执行、地区真实性和美元费用未知；不是本机 Xue 网页四件套。单目标最多 10 次请求，最多10次监测；持久队列仅对明确429拒绝有限重试，超时或费用不确定时停止。');
       run.limitations.push(hasWeb && hasApi ? '本轮同时包含网页与 API 通道，结果按通道、平台、模型分开解释；API 降级不冒充网页结果。' : hasWeb ? '本轮为个人浏览器网页采样；地区和页面模型版本未独立核验，不等价于 API 结果。' : hasApi ? 'API 回答不等价于消费级网页客户端结果。' : project.origin === 'synthetic' ? '全部回答为合成 fixture，只检验业务流程。' : '回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。');
       return { summary: `保留 ${groups.size} 个原始采样批次，按模型、品牌词与非品牌词分组。没有干预对照，不输出提升结论。`, ids: [...groups] };
     });
@@ -302,7 +336,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
       run.review = `${channelNote}计划 ${run.audit!.planned} 个单元，执行 ${run.audit!.attemptCount || 0} 次尝试，取得原文 ${run.audit!.collected} 条。${conflicts.length ? `先确认 ${conflicts.length} 项冲突，再生成可发布内容。` : '可继续审核内容与执行任务。'}下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。`;
       return { summary: run.review, ids: run.actions.map(a => a.id) };
     });
-    run.status = (project.market === 'international' ? !run.audit?.analyzed : run.draft?.status === 'blocked') || run.samples.some(s => s.collectionStatus === 'failed') ? 'needs_review' : 'completed';
+    run.status = (project.market === 'international' ? !run.audit?.analyzed : run.draft?.status === 'blocked') || (run.samplingQueue ? run.samplingQueue.jobs.some(j=>j.state!=='succeeded') : run.samples.some(s => s.collectionStatus === 'failed' || s.analysisStatus !== 'completed')) ? 'needs_review' : 'completed';
   } catch (error) { run.status = 'failed'; run.error = error instanceof Error ? error.message : String(error); }
   if (project.market === 'international') {
     const audit = run.audit;

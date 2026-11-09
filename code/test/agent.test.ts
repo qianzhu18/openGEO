@@ -82,7 +82,8 @@ test('truncation and missing fact references cannot become valid analysis or mod
     const run = await executeRun(createRun(project, 'live', project.goal, config), store, config);
     assert.ok(run.samples[0].answer); assert.equal(run.samples[0].analysisStatus, 'failed');
     assert.equal(run.audit?.mention.denominator, 0); assert.equal(run.draft?.generator, 'rules');
-    assert.ok(!run.draft?.markdown.includes('保证提升')); assert.ok(run.limitations.some(l => l.includes('没有可定位的事实引用')));
+    assert.ok(!run.draft?.markdown.includes('保证提升')); assert.ok(run.limitations.some(l => l.includes('已暂停后续模型调用')));
+    assert.equal(run.calls.length, 1, 'an incomplete paid observation must stop subsequent model operations');
   } finally { globalThis.fetch = original; await cleanup(); }
 });
 
