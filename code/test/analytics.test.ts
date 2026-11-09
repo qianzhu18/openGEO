@@ -39,3 +39,12 @@ test('diagnostic report is concise while full evidence remains separately availa
  assert.ok(brief.length < full.length/3);assert.match(brief,/诊断结论/);assert.match(brief,/优先行动/);assert.match(brief,/验收/);assert.match(full,/原文证据/);
  assert.ok(!reportMarkdown(run,{model:'absent'}).includes('制作选型问题'));
 });
+
+test('diagnostic briefs never reuse counts or evidence outside the selected scope', async()=>{
+ const {diagnoseRun}=await import('../src/citekeel/diagnosis.js');
+ const run=createRun(project,'replay');run.status='completed';run.samples=[sample('good'),sample('bad',{model:'other',analysisStatus:'failed'})];
+ run.actions=[{id:'old',kind:'content',title:'UNSCOPED COUNT',priority:'P1',rationale:'2 observations',queryIds:['q1'],sampleIds:['good','bad'],claimIds:[],acceptance:'',status:'proposed'}];
+ const d=diagnoseRun(run,{model:'deepseek/test'});assert.ok(!d.actions.some(a=>a.id==='old'));assert.ok(d.actions.every(a=>a.sampleIds.every(id=>id==='good')));
+ const derived=d.actions[0]!;run.actionStates={[derived.id]:'skipped'};assert.equal(diagnoseRun(run,{model:'deepseek/test'}).actions[0]?.status,'skipped');
+ run.samples=[sample('bad',{analysisStatus:'failed'})];assert.equal(diagnoseRun(run).actions.length,0);
+});

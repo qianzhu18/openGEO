@@ -1,9 +1,9 @@
-import { diagnosticView, analysisQuery, brandActions, collectionStatusPanel, executionPanel } from './analytics-view.js';
+import { actionCenter, diagnosisPanel, diagnosticView, analysisQuery, executionPanel } from './analytics-view.js';
 import { brandSourceForm } from './brand-sources.js';
 const $ = s => document.querySelector(s);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = value => { try { const u = new URL(value); return ['http:', 'https:'].includes(u.protocol) ? esc(u.toString()) : '#'; } catch { return '#'; } };
-const state = { projects: [], project: null, spaceId: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
+const state = { actionCategory: 'all', actionStatus: 'proposed', actionPriority: 'all', projects: [], project: null, spaceId: null, run: null, history: [], view: 'overview', selectedSample: '', filter: '', status: null, polling: false, apiKeys: {}, modelFilter: 'all', rangeFilter: 'all', chartMetric: 'visibility', collapsed: false, analytics: null, analysisFilters: {}, sourceLevel: 'domain' };
 let runSelection = 0, projectSelection = 0;
 let showExamples = localStorage.getItem('opengeo-show-examples') === 'true';
 const NAV = [['overview', '工作概览'], ['queries', '问题空间'], ['evidence', '回答与信源'], ['sources', '信源分析'], ['actions', '策略任务'], ['content', '内容与交付'], ['facts', '品牌事实'], ['flow', 'Agent 思路与历史']];
@@ -58,7 +58,7 @@ function spaceToolbar() {
 function pageHeader(title, description = '', actions = '') {
   return `<div class="page-heading"><div><div class="eyebrow">${esc(state.project.brand)} / GEO workspace</div><h1>${esc(title)}</h1>${description ? `<p class="subtle">${esc(description)}</p>` : ''}</div>${actions && !actions.includes('data-export') ? `<div class="actions">${actions}</div>` : ''}</div>`;
 }
-function downloadActions() { return state.run && !running() ? `<a class="btn small" href="/api/runs/${state.run.id}/report${analysisQuery(state.analysisFilters)}" download>导出报告 ↗</a><a class="btn small" href="/api/runs/${state.run.id}/report-html${analysisQuery(state.analysisFilters)}" download>HTML 报告</a><button class="btn small" data-export>JSON 证据</button>` : ''; }
+function downloadActions() { return state.run && !running() ? `<a class="btn small" href="/api/runs/${state.run.id}/report${analysisQuery(state.analysisFilters)}" download>导出报告 ↗</a><a class="btn small" href="/api/runs/${state.run.id}/report-html${analysisQuery(state.analysisFilters)}" download>HTML 报告</a><a class="btn small" href="/api/runs/${state.run.id}/report-evidence${analysisQuery(state.analysisFilters)}" download>完整证据附录</a><button class="btn small" data-export>JSON 证据</button>` : ''; }
 function originBanner() {
   const samples = state.run?.samples || state.project.samples;
   const apiArchive = state.run?.mode !== 'live' && samples.length > 0 && samples.every(s => s.origin === 'api');
@@ -76,7 +76,7 @@ function trace() {
   return `<div class="panel"><div class="panel-head"><h2>Agent 执行轨迹</h2>${state.run ? statusBadge(state.run.status) : badge('尚未运行')}</div><div class="steps">${steps.map((step, i) => `<div class="step ${esc(step.status)}"><span class="step-mark">${step.status === 'completed' ? '✓' : i + 1}</span><div class="step-title">${esc(step.label)}<small>${esc(step.skill)}</small></div><p class="step-summary">${esc(step.summary || '等待本轮输入与前置步骤')}</p><span class="step-state">${esc(EXECUTORS[step.executor])}</span></div>`).join('')}</div></div>`;
 }
 function overview() {
-  return `<h1 class="sr-only">把观察变成下一步行动</h1><div class="page-heading"><div><div class="eyebrow">${esc(state.project.brand)} / GEO analytics</div><h1>数据分析</h1><p class="subtle">从本轮覆盖、品牌表现与信源，回到每一条回答。</p></div></div>` + (running() ? '' : diagnosticView(state.spaceId && !state.run ? null : state.analytics, { runs: state.history.filter(r=>state.spaceId ? r.spaceId===state.spaceId : !r.spaceId), chart: state.chartMetric, sourceLevel: state.sourceLevel })) + `<details class="run-controls" open><summary>运行工作流</summary>${runBox()}</details>`;
+  return `<h1 class="sr-only">把观察变成下一步行动</h1><div class="page-heading"><div><div class="eyebrow">${esc(state.project.brand)} / GEO analytics</div><h1>数据分析</h1><p class="subtle">从本轮覆盖、品牌表现与信源，回到每一条回答。</p></div></div>` + (running() ? '' : diagnosisPanel(state.analytics?.diagnosis || state.run?.diagnosis) + diagnosticView(state.spaceId && !state.run ? null : state.analytics, { runs: state.history.filter(r=>state.spaceId ? r.spaceId===state.spaceId : !r.spaceId), chart: state.chartMetric, sourceLevel: state.sourceLevel })) + `<details class="run-controls" ${!state.run ? 'open' : ''}><summary>运行工作流</summary>${runBox()}</details>`;
 }
 function sourcesPage() { return pageHeader('信源分析', '域名与 URL 分层，保留来源类型与原文入口。') + diagnosticView(state.analytics, { runs: state.history.filter(r=>state.spaceId ? r.spaceId===state.spaceId : !r.spaceId), sourceLevel: state.sourceLevel, sourcesOnly: true }); }
 async function refreshAnalysis() {
@@ -128,10 +128,7 @@ function evidencePage() {
     `${measurementMatrix()}<div class="filters"><input id="sample-filter" placeholder="筛选问题、回答或模型" aria-label="筛选回答" value="${esc(state.filter)}"><div class="actions"><button class="btn small" data-import>导入回答 JSON</button><button class="btn quiet small" data-import-template>下载导入格式</button></div></div><div class="evidence-layout"><div class="panel table-scroll"><table class="data-table"><thead><tr><th>问题 / 意图</th><th>模型 / 时间</th><th>判定</th><th class="right">引用</th></tr></thead><tbody>${filtered.length ? sampleRows(filtered) : `<tr><td colspan="4"><div class="empty">${state.run ? '当前没有匹配的回答。可以导入原文，或用模型执行新测量。' : '先运行 Agent，再查看回答证据。'}</div></td></tr>`}</tbody></table></div>${inspector()}</div>${state.run?.audit ? `<div class="panel section-gap"><div class="panel-head"><h2>分组覆盖</h2>${badge('不同条件不混作趋势')}</div><div class="table-scroll"><table class="data-table"><thead><tr><th>来源 · 模型 · 问题类型 · 批次</th><th class="right">原文</th><th class="right">提及 / 可判定</th></tr></thead><tbody>${state.run.audit.strata.map(s => `<tr><td class="mono">${esc(s.label)}</td><td class="right num">${s.collected}/${s.count}</td><td class="right num">${s.mentioned}/${s.denominator}</td></tr>`).join('')}</tbody></table></div></div>` : ''}<input type="file" id="sample-file" accept="application/json,.json" hidden>`;
 }
 function actionsPage() {
-  const actions = brandActions(state.run);
-  const types = { faq: 'FAQ', product_page: '产品页', comparison: '对比页', implementation_guide: '实施指南', case_study: '案例页', selection_guide: '选型页' };
-  return pageHeader('有依据的策略任务', '任务保留目标问题、样本与事实 ID，执行状态可以在本地更新。') + collectionStatusPanel(state.run) +
-    `<div class="panel"><div class="panel-head"><h2>行动清单</h2>${badge(`${actions.length} 项`)}</div>${actions.length ? actions.map(action => `<article class="task"><div><div class="task-title">${badge(action.priority, action.priority === 'P0' ? 'warn' : '')}${action.contentType ? badge(types[action.contentType] || action.contentType) : ''}<h3>${esc(action.title)}</h3></div><p>${esc(action.rationale)}</p>${action.trigger ? `<p class="subtle"><strong>触发问题：</strong>${esc(action.trigger)}</p>` : ''}${action.evidenceGap ? `<p class="subtle"><strong>证据缺口：</strong>${esc(action.evidenceGap)}</p>` : ''}${action.outline?.length ? `<details class="subtle"><summary>推荐结构</summary><ol>${action.outline.map(item => `<li>${esc(item)}</li>`).join('')}</ol></details>` : ''}<p class="acceptance">验收：${esc(action.acceptance)}</p><div class="references">${action.sampleIds.slice(0, 3).map((id, i) => `<button class="ref" data-sample="${esc(id)}">原文 ${i + 1} ↗</button>`).join('')}${action.claimIds.slice(0, 3).map(id => `<button class="ref" data-nav="facts">事实 ${esc(id)}</button>`).join('')}${action.queryIds.length ? `<button class="ref" data-nav="queries">${action.queryIds.length} 个关联问题</button>` : ''}</div></div><label class="subtle">执行状态<select data-action-id="${esc(action.id)}">${[['proposed', '待处理'], ['in_progress', '进行中'], ['done', '已完成']].map(([id, label]) => `<option value="${id}" ${action.status === id ? 'selected' : ''}>${label}</option>`).join('')}</select></label></article>`).join('') : `<div class="empty">运行 Agent 后，这里会出现基于证据的改进任务。</div>`}</div>`;
+  return pageHeader('行动中心', '从诊断到可执行的制作单，待办与历史保存在当前运行。') + actionCenter(state.run, {category:state.actionCategory,status:state.actionStatus,priority:state.actionPriority});
 }
 function contentPage() {
   const draft = state.run?.draft;
@@ -257,6 +254,8 @@ document.addEventListener('pointerdown', () => document.body.classList.remove('k
 document.addEventListener('click', async event => {
   const button = event.target.closest('button'); if (!button) return;
   try {
+    if (button.dataset.acFilter) { state[{category:'actionCategory',status:'actionStatus',priority:'actionPriority'}[button.dataset.acFilter]] = button.dataset.acValue; render(); return; }
+    if (button.dataset.acAction) { button.disabled=true; const saved=await api(`/api/runs/${state.run.id}/actions`, {method:'PATCH',body:JSON.stringify({id:button.dataset.acAction,status:button.dataset.acStatus})}); state.run={...state.run,...saved}; render(); toast('行动状态已保存'); return; }
     if (button.hasAttribute('data-projects')) { await projectManager(); return; }
     if (button.dataset.openProject) { $('#dialog').close(); await selectProject(button.dataset.openProject); return; }
     if (button.dataset.deleteProject) {

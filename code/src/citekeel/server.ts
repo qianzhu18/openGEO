@@ -402,7 +402,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
         const days = Number(url.searchParams.get('days'));
         const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
         if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter) });
-        if (method === 'GET' && action === 'analytics') return send(res, 200, analyzeRun(run, filter));
+        if (method === 'GET' && action === 'analytics') return send(res, 200, {...analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter)});
         if (method === 'GET' && action === 'report-html') {
           res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-${run.id}.html"`, 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(reportHtml(run, filter));
         }
@@ -416,7 +416,8 @@ export async function createApp(store = new Store(), options: { research?: typeo
         if (['queued', 'running'].includes(run.status)) return send(res, 409, { error: '运行结束后才能修改交付记录' });
         const input = await body(req);
         if (method === 'PATCH' && action === 'actions') {
-          const item = run.actions.find(a => a.id === input.id); if (!item || !['proposed', 'in_progress', 'done'].includes(input.status)) throw new Error('任务或状态无效'); item.status = input.status;
+          const item = diagnoseRun(run).actions.find(a => a.id === input.id); if (!item || !['proposed', 'in_progress', 'done', 'skipped'].includes(input.status)) throw new Error('任务或状态无效');
+          run.actionStates = {...run.actionStates, [item.id]: input.status};
         } else if (method === 'PATCH' && action === 'draft') {
           if (!run.draft || run.draft.status === 'blocked') throw new Error('请先解决事实阻塞并重新运行');
           run.draft.markdown = textField(input.markdown, '草稿', 50000, run.draft.markdown);
@@ -427,7 +428,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
           if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('发布链接仅支持 http 或 https');
           run.publications.push({ id: randomUUID(), url: parsed.toString(), recordedAt: new Date().toISOString(), note: textField(input.note, '说明', 1000), state: 'recorded_not_verified' });
         } else return send(res, 405, { error: '不支持的运行操作' });
-        await store.save('runs', run); return send(res, 200, run);
+        await store.save('runs', run); return send(res, 200, {...run, diagnosis: diagnoseRun(run)});
       }
       return send(res, 404, { error: '没有这个页面或接口' });
     } catch (error) { send(res, error instanceof WorkspaceError ? error.status : 400, { error: error instanceof Error ? error.message : '请求失败', ...(error instanceof WorkspaceError ? {code:error.code} : {}) }); }

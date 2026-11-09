@@ -141,7 +141,7 @@ test('analysis scope and exported report agree, with inert HTML and usable mobil
   const analysis = await (await request.get(base + '/analytics?channel=api')).json();
   expect(analysis.quality.valid).toBe(1); expect(analysis.quality.planned).toBe(2);
   const markdown = await (await request.get(base + '/report?channel=api')).text();
-  expect(markdown).toContain('**1/2**'); expect(markdown).toContain('Fixture provider timeout');
+  expect(markdown).toContain('1/2**'); expect(markdown).toContain('Fixture provider timeout');
   expect(markdown).not.toContain('## Content'); expect(markdown).not.toContain('## Actions');
   const html = await (await request.get(base + '/report-html?channel=api')).text();
   expect(html).toContain('<!doctype html>'); expect(html).toContain('<table>');
@@ -160,7 +160,7 @@ test('analysis scope and exported report agree, with inert HTML and usable mobil
   // Inspect the actual exported artifact with scripts and all remote content disabled by its CSP.
   await page.route('**/analysis-report-preview', route => route.fulfill({ contentType: 'text/html', body: html }));
   await page.goto('/analysis-report-preview');
-  await expect(page.getByRole('heading', { name: 'Summary and data quality' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Diagnosis', exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 1000 });
   await page.screenshot({ path: 'data/browser-tests/analytics-preview/report-desktop.png', fullPage: true });
 });
@@ -219,16 +219,54 @@ test('saved collection failures stay out of brand actions on both surfaces', asy
   run.actions[1].sampleIds = Array(78).fill('answer-b');
   await store.save('runs', run);
   await page.goto(`/workspace?project=${projectId}&run=${run.id}&view=actions`);
+  await page.locator('.ac-collection > summary').click();
   await expect(page.getByRole('heading', { name: 'Collection status', exact: true })).toBeVisible();
   const business = page.locator('.panel').filter({ has: page.getByRole('heading', { name: 'Evidence-backed actions', exact: true }) });
   await expect(business.locator('.action-item')).toHaveCount(1);
+  await business.locator('.ac-card summary').click();
   await expect(business.getByRole('button', { name: 'View answer evidence' })).toHaveCount(1);
   await expect(business.getByRole('heading', { name: 'Improve the product analytics evidence page' })).toBeVisible();
   await expect(business).not.toContainText('78 条记录');
   await page.goto(`/?project=${projectId}`);
   await page.getByRole('button', { name: '策略任务', exact: true }).click();
+  await page.locator('.ac-collection > summary').click();
   await expect(page.getByRole('heading', { name: '采集状态', exact: true })).toBeVisible();
   await expect(page.locator('.task')).toHaveCount(1);
   await expect(page.locator('.task')).toContainText('Improve the product analytics evidence page');
   expect((await store.get<any>('runs', run.id)).actions[0].sampleIds).toHaveLength(78);
+});
+
+
+test('action center filters and saved todo, done and skip states survive reload on both surfaces', async ({page,request})=>{
+  await page.goto(`/workspace?project=${projectId}&run=${runIds[1]}&view=actions`);
+  const card=page.locator('.ac-card');
+  await expect(card).toHaveCount(1);
+  await page.getByRole('button',{name:'Fact review 0',exact:true}).click();
+  await expect(page.locator('.ac-empty')).toBeVisible();
+  await page.locator('[data-ac-filter="category"][data-ac-value="all"]').click();
+  await card.getByRole('button',{name:'Add to Todo',exact:true}).click();
+  await expect(card).toHaveCount(0);
+  await page.locator('[data-ac-filter="status"][data-ac-value="in_progress"]').click();
+  await expect(card).toHaveCount(1);
+  await page.reload();
+  await page.locator('[data-ac-filter="status"][data-ac-value="in_progress"]').click();
+  await card.getByRole('button',{name:'Mark done',exact:true}).click();
+  await page.locator('[data-ac-filter="status"][data-ac-value="history"]').click();
+  await expect(card).toContainText('Done');
+  await card.getByRole('button',{name:'Restore suggestion',exact:true}).click();
+  await page.locator('[data-ac-filter="status"][data-ac-value="proposed"]').click();
+  await card.getByRole('button',{name:'Skip',exact:true}).click();
+  const saved=await (await request.get(`/api/runs/${runIds[1]}`)).json();
+  expect(saved.actionStates['action-sources']).toBe('skipped');
+  expect(saved.actions[0].status).toBe('proposed'); // Preserve the original planner output.
+  await page.goto(`/?project=${projectId}`);
+  await page.getByRole('button',{name:'策略任务',exact:true}).click();
+  await page.locator('[data-ac-filter="status"][data-ac-value="history"]').click();
+  await expect(page.locator('.ac-card')).toContainText('已跳过');
+  await mkdir('data/browser-tests/action-center', {recursive:true});
+  await page.setViewportSize({width:1440,height:1000});
+  await page.screenshot({path:'data/browser-tests/action-center/desktop.png',fullPage:true});
+  await page.setViewportSize({width:375,height:812});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:'data/browser-tests/action-center/mobile.png',fullPage:true});
 });
