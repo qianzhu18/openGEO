@@ -4,6 +4,7 @@ test('replays public archive, opens original evidence and exports a report', asy
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/?project=posthog');
   await expect(page.getByRole('heading', { name: '把观察变成下一步行动' })).toBeVisible();
+  await page.locator('.run-controls').evaluate(el=>el.setAttribute('open',''));
   await page.getByRole('button', { name: '仅回放', exact: true }).click();
   await expect(page.getByText('本轮已完成，结果与执行记录已保存在本地')).toBeVisible();
   await page.getByRole('button', { name: '回答与信源', exact: true }).click();
@@ -39,6 +40,7 @@ test('diagnosis entry submits a frozen question set and platform matrix without 
     if (route.request().method() !== 'POST') { await route.continue(); return; }
     payload = route.request().postDataJSON(); await route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ id: 'diagnosis-ui-test' }) });
   });
+  await page.locator('.run-controls').evaluate(el=>el.setAttribute('open',''));
   await page.getByRole('button', { name: '⇶ 运行品牌诊断' }).click();
   await expect(page.getByRole('heading', { name: '运行一轮品牌诊断' })).toBeVisible();
   await page.locator('input[name=targetIds][value=chatgpt]').check();
