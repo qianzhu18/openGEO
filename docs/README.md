@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [0.5.0 本地持久队列](OPENGEO-20261109-DURABLE-QUEUE/Report.md) | 已实现，142单测/28浏览器通过 | SQLite、有限退避、死信、受控恢复；MySQL/RocketMQ未引入 | [验收与待办](OPENGEO-20261109-DURABLE-QUEUE/Todo.md) |
 | [0.4.1 API 请求与内容对账](OPENGEO-20261109-API-RECEIPTS/Report.md) | 已实现并通过离线回归 | 130 单测 / 27 浏览器测试；保留付费错误响应、关联费用与原文；真实账单核销未实现 | [验收记录](OPENGEO-20261109-API-RECEIPTS/Report.md) |
 | [0.4.0 报告与行动中心](OPENGEO-20261109-REPORT-ACTIONS/Report.md) | 已完成 | 120 单测 / 26 浏览器测试；分支合入 0.4.0 | [验收记录](OPENGEO-20261109-REPORT-ACTIONS/Report.md) |
 | [诊断空间与执行状态](OPENGEO-20261109-SPACE-PROGRESS/Report.md) | 已完成，0.3.1 本地运行 | 118 单测 / 25 浏览器测试；空间持久化与前置进度 | [验收记录](OPENGEO-20261109-SPACE-PROGRESS/Report.md) |

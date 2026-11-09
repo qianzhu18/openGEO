@@ -6,7 +6,7 @@ import { HostBrowserMailbox } from './browser/host-mailbox.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { loadDotEnv, hasProviderKey, resolveProviderKey } from '../../vendor/niubigeo/src/config/env.js';
 import { loadCases } from './cases.js';
 import { Store } from './storage.js';
@@ -65,15 +65,21 @@ function hostWebCollector(worker: HostBrowserMailbox) {
     return row.data;
   }, async close() {} };
 }
+import { initializeSamplingQueue, redriveJobs } from './sampling-queue.js';
+
 export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch; browserWorker?: HostBrowserMailbox } = {}) {
   const examples = await loadCases();
   const exampleIds = new Set(examples.map(project => project.id));
-  await store.initialize(examples);
+  const workerToken=randomUUID();
+  store.acquireWorker(workerToken);
+  try { await store.initialize(examples); } catch(error) { store.releaseWorker(workerToken); store.close(); throw error; }
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
   const recordings = new RecordingService(store);
   const brandSources = new BrandSourceService(store, options.research);
   let activeRunId: string | null = null;
+  let liveRun: AgentRun | null = null;
+  let closed=false;
   const server = createServer(async (req, res) => {
     try {
       const host = req.headers.host || '';
@@ -279,9 +285,16 @@ export async function createApp(store = new Store(), options: { research?: typeo
         return send(res, 200, runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 60).map(r => ({ id: r.id, projectId: r.projectId, createdAt: r.createdAt, status: r.status, mode: r.mode, spaceId: r.spaceId, queryVersion: r.projectSnapshot.queryVersion, goal: r.goal, sampleCount: r.samples.length })));
       }
       if (path === '/api/runs' && method === 'POST') {
-        if ((await store.list<AgentRun>('runs')).some(r => ['queued', 'running'].includes(r.status))) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const input = await body(req), project = await store.get<Project>('projects', String(input.projectId || ''));
         if (!project) throw new Error('请选择项目');
+        const {apiKey:_key,apiKeys:_keys,requestKey,...submissionInput}=input;
+        const fingerprint=createHash('sha256').update(JSON.stringify(submissionInput)).digest('hex');
+        if(requestKey!==undefined && (typeof requestKey!=='string' || !/^[a-zA-Z0-9_-]{8,100}$/.test(requestKey))) throw new Error('无效的提交标识');
+        if(requestKey) {
+          const previous=store.submission(project.id,requestKey);
+          if(previous) return send(res,previous.fingerprint===fingerprint?202:409,previous.fingerprint===fingerprint?{id:previous.run_id,reused:true}:{error:'同一提交标识不能用于不同输入'});
+        }
+
         if (input.spaceId) {
           const space = project.diagnosisSpaces?.find(s => s.id === input.spaceId);
           if (!space) throw new WorkspaceError('诊断空间不属于当前项目');
@@ -369,7 +382,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
             if (!key) throw new WorkspaceError(`Provider ${provider} is not configured for API fallback.`);
             apiKeys[provider!] = key;
           }
-          diagnosis = { targets: parsedTargets, apiKeys };
+          diagnosis = { targets: parsedTargets, apiKeys, durableQueue: parsedTargets.every(t=>t.preferredChannel==='api' && t.browserPreference!=='browser_first') };
           diagnosisTargets = parsedTargets;
           browserEngine = parsedTargets.some(target => target.preferredChannel === 'web' && target.webEngine === 'chatgpt') ? 'chatgpt' : undefined;
         }
@@ -377,8 +390,14 @@ export async function createApp(store = new Store(), options: { research?: typeo
         const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config, diagnosisTargets);
         if (input.spaceId) run.spaceId = input.spaceId;
         run.projectSnapshot.diagnosisSpaces = undefined;
-        activeRunId = run.id;
-        try { await store.save('runs', run); } catch (error) { activeRunId = null; throw error; }
+        if (diagnosis?.durableQueue) {
+          run.queries=structuredClone(project.queries);
+          run.measurementUnits=run.queries.flatMap(query=>diagnosisTargets!.map(target=>({id:`${query.id}--${target.id}`,queryId:query.id,question:query.text,targetId:target.id,platform:target.platform,preferredChannel:target.preferredChannel,status:'planned',attempts:[]})));
+          initializeSamplingQueue(run);
+          if(requestKey) run.submission={key:requestKey,fingerprint};
+        }
+        activeRunId = run.id; liveRun=run;
+        try { await store.save('runs', run); } catch (error) { activeRunId = null; liveRun=null; throw error; }
         void (async () => {
           let collector: { close: () => Promise<void> } | undefined;
           try {
@@ -390,15 +409,47 @@ export async function createApp(store = new Store(), options: { research?: typeo
           } catch (error) {
             run.status = 'failed'; run.error = error instanceof Error ? error.message : '执行异常，已有证据已保留'; await store.save('runs', run);
           } finally {
-            await collector?.close().catch(() => {}); activeRunId = null;
+            await collector?.close().catch(() => {}); activeRunId = null; liveRun=null;
+            if(closed) {store.releaseWorker(workerToken);store.close();}
           }
         })();
         return send(res, 202, { id: run.id });
       }
-      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|report-html|report-evidence|analytics|export|actions|draft|publications))?$/);
+      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(queue|stop|resume|redrive|report|report-html|report-evidence|analytics|export|actions|draft|publications))?$/);
       if (runMatch) {
         const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run || (url.searchParams.has('projectId') && url.searchParams.get('projectId') !== run.projectId)) return send(res, 404, { error: '运行不存在或不属于当前项目' });
         const action = runMatch[2];
+        if(method==='GET' && action==='queue') return send(res,200,run.samplingQueue || {error:'历史运行没有持久队列'});
+        if(method==='POST' && action==='stop') {
+          if(!liveRun?.samplingQueue || liveRun.id!==run.id) return send(res,409,{error:'没有可停止的运行'});
+          liveRun.samplingQueue.stopRequested=true; await store.save('runs',liveRun);
+          return send(res,202,{id:run.id,message:'停止后续发送；已发出的请求可能仍在生成或收费。'});
+        }
+        if(method==='POST' && ['resume','redrive'].includes(action || '')) {
+          if(activeRunId) return send(res,409,{error:'当前有一轮执行中'});
+          if(!run.samplingQueue || !run.measurementTargets) throw new Error('历史运行不可按队列恢复');
+          const input=await body(req);
+          if(action==='redrive') {
+            if(!Array.isArray(input.jobIds) || input.jobIds.some((id:unknown)=>typeof id!=='string')) throw new Error('请选择任务');
+            redriveJobs(run,input.jobIds,input.acknowledgeCost===true);
+          } else {
+            for(const job of run.samplingQueue.jobs) if(job.state==='paused' && job.reason==='用户停止了后续发送。') {job.state='queued';job.reason=undefined;}
+          }
+          if(!run.samplingQueue.jobs.some(j=>['queued','retry_wait'].includes(j.state))) throw new Error('没有可继续的任务；失败或费用不确定的任务需明确确认后重投');
+          const apiKeys:Record<string,string>={};
+          for(const target of run.measurementTargets) {
+            const key=resolveProviderKey(target.provider!);
+            if(!key) throw new Error(`请先在服务商设置配置 ${target.provider}`);
+            apiKeys[target.provider!]=key;
+          }
+          if(activeRunId) return send(res,409,{error:'当前有一轮执行中'});
+          run.samplingQueue.stopRequested=false;run.status='queued';run.error=undefined;run.finishedAt=undefined;
+          activeRunId=run.id;liveRun=run;
+          try {await store.save('runs',run);} catch(error) {activeRunId=null;liveRun=null;throw error;}
+          void executeRun(run,store,undefined,undefined,{targets:run.measurementTargets,apiKeys,durableQueue:true}).catch(()=>{}).finally(()=>{activeRunId=null;liveRun=null;if(closed){store.releaseWorker(workerToken);store.close();}});
+          return send(res,202,{id:run.id});
+        }
+
         const days = Number(url.searchParams.get('days'));
         const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
         if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter) });
@@ -433,6 +484,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
       return send(res, 404, { error: '没有这个页面或接口' });
     } catch (error) { send(res, error instanceof WorkspaceError ? error.status : 400, { error: error instanceof Error ? error.message : '请求失败', ...(error instanceof WorkspaceError ? {code:error.code} : {}) }); }
   });
+  server.on('close',()=>{closed=true;if(!activeRunId){store.releaseWorker(workerToken);store.close();}else if(liveRun?.samplingQueue)liveRun.samplingQueue.stopRequested=true;});
   return { server, store };
 }
 

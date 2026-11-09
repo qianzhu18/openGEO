@@ -6,7 +6,13 @@ import { customConnection, customProviderFetch } from "./custom-connection.js";
 const scopedAttempts = new AsyncLocalStorage<number>();
 export type ProviderHttpEvent =
   | { phase: 'attempted' }
-  | { phase: 'response'; status: number; data: unknown; requestId?: string };
+  | { phase: 'response'; status: number; data: unknown; requestId?: string; retryAfterMs?: number };
+export function retryAfterMs(value: string | null, now = Date.now()): number | undefined {
+  if (!value) return undefined;
+  const numeric = Number(value);
+  const delay = Number.isFinite(numeric) ? numeric * 1000 : Date.parse(value) - now;
+  return Number.isFinite(delay) && delay >= 0 ? delay : undefined;
+}
 const httpObserver = new AsyncLocalStorage<(event: ProviderHttpEvent) => Promise<void>>();
 /** OpenGEO: retain paid response evidence before adapter validation can throw. */
 export function withProviderHttpObserver<T>(observer: (event: ProviderHttpEvent) => Promise<void>, operation: () => T): T {
@@ -63,7 +69,7 @@ export async function postJsonWithRetry(url: string, init: RequestInit, attempts
       } else data = await response.json().catch(() => ({}));
       data = redactRequestSecrets(data);
       const latencyMs = Date.now() - started;
-      await httpObserver.getStore()?.({ phase: 'response', status: response.status, data,
+      await httpObserver.getStore()?.({ phase: 'response', status: response.status, data, retryAfterMs: retryAfterMs(response.headers.get('retry-after')),
         requestId: response.headers.get('x-request-id') || response.headers.get('request-id') || undefined });
       if (response.ok || !isTransient(response.status) || attempt === attempts) {
         return { status: response.status, ok: response.ok, data, latencyMs };

@@ -110,6 +110,8 @@ export interface AgentRun {
   createdAt: string; finishedAt?: string; steps: Step[]; queries: Query[]; samples: Sample[];
   audit?: Audit; actionStates?: Record<string, Action['status']>; actions: Action[]; draft?: Draft; calls: ModelCall[]; publications: Publication[];
   limitations: string[]; review: string; error?: string; model?: string; provider?: string;
+  samplingQueue?: import('./sampling-queue.js').SamplingQueue;
+  submission?: {key: string; fingerprint: string};
   measurementTargets?: MeasurementTarget[]; measurementUnits?: MeasurementUnit[];
 }
 export interface LiveConfig { provider: string; model: string; apiKey: string; maxQuestions: number; webSearch: boolean }

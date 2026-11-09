@@ -57,7 +57,7 @@ export class ModelSession {
       const answer = await withRequestProviderKeys({ [this.config.provider]: this.config.apiKey }, () =>
         withProviderHttpObserver(async event => {
           if (event.phase === 'attempted') call.receipt!.dispatch = 'attempted';
-          else retainApiResponse(call, event.data, event.status, event.requestId, this.config.apiKey);
+          else { retainApiResponse(call, event.data, event.status, event.requestId, this.config.apiKey); call.receipt!.retryAfterMs = event.retryAfterMs; }
           await this.persist();
         }, () => withProviderHttpAttempts(1, () => provider.run({
           prompt, model: this.config.model, apiKey: this.config.apiKey, temperature: 0,

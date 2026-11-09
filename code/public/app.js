@@ -177,10 +177,15 @@ async function selectRun(id) {
   if (selection !== runSelection) return;
   render(); if (running()) pollRun(id);
 }
+let pendingSubmission;
 async function startRun(input = {}) {
   ++runSelection;
   const goal = $('#goal')?.value || state.run?.goal || state.project.goal;
-  const run = await api('/api/runs', { method: 'POST', body: JSON.stringify({ projectId: state.project.id, ...(state.spaceId ? {spaceId:state.spaceId}:{}), goal, mode: 'replay', ...input }) });
+  const payload={projectId:state.project.id,...(state.spaceId?{spaceId:state.spaceId}:{}),goal,mode:'replay',...input};
+  const signature=JSON.stringify(payload);
+  if(pendingSubmission?.signature!==signature) pendingSubmission={signature,key:crypto.randomUUID()};
+  const run=await api('/api/runs',{method:'POST',body:JSON.stringify({...payload,requestKey:pendingSubmission.key})});
+  pendingSubmission=undefined;
   state.run = await api(`/api/runs/${run.id}`); state.analytics = state.run.analytics; state.analysisFilters = {}; state.view = 'overview'; rememberSpace(); await refreshHistory(); render(); pollRun(run.id);
 }
 function showDialog(title, description, fields, submitLabel, onSubmit) {
@@ -254,6 +259,14 @@ document.addEventListener('pointerdown', () => document.body.classList.remove('k
 document.addEventListener('click', async event => {
   const button = event.target.closest('button'); if (!button) return;
   try {
+    if(button.dataset.queueAction) {
+      const action=button.dataset.queueAction;
+      if(action==='redrive' && !confirm('旧请求可能已经收费。本次重投会保留旧记录，并可能再次收费。确认已核对回执并重投？')) return;
+      button.disabled=true;
+      await api(`/api/runs/${state.run.id}/${action}`, {method:'POST',body:JSON.stringify({jobIds:[button.dataset.queueJob],acknowledgeCost:action==='redrive'})});
+      await selectRun(state.run.id);
+      return;
+    }
     if (button.dataset.acFilter) { state[{category:'actionCategory',status:'actionStatus',priority:'actionPriority'}[button.dataset.acFilter]] = button.dataset.acValue; render(); return; }
     if (button.dataset.acAction) { button.disabled=true; const saved=await api(`/api/runs/${state.run.id}/actions`, {method:'PATCH',body:JSON.stringify({id:button.dataset.acAction,status:button.dataset.acStatus})}); state.run={...state.run,...saved}; render(); toast('行动状态已保存'); return; }
     if (button.hasAttribute('data-projects')) { await projectManager(); return; }

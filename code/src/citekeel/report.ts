@@ -127,7 +127,7 @@ export function exportRun(run: AgentRun) {
   return sanitizeExport({ schemaVersion: 'citekeel-public-run/v1', id: run.id, createdAt: run.createdAt, mode: run.mode,
     project: { name: run.projectSnapshot.name, brand: run.projectSnapshot.brand, origin: run.projectSnapshot.origin, market: run.projectSnapshot.market, language: run.projectSnapshot.language, requestedCountry: run.projectSnapshot.country },
     analysis: analyzeRun(run), apiReceipts: apiReceipts(run), goal: run.goal, audit: run.audit, queries: run.queries, actions: run.actions, actionStates: run.actionStates, diagnosis: diagnoseRun(run), draft: run.draft,
-    measurementTargets: run.measurementTargets, measurementUnits: run.measurementUnits,
+    samplingQueue: run.samplingQueue, measurementTargets: run.measurementTargets, measurementUnits: run.measurementUnits,
     samples: run.samples.map(({ rawResponse, search, ...s }) => s),
     calls: run.calls.map(({ response, answer, ...c }) => c), steps: run.steps, limitations: run.limitations, review: run.review });
 }

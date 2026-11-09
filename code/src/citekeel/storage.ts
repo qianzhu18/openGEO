@@ -1,11 +1,20 @@
 import { mkdir, readFile, writeFile, rename, readdir, unlink } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { SamplingDatabase } from './sampling-db.js';
+import { recoverSamplingQueue } from './sampling-queue.js';
 import type { AgentRun, Project } from './types.js';
 
 export class Store {
   readonly root: string;
   private queue: Promise<unknown> = Promise.resolve();
+  private db?: SamplingDatabase;
+  private database() { return this.db ||= new SamplingDatabase(this.root); }
+  submission(projectId:string,key:string) { return this.database().submission(projectId,key); }
+  acquireWorker(token:string) { this.database().acquire(token); }
+  releaseWorker(token:string) { this.db?.release(token); }
+  close() { this.db?.close();this.db=undefined; }
   private projectQueues = new Map<string, Promise<unknown>>();
   constructor(root = process.env.CITEKEEL_DATA_DIR || 'data/citekeel') { this.root = resolve(root); }
   private path(kind: string, id: string) {
@@ -13,9 +22,11 @@ export class Store {
     return join(this.root, kind, `${id}.json`);
   }
   async save<T extends { id: string }>(kind: 'projects' | 'runs' | 'researches', value: T): Promise<void> {
+    this.path(kind,value.id);
     const copy = JSON.stringify(value, null, 2);
     const work = this.queue.catch(() => {}).then(async () => {
       if (await this.deleted(kind === 'projects' ? value.id : (value as unknown as { projectId?: string }).projectId)) throw new Error('项目已删除，请先恢复项目');
+      if (kind === 'runs' && (value as unknown as AgentRun).samplingQueue) this.database().save(JSON.parse(copy));
       const dest = this.path(kind, value.id);
       await mkdir(join(this.root, kind), { recursive: true });
       const temp = `${dest}.${randomUUID()}.tmp`;
@@ -26,8 +37,10 @@ export class Store {
     await work;
   }
   async get<T>(kind: 'projects' | 'runs' | 'researches', id: string): Promise<T | null> {
+    this.path(kind,id);
     try {
-      const value = JSON.parse(await readFile(this.path(kind, id), 'utf8'));
+      const durable = kind === 'runs' && existsSync(join(this.root,'sampling.sqlite')) ? this.database().get(id) : null;
+      const value = durable || JSON.parse(await readFile(this.path(kind, id), 'utf8'));
       if (await this.deleted(kind === 'projects' ? id : value.projectId)) return null;
       return value as T;
     }
@@ -35,7 +48,7 @@ export class Store {
   }
   async list<T>(kind: 'projects' | 'runs' | 'researches'): Promise<T[]> {
     const names = await readdir(join(this.root, kind)).catch(() => [] as string[]);
-    return (await Promise.all(names.filter(n => n.endsWith('.json')).map(n => this.get<T>(kind, n.slice(0, -5))))).filter(Boolean) as T[];
+    return (await Promise.all([...new Set([...names.filter(n => n.endsWith('.json')).map(n=>n.slice(0,-5)), ...(kind==='runs' && existsSync(join(this.root,'sampling.sqlite')) ? this.database().ids():[])])].map(id => this.get<T>(kind,id)))).filter(Boolean) as T[];
   }
   async updateProject<T>(id: string, work: (project: Project) => T | Promise<T>, persist = true): Promise<{ project: Project; result: T }> {
     const previous = this.projectQueues.get(id) || Promise.resolve();
@@ -81,7 +94,8 @@ export class Store {
     for (const project of projects) if (!await this.deleted(project.id) && !await this.get('projects', project.id)) await this.save('projects', project);
     for (const run of await this.list<AgentRun>('runs')) {
       if (run.status === 'running' || run.status === 'queued') {
-        run.status = 'interrupted'; run.error = '上次进程在执行中退出，已保留完成的步骤与原文。可重新创建一轮。';
+        recoverSamplingQueue(run);
+        run.status = 'interrupted'; run.error = '上次进程在执行中退出，已保留完成的步骤与原文。队列任务可显式继续；发送或费用不确定的请求先核对，旧运行可重新创建一轮。';
         for (const step of run.steps) if (step.status === 'running') step.status = 'failed';
         await this.save('runs', run);
       }

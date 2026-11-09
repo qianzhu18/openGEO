@@ -3,7 +3,7 @@ import { answerTruncated } from './analysis.js';
 import { answerExclusion } from './geo-rates.js';
 
 export interface ApiReceipt {
-  version: 'api-receipt/v1'; sampleId?: string; queryId?: string; unitId?: string;
+  version: 'api-receipt/v1'; jobLease?: string; retryAfterMs?: number; sampleId?: string; queryId?: string; unitId?: string;
   dispatch: 'not_started' | 'attempted' | 'response_received';
   responseRetained: boolean; httpStatus?: number; providerRequestId?: string; generationId?: string;
   actualModel?: string; costStatus: 'reported' | 'unknown';
@@ -20,7 +20,7 @@ export interface ApiFailureDiagnosis {
   summary: string;
   action: string;
 }
-export type CallContext = Pick<ApiReceipt, 'sampleId' | 'queryId' | 'unitId'>;
+export type CallContext = Pick<ApiReceipt, 'sampleId' | 'queryId' | 'unitId' | 'jobLease'>;
 export function newReceipt(context: CallContext = {}, search = false): ApiReceipt {
   return { version: 'api-receipt/v1', ...context, dispatch: 'not_started', responseRetained: false,
     costStatus: 'unknown', answerState: 'none', searchState: search ? 'unconfirmed' : 'not_requested' };

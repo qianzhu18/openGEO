@@ -1,5 +1,5 @@
 import type { Citation } from './types.js';
-import type { ProviderHttpEvent } from '../../vendor/niubigeo/src/providers/http.js';
+import { retryAfterMs, type ProviderHttpEvent } from '../../vendor/niubigeo/src/providers/http.js';
 import { apiAnswerProblem, redactApiEvidence } from './api-receipts.js';
 
 // Personal workbench: one shared slot also covers ChatGPT and Gemini together.
@@ -14,6 +14,8 @@ export class CloroMonitor {
   private stopped = false;
   private requests = 0;
   constructor(private readonly key: string) {}
+
+  allowQueueRetry() { this.stopped = false; }
 
   ask(engine: string, prompt: string, country: string, observe?: (event: ProviderHttpEvent) => Promise<void>) {
     const work = monitorQueue.then(() => this.perform(engine, prompt, country, observe));
@@ -38,7 +40,7 @@ export class CloroMonitor {
       let parsed: unknown;
       try { parsed = JSON.parse(body); } catch { parsed = { unparsedBody: body }; }
       const raw = redactApiEvidence(parsed, this.key) as any;
-      await observe?.({ phase: 'response', status: response.status, data: raw,
+      await observe?.({ phase: 'response', status: response.status, data: raw, retryAfterMs: retryAfterMs(response.headers.get('retry-after')),
         requestId: response.headers.get('x-request-id') || response.headers.get('request-id') || undefined });
       if (!response.ok) throw new Error(`Cloro HTTP ${response.status}；本目标已停止。`);
       if (raw?.success !== true || typeof raw.result?.text !== 'string' || !raw.result.text.trim()) throw new Error('Cloro 未返回成功且非空的 result.text；原文未计为有效回答。');
