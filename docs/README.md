@@ -23,6 +23,7 @@
 
 | 任务 | 状态 | 下一步 | 记录 |
 | --- | --- | --- | --- |
+| [0.4.0 报告与行动中心](OPENGEO-20261109-REPORT-ACTIONS/Report.md) | 已完成 | 120 单测 / 26 浏览器测试；分支合入 0.4.0 | [验收记录](OPENGEO-20261109-REPORT-ACTIONS/Report.md) |
 | [诊断空间与执行状态](OPENGEO-20261109-SPACE-PROGRESS/Report.md) | 已完成，0.3.1 本地运行 | 118 单测 / 25 浏览器测试；空间持久化与前置进度 | [验收记录](OPENGEO-20261109-SPACE-PROGRESS/Report.md) |
 | [0.3 本地使用链路](OPENGEO-20261108-PRODUCT-FLOW/TaskInfo.md) | 已完成，0.3.0 本地运行 | 117 单测 / 24 浏览器测试；Cloro 待配置后实测 | [Report](OPENGEO-20261108-PRODUCT-FLOW/Report.md) / [Todo](OPENGEO-20261108-PRODUCT-FLOW/Todo.md) |
 | [采样入口与 Cloro](OPENGEO-20261108-PROVIDER-STOP/TaskInfo.md) | Cloro 独立适配器与搜索策略分离已实施；实跑有覆盖缺口 | 核对本轮失败与有效原文，再优化国内截断和桥接 | [Report](OPENGEO-20261108-PROVIDER-STOP/Report.md) |
