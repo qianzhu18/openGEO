@@ -1,0 +1,31 @@
+{
+  "evidence_id": "ev_311c3be1e5b51aa66be0ca26d59a9705ebd3ee44e0c680cf4069282e48dfdfd4",
+  "digest": {
+    "sha256": "195965f143dfedd4781d533438c2439d9ce51df3783ecfc6047b2b2e81ad42b3"
+  },
+  "provider": {
+    "id": "rea-javascript-application",
+    "name": "REA JavaScript application analyzer",
+    "version": "1"
+  },
+  "limitations": [
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "Graph coverage is incomplete; unavailable facts remain explicit and must not be read as absence.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ],
+  "files": [
+    {
+      "name": "page-561af9133ffdfd73.js",
+      "sha256": "922a08b276e9716a6e6913f77cf1e479bdfa31d0cf0c9c751f5c619f632f8055"
+    },
+    {
+      "name": "layout-733676230965ef27.js",
+      "sha256": "0adec8dca49122cfb4a497934a42e272647e34df94e2c9046049d7cba1861877"
+    }
+  ],
+  "runtime": "Kimi attached existing actions page, read-only main text. 6 suggestions: 4 on-page, 2 new articles.",
+  "cleanup": "CLI emitted Evidence then exit1: worker process-group identity could not be revalidated; not a clean tool exit."
+}

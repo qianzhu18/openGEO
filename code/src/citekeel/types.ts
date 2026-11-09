@@ -78,7 +78,7 @@ export interface Audit {
 export interface Action {
   id: string; title: string; kind: 'fact' | 'content' | 'source' | 'measurement';
   priority: 'P0' | 'P1' | 'P2'; rationale: string; queryIds: string[]; sampleIds: string[];
-  claimIds: string[]; acceptance: string; status: 'proposed' | 'in_progress' | 'done';
+  claimIds: string[]; acceptance: string; status: 'proposed' | 'in_progress' | 'done' | 'skipped';
   /** Optional content-opportunity fields. Older saved runs remain valid without them. */
   contentType?: 'faq' | 'product_page' | 'comparison' | 'implementation_guide' | 'case_study' | 'selection_guide';
   trigger?: string;
@@ -107,7 +107,7 @@ export interface AgentRun {
   id: string; projectId: string; spaceId?: string; projectSnapshot: Project; mode: Mode; goal: string;
   status: 'queued' | 'running' | 'completed' | 'needs_review' | 'failed' | 'interrupted';
   createdAt: string; finishedAt?: string; steps: Step[]; queries: Query[]; samples: Sample[];
-  audit?: Audit; actions: Action[]; draft?: Draft; calls: ModelCall[]; publications: Publication[];
+  audit?: Audit; actionStates?: Record<string, Action['status']>; actions: Action[]; draft?: Draft; calls: ModelCall[]; publications: Publication[];
   limitations: string[]; review: string; error?: string; model?: string; provider?: string;
   measurementTargets?: MeasurementTarget[]; measurementUnits?: MeasurementUnit[];
 }
