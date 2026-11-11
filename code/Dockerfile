@@ -5,8 +5,13 @@ RUN npm ci --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
 COPY public ./public
+COPY scripts ./scripts
+COPY LICENSE ./LICENSE
 COPY vendor/niubigeo/src ./vendor/niubigeo/src
+COPY vendor/niubigeo/LICENSE ./vendor/niubigeo/LICENSE
 COPY examples/upstream ./examples/upstream
+COPY examples/opengeo ./examples/opengeo
+RUN npm run build
 RUN mkdir -p /app/data/citekeel && chown -R node:node /app/data
 USER node
 ENV OPENGEO_CONTAINER=1 CITEKEEL_DATA_DIR=/app/data/citekeel CITEKEEL_PORT=8847

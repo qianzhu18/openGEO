@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/citekeel/server.js';
@@ -40,6 +43,15 @@ test('Docker browser mailbox accepts one authenticated claim and binds each resu
     const nonce = Date.now() + '-' + randomUUID();
     assert.deepEqual(await (await call('claim', {}, nonce)).json(), { task: null });
     assert.equal((await call('claim', {}, nonce)).status, 403);
+    const check = request('/api/browser/check');
+    let checkTask;
+    for (let i = 0; !checkTask && i < 25; i++) {
+      checkTask = (await (await call('claim')).json()).task;
+      if (!checkTask) await new Promise(done => setTimeout(done, 10));
+    }
+    assert.equal(checkTask?.kind, 'check');
+    assert.equal((await call('finish', { id: checkTask.id, reply: { ok: true } })).status, 200);
+    assert.deepEqual(await (await check).json(), { ok: true, profile: 'Xue', authenticated: true });
     const collector = browserWorker.collector(['Q1', 'Q2']);
     const first = collector.ask('Q1');
     const { task } = await (await call('claim')).json();
@@ -73,7 +85,8 @@ test('Docker browser mailbox accepts one authenticated claim and binds each resu
       if (!['queued','running'].includes(run.status)) break;
       await new Promise(done => setTimeout(done, 10));
     }
-    assert.equal(run.status, 'completed');
+    // Successful sampling does not confirm the new project's unreviewed facts.
+    assert.equal(run.status, 'needs_review');
     assert.equal(run.samples[0].collectionStatus, 'completed');
     assert.equal(run.samples[0].origin, 'browser');
     assert.equal(run.samples[0].upstreamAttemptId, fixture.evidenceId);
@@ -96,4 +109,52 @@ test('timed out jobs cannot be claimed or completed later', async () => {
   assert.equal((await old).ok, false);
   assert.equal(mailbox.alive(task.id), false);
   assert.equal(mailbox.finish(task.id, { ok: true }), false);
+});
+
+test('host worker rejects unsupported engines before creating a browser collector', { timeout: 10_000 }, async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'opengeo-worker-cli-'));
+  const tokenFile = join(dir, 'token');
+  await writeFile(tokenFile, token, { mode: 0o600 });
+  const mailbox = new HostBrowserMailbox(token);
+  let finished!: () => void;
+  const finish = new Promise<void>(resolve => { finished = resolve; });
+  let submitted = false;
+  let taskResult: ReturnType<typeof mailbox.submit> | undefined;
+  const server = createServer(async (req, res) => {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const input = JSON.parse(Buffer.concat(chunks).toString());
+    const action = req.url!.split('/').at(-1)!;
+    const nonce = mailbox.authorize(action, req.headers.authorization, input);
+    if (!nonce) { res.writeHead(403); res.end('{}'); return; }
+    if (!submitted) {
+      mailbox.claim();
+      taskResult = mailbox.submit({ kind: 'batch', engine: 'perplexity', prompts: ['Must never reach ChatGPT'] });
+      submitted = true;
+    }
+    const result = action === 'claim' ? { task: mailbox.claim() } : action === 'alive'
+      ? { alive: mailbox.alive(input.id) } : { ok: mailbox.finish(input.id, input.reply) };
+    res.setHeader('x-opengeo-proof', mailbox.sign(action, nonce, result));
+    res.end(JSON.stringify(result));
+    if (action === 'finish') finished();
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const child = spawn(process.execPath, ['--import', 'tsx', 'src/citekeel/browser/host-worker.ts'], {
+    env: { ...process.env, OPENGEO_HOST_WORKER_TOKEN_FILE: tokenFile,
+      OPENGEO_WORKER_APP_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}` },
+    stdio: 'ignore',
+  });
+  const exited = once(child, 'exit');
+  try {
+    await Promise.race([finish, exited.then(() => { throw new Error('worker exited before replying'); })]);
+    assert.ok(taskResult);
+    const result = await taskResult;
+    assert.equal(result.ok, false);
+    assert.match((result as { error: string }).error, /当前仅支持 ChatGPT/);
+  } finally {
+    child.kill('SIGTERM');
+    await exited;
+    await new Promise<void>(resolve => server.close(() => resolve()));
+    await rm(dir, { recursive: true, force: true });
+  }
 });

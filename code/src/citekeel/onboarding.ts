@@ -71,8 +71,8 @@ function fallbackEvidence(html: string): FallbackEvidence | null {
   return text.length >= 40 ? { ...(title ? { title } : {}), ...(derivedDescription ? { description: derivedDescription } : {}), text, headings } : null;
 }
 function attemptReason(error: unknown, deadline: number): string {
-  if (Date.now() >= deadline) return 'Research time budget exhausted.';
   const message = error instanceof Error ? error.message : '';
+  if (message === 'Research time budget exhausted.' || Date.now() >= deadline) return 'Research time budget exhausted.';
   if (/No readable text/i.test(message)) return 'The page returned no readable text; client-rendered pages need browser rendering.';
   if (/No HTML/i.test(message)) return 'The URL did not return HTML.';
   if (/Redirect/i.test(message)) return 'The page redirected off the submitted domain.';

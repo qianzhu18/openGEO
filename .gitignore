@@ -1,4 +1,17 @@
-node_modules/
+# GitHub sync allowlist: keep local documents, publish code only.
+/*
+!/.gitignore
+!/code/
+
+# Markdown stays local, including agent instructions and skills.
+*.[mM][dD]
+*.[mM][dD][xX]
+*.[mM][aA][rR][kK][dD][oO][wW][nN]
+**/docs/
+**/references/
+
+# Dependencies, generated output, runtime data and credentials.
+node_modules
 dist/
 data/
 .env
@@ -8,6 +21,7 @@ test-results/
 playwright-report/
 artifacts/
 code/vendor/niubigeo/dist/
+code/vendor/niubigeo/assets/screenshots/
 .DS_Store
 *.log
 
@@ -17,7 +31,3 @@ code/vendor/niubigeo/dist/
 *.saz
 *.pem
 *.key
-
-# Private case directories and local browser evidence
-/案例/
-*.png

@@ -1,0 +1,295 @@
+{
+  "schemaVersion": "citekeel-public-run/v1",
+  "id": "59ea342d-2568-4540-9307-52e4ff31b8b2",
+  "createdAt": "2026-10-29T12:04:23.674Z",
+  "mode": "replay",
+  "project": {
+    "name": "牛逼Star · 公开归档",
+    "brand": "牛逼Star",
+    "origin": "archive"
+  },
+  "goal": "回放真实历史回答，区分原文、解析失败、引用与正文链接，形成可检查的下一步任务。",
+  "audit": {
+    "planned": 3,
+    "collected": 3,
+    "analyzed": 3,
+    "collectionFailed": 0,
+    "analysisFailed": 0,
+    "mention": {
+      "numerator": 2,
+      "denominator": 3,
+      "value": 0.6666666666666666
+    },
+    "recommendation": {
+      "numerator": 0,
+      "denominator": 1,
+      "value": 0
+    },
+    "judgments": [
+      {
+        "sampleId": "6b23fd71-ac1e-4b00-b03f-3a15360319ed",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "cognized\",\"recognizedBrand\":{\"value\":\"牛逼Star\",\"citationUrls\":[]},\"businessDescription\":{\"value\":\"牛逼Star 是一个安全的 GitHub 项目互赞平台，提供 GitHub",
+          "start": 54,
+          "end": 188
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      },
+      {
+        "sampleId": "d8b7072d-a2c2-47c9-9bf9-da0502a1c08b",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "c2129e79-e3af-4513-9869-14f09f8fd4f0",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "\n  \"recognizedBrand\": {\n    \"value\": \"Niubistar\",\n    \"citationUrls\": []\n  },\n  \"businessDescription\": {\n    \"value\": \"Niubistar 是一家提供在线游",
+          "start": 72,
+          "end": 209
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      }
+    ],
+    "providerCitations": 0,
+    "searchResults": 0,
+    "groundings": 0,
+    "answerUrls": 0,
+    "citationIntegrityFailures": 0,
+    "strata": [
+      {
+        "label": "archive · openai/gpt-4.1-mini · provider_native · 品牌问题 · 00d942a5-5155-42df-a79e-e1488f005048",
+        "count": 1,
+        "collected": 1,
+        "mentioned": 1,
+        "denominator": 1
+      },
+      {
+        "label": "archive · openai/gpt-4o-mini · off · 品牌问题 · 00d942a5-5155-42df-a79e-e1488f005048",
+        "count": 1,
+        "collected": 1,
+        "mentioned": 0,
+        "denominator": 1
+      },
+      {
+        "label": "archive · google/gemini-2.5-flash-lite · off · 品牌问题 · 00d942a5-5155-42df-a79e-e1488f005048",
+        "count": 1,
+        "collected": 1,
+        "mentioned": 1,
+        "denominator": 1
+      }
+    ]
+  },
+  "queries": [
+    {
+      "id": "domain-niubistar.com",
+      "text": "识别域名 niubistar.com",
+      "intent": "域名识别",
+      "branded": true,
+      "origin": "niubigeo 历史测量协议"
+    }
+  ],
+  "actions": [
+    {
+      "title": "核对来源类型和页面证据",
+      "priority": "P1",
+      "kind": "source",
+      "rationale": "目前有 0 个 Provider 引用项，0 个正文链接，二者需要分别核对。",
+      "queryIds": [],
+      "sampleIds": [],
+      "claimIds": [],
+      "acceptance": "能返回原始来源路径，并人工确认页面是否支持对应声明；链接本身不证明已引用。",
+      "id": "action-1",
+      "status": "proposed"
+    }
+  ],
+  "draft": {
+    "title": "内容等待事实确认",
+    "markdown": "",
+    "claimIds": [
+      "c-domain"
+    ],
+    "status": "blocked",
+    "generator": "rules",
+    "warnings": [
+      "目前只有观察域名，请补充并确认产品事实后再生成品牌内容。"
+    ]
+  },
+  "samples": [
+    {
+      "id": "6b23fd71-ac1e-4b00-b03f-3a15360319ed",
+      "queryId": "domain-niubistar.com",
+      "question": "识别域名 niubistar.com",
+      "intent": "域名识别",
+      "branded": true,
+      "origin": "archive",
+      "model": "openai/gpt-4.1-mini · provider_native",
+      "observedAt": "2026-09-08T06:01:10.373Z",
+      "runGroup": "00d942a5-5155-42df-a79e-e1488f005048",
+      "protocolId": "domain-recognition/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "{\"domainRecognition\":\"recognized\",\"analysisStatus\":\"recognized\",\"recognizedBrand\":{\"value\":\"牛逼Star\",\"citationUrls\":[]},\"businessDescription\":{\"value\":\"牛逼Star 是一个安全的 GitHub 项目互赞平台，提供 GitHub Stars 增长服务，帮助开发者提升项目的可信度和曝光度。\",\"citationUrls\":[]},\"productCategory\":{\"value\":\"GitHub Stars 增长服务\",\"citationUrls\":[]},\"competitors\":[{\"name\":\"GitHub Stars Exchange\",\"domain\":\"githubstarsexchange.com\",\"businessDescription\":\"提供 GitHub Stars 增长服务，帮助开发者提升项目的可信度和曝光度。\",\"productCategory\":\"GitHub Stars 增长服务\",\"keywords\":[{\"keyword\":\"GitHub Stars 增长服务\",\"citationUrls\":[]}],\"citationUrls\":[]}],\"brandKeywords\":[{\"keyword\":\"GitHub Stars 增长服务\",\"citationUrls\":[]}],\"unknowns\":[]}",
+      "citations": [],
+      "upstreamAttemptId": "43b92502-c357-4666-a0e7-380e0704e8e6",
+      "costUsd": 0.0140224
+    },
+    {
+      "id": "d8b7072d-a2c2-47c9-9bf9-da0502a1c08b",
+      "queryId": "domain-niubistar.com",
+      "question": "识别域名 niubistar.com",
+      "intent": "域名识别",
+      "branded": true,
+      "origin": "archive",
+      "model": "openai/gpt-4o-mini · off",
+      "observedAt": "2026-09-08T06:01:10.373Z",
+      "runGroup": "00d942a5-5155-42df-a79e-e1488f005048",
+      "protocolId": "domain-recognition/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "{\"domainRecognition\":\"not_recognized\",\"analysisStatus\":\"unknown\",\"recognizedBrand\":{\"value\":null,\"citationUrls\":[]},\"businessDescription\":{\"value\":null,\"citationUrls\":[]},\"productCategory\":{\"value\":null,\"citationUrls\":[]},\"competitors\":[],\"brandKeywords\":[],\"unknowns\":[]}",
+      "citations": [],
+      "upstreamAttemptId": "6f7493e2-3af9-47ed-990e-d1bcb15ca393",
+      "costUsd": 0.0001323
+    },
+    {
+      "id": "c2129e79-e3af-4513-9869-14f09f8fd4f0",
+      "queryId": "domain-niubistar.com",
+      "question": "识别域名 niubistar.com",
+      "intent": "域名识别",
+      "branded": true,
+      "origin": "archive",
+      "model": "google/gemini-2.5-flash-lite · off",
+      "observedAt": "2026-09-08T06:01:10.373Z",
+      "runGroup": "00d942a5-5155-42df-a79e-e1488f005048",
+      "protocolId": "domain-recognition/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "{\n  \"domainRecognition\": \"recognized\",\n  \"analysisStatus\": \"recognized\",\n  \"recognizedBrand\": {\n    \"value\": \"Niubistar\",\n    \"citationUrls\": []\n  },\n  \"businessDescription\": {\n    \"value\": \"Niubistar 是一家提供在线游戏和娱乐服务的公司。\",\n    \"citationUrls\": []\n  },\n  \"productCategory\": {\n    \"value\": \"在线游戏\",\n    \"citationUrls\": []\n  },\n  \"competitors\": [],\n  \"brandKeywords\": [\n    {\n      \"keyword\": \"在线游戏\",\n      \"citationUrls\": []\n    },\n    {\n      \"keyword\": \"娱乐服务\",\n      \"citationUrls\": []\n    }\n  ],\n  \"unknowns\": []\n}",
+      "citations": [],
+      "upstreamAttemptId": "f361c1b5-8d6d-4ed4-a429-98dab92790c9",
+      "costUsd": 0.0000856
+    }
+  ],
+  "calls": [],
+  "steps": [
+    {
+      "id": "ground",
+      "label": "品牌事实",
+      "skill": "brand-grounding",
+      "status": "completed",
+      "evidenceIds": [
+        "c-domain"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.675Z",
+      "summary": "读取 1 项事实，0 项冲突，0 项待确认。",
+      "finishedAt": "2026-10-29T12:04:23.675Z"
+    },
+    {
+      "id": "queries",
+      "label": "问题空间",
+      "skill": "query-discovery",
+      "status": "completed",
+      "evidenceIds": [
+        "domain-niubistar.com"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.675Z",
+      "summary": "采用问题集 v1，本轮 1 个问题。候选来自上游协议，不推断搜索量。",
+      "finishedAt": "2026-10-29T12:04:23.675Z"
+    },
+    {
+      "id": "audit",
+      "label": "可见度诊断",
+      "skill": "visibility-audit",
+      "status": "completed",
+      "evidenceIds": [
+        "6b23fd71-ac1e-4b00-b03f-3a15360319ed",
+        "d8b7072d-a2c2-47c9-9bf9-da0502a1c08b",
+        "c2129e79-e3af-4513-9869-14f09f8fd4f0"
+      ],
+      "executor": "archive",
+      "startedAt": "2026-10-29T12:04:23.676Z",
+      "summary": "3 条样本，3 条有原文，3 条分析完成。仅回放原始数据，未调用模型。",
+      "finishedAt": "2026-10-29T12:04:23.676Z"
+    },
+    {
+      "id": "sources",
+      "label": "信源分析",
+      "skill": "source-analysis",
+      "status": "completed",
+      "evidenceIds": [],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.676Z",
+      "summary": "0 个 Provider 引用、0 个搜索结果、0 个 grounding 来源、0 个正文 URL；分别记录。",
+      "finishedAt": "2026-10-29T12:04:23.676Z"
+    },
+    {
+      "id": "strategy",
+      "label": "策略规划",
+      "skill": "strategy-planning",
+      "status": "completed",
+      "evidenceIds": [
+        "action-1"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.677Z",
+      "summary": "1 个任务。根据事实冲突、失败记录、品牌缺口与来源类型生成任务。",
+      "finishedAt": "2026-10-29T12:04:23.678Z"
+    },
+    {
+      "id": "content",
+      "label": "内容工程",
+      "skill": "content-engineering",
+      "status": "blocked",
+      "evidenceIds": [
+        "c-domain"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.678Z",
+      "summary": "目前只有观察域名，请补充并确认产品事实后再生成品牌内容。",
+      "finishedAt": "2026-10-29T12:04:23.678Z"
+    },
+    {
+      "id": "monitor",
+      "label": "监测比较",
+      "skill": "monitoring-analysis",
+      "status": "completed",
+      "evidenceIds": [
+        "00d942a5-5155-42df-a79e-e1488f005048"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.678Z",
+      "summary": "保留 1 个原始采样批次，按模型、品牌词与非品牌词分组。没有干预对照，不输出提升结论。",
+      "finishedAt": "2026-10-29T12:04:23.679Z"
+    },
+    {
+      "id": "review",
+      "label": "实验复盘",
+      "skill": "experiment-retrospective",
+      "status": "completed",
+      "evidenceIds": [
+        "action-1"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.679Z",
+      "summary": "本轮完成案例回放。计划 3 条，取得原文 3 条。可继续审核内容与执行任务。下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。",
+      "finishedAt": "2026-10-29T12:04:23.679Z"
+    }
+  ],
+  "limitations": [
+    "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+    "引用项存在不证明来源正确，也不证明导致了推荐。",
+    "回答来自 2026-09-08 的上游公开归档，不代表当前模型表现。"
+  ],
+  "review": "本轮完成案例回放。计划 3 条，取得原文 3 条。可继续审核内容与执行任务。下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。"
+}

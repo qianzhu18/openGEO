@@ -1,11 +1,12 @@
 import { PromptService, WorkspaceError } from './prompts.js';
+import { BrandSourceService } from './brand-sources.js';
 import { RecordingService } from './recordings.js';
 import { createBrowserCollector, type BrowserEngine } from './browser/collector.js';
-import { HostBrowserMailbox, validBrowserPrompts } from './browser/host-mailbox.js';
+import { HostBrowserMailbox } from './browser/host-mailbox.js';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { loadDotEnv, hasProviderKey, resolveProviderKey } from '../../vendor/niubigeo/src/config/env.js';
 import { loadCases } from './cases.js';
 import { Store } from './storage.js';
@@ -14,18 +15,18 @@ import { researchWebsite } from './onboarding.js';
 import { enrichWebsiteResearch } from './semantic-research.js';
 import { createRun, executeRun } from './engine.js';
 import { validateImport } from './analysis.js';
-import { exportRun, reportMarkdown } from './report.js';
+import { diagnoseRun } from './diagnosis.js';
+import { exportRun, reportMarkdown, reportHtml, evidenceMarkdown, reportEvidenceHtml } from './report.js';
+import { analyzeRun, type AnalyticsFilter } from './analytics.js';
 import { SKILLS, type AgentRun, type LiveConfig, type MeasurementTarget, type Project, type Query } from './types.js';
+import { parseQuestionSet } from './question-set.js';
+import { configureNetwork, networkRoute } from './network.js';
+import { BATCH_LIMITS } from './batch-policy.js';
+import { diagnosisRoutes } from './diagnosis-routes.js';
 
+const { version: APP_VERSION } = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as { version: string };
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
-const DIAGNOSIS_MODEL_ENV: Record<string, string> = {
-  chatgpt: 'OPENGEO_CHATGPT_API_MODEL', gemini: 'OPENGEO_GEMINI_MODEL', perplexity: 'OPENGEO_PERPLEXITY_MODEL',
-  deepseek: 'OPENGEO_DEEPSEEK_MODEL', qwen: 'OPENGEO_QWEN_MODEL', seed: 'OPENGEO_SEED_MODEL',
-};
-const OPENROUTER_DIAGNOSIS_MODELS = {
-  chatgpt: 'openai/gpt-6-luna', gemini: 'google/gemini-3.8-flash', perplexity: 'perplexity/sonar',
-  deepseek: 'deepseek/deepseek-v4.1-flash', qwen: 'qwen/qwen3.8-flash', seed: 'bytedance-seed/seed-2-1-turbo',
-} as const;
+const MEASUREMENT_PROVIDERS = [...PROVIDERS, 'cloro'];
 async function body(req: IncomingMessage): Promise<any> {
   let size = 0; const chunks: Buffer[] = [];
   for await (const chunk of req) {
@@ -44,28 +45,30 @@ function send(res: ServerResponse, status: number, value: unknown) {
 }
 function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.brand, origin: p.origin, domain: p.domain, description: p.description, sampleCount: p.samples.length, queryCount: p.queries.length }; }
 function diagnosisTemplates() {
-  return [
-    { id: 'chatgpt', platform: 'ChatGPT', preferredChannel: 'web' as const, webEngine: 'chatgpt' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.chatgpt] || OPENROUTER_DIAGNOSIS_MODELS.chatgpt, webSearch: true },
-    { id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.gemini] || OPENROUTER_DIAGNOSIS_MODELS.gemini, webSearch: true },
-    { id: 'perplexity', platform: 'Perplexity', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.perplexity] || OPENROUTER_DIAGNOSIS_MODELS.perplexity, webSearch: true },
-    { id: 'deepseek', platform: 'DeepSeek', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.deepseek] || OPENROUTER_DIAGNOSIS_MODELS.deepseek, webSearch: false },
-    { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.qwen] || OPENROUTER_DIAGNOSIS_MODELS.qwen, webSearch: false },
-    { id: 'seed', platform: '豆包 Seed', preferredChannel: 'api' as const, provider: 'openrouter', model: process.env[DIAGNOSIS_MODEL_ENV.seed] || OPENROUTER_DIAGNOSIS_MODELS.seed, webSearch: false },
-  ].map(target => ({ ...target, configured: target.provider ? hasProviderKey(target.provider) : false }));
+  return diagnosisRoutes().map(target => ({ ...target, configured: hasProviderKey(target.provider!) }));
 }
-function hostWebCollector(worker: HostBrowserMailbox) {
-  return { engine: 'chatgpt', ask: async (prompt: string) => {
-    const [row] = await worker.batch('chatgpt', [prompt]);
+function hostWebCollector(worker: HostBrowserMailbox, engine: BrowserEngine) {
+  return { engine, ask: async (prompt: string) => {
+    const [row] = await worker.batch(engine, [prompt]);
     if (!row || row.ok !== true) throw new Error(row && row.ok === false ? row.error : '网页采集没有返回记录。');
     return row.data;
   }, async close() {} };
 }
+import { initializeSamplingQueue, redriveJobs } from './sampling-queue.js';
+
 export async function createApp(store = new Store(), options: { research?: typeof researchWebsite; enrich?: typeof enrichWebsiteResearch; browserWorker?: HostBrowserMailbox } = {}) {
-  await store.initialize(await loadCases());
+  const examples = await loadCases();
+  const exampleIds = new Set(examples.map(project => project.id));
+  const workerToken=randomUUID();
+  store.acquireWorker(workerToken);
+  try { await store.initialize(examples); } catch(error) { store.releaseWorker(workerToken); store.close(); throw error; }
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
   const recordings = new RecordingService(store);
+  const brandSources = new BrandSourceService(store, options.research);
   let activeRunId: string | null = null;
+  let liveRun: AgentRun | null = null;
+  let closed=false;
   const server = createServer(async (req, res) => {
     try {
       const host = req.headers.host || '';
@@ -74,7 +77,7 @@ export async function createApp(store = new Store(), options: { research?: typeo
       if (req.headers.origin && req.headers.origin !== `http://${host}`) return send(res, 403, { error: '请求来源与本地工作台不一致' });
       const url = new URL(req.url || '/', `http://${host}`), path = url.pathname;
       const method = req.method || 'GET';
-      if (method === 'GET' && ['/', '/app.js', '/style.css', '/create-workspace', '/onboarding.js', '/onboarding.css', '/workspace', '/workspace.js', '/workspace.css'].includes(path)) {
+      if (method === 'GET' && ['/', '/app.js', '/brand-sources.js', '/analytics-view.js', '/analytics.css', '/readability.css', '/chart-interactions.js', '/ui-icons.js', '/style.css', '/create-workspace', '/onboarding.js', '/onboarding.css', '/workspace', '/workspace.js', '/workspace.css'].includes(path)) {
         const file = path === '/' ? 'index.html' : path === '/create-workspace' ? 'onboarding.html' : path === '/workspace' ? 'workspace.html' : path.slice(1);
         const mime = file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html';
         res.writeHead(200, { 'content-type': `${mime}; charset=utf-8`, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff',
@@ -115,10 +118,24 @@ export async function createApp(store = new Store(), options: { research?: typeo
         }
         return send(res, 405, { error: 'Unsupported research operation.' });
       }
-      if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: '0.1.0', upstream: 'niubigeo v0.3.2', skills: SKILLS,
-        providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
-        diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
-      if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(projectSummary));
+      if (path === '/api/status' && method === 'GET') return send(res, 200, { name: 'CiteKeel', version: APP_VERSION, network: networkRoute(), upstream: 'niubigeo v0.3.2', skills: SKILLS,
+        batchLimits: BATCH_LIMITS, providers: PROVIDERS.map(id => ({ id, configured: hasProviderKey(id) })),
+        monitorProviders: [{ id: 'cloro', configured: hasProviderKey('cloro') }], diagnosisTargets: diagnosisTemplates(), activeRunCount: (await store.list<AgentRun>('runs')).filter(r => r.status === 'running').length });
+      if (path === '/api/provider-session' && method === 'POST') {
+        const input = await body(req);
+        // Process memory only: no credential is returned or persisted.
+        for (const provider of ['openrouter', 'cloro']) {
+          if (input[provider] !== undefined) {
+            const key = textField(input[provider], 'API Key', 2000);
+            if (key) process.env[provider === 'cloro' ? 'CLORO_API_KEY' : 'OPENROUTER_API_KEY'] = key;
+          }
+        }
+        return send(res, 200, { ok: true });
+      }
+      if (path === '/api/projects' && method === 'GET') return send(res, 200, (await store.list<Project>('projects')).map(project => ({ ...projectSummary(project), example: exampleIds.has(project.id) })));
+      if (path === '/api/deleted-projects' && method === 'GET') return send(res, 200, await store.deletedProjects());
+      const restoreMatch = path.match(/^\/api\/deleted-projects\/([a-zA-Z0-9_-]+)\/restore$/);
+      if (restoreMatch && method === 'POST') return send(res, 200, await store.restoreProject(restoreMatch[1]));
       if (path === '/api/projects' && method === 'POST') {
         const input = await body(req), brand = textField(input.brand, '品牌', 80), industry = textField(input.industry, '行业', 100);
         if (!brand || !industry) throw new Error('请填写品牌和行业');
@@ -136,6 +153,14 @@ export async function createApp(store = new Store(), options: { research?: typeo
           }), queries: strings.map((text, i) => ({ id: `q-${i + 1}`, text, intent: i === 0 ? '品牌核验' : '供应商发现', branded: i === 0, origin: '本地模板，待用户选择' })),
           queryVersion: 1, samples: [], createdAt: now, updatedAt: now };
         await store.save('projects', project); return send(res, 201, project);
+      }
+      const sourceMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/(brand-sources|brand-claims)$/);
+      if (sourceMatch && method === 'POST') {
+        const input = await body(req);
+        const outcome = sourceMatch[2] === 'brand-sources'
+          ? await brandSources.add(sourceMatch[1], input)
+          : await brandSources.addClaim(sourceMatch[1], input);
+        return send(res, 200, outcome);
       }
       const recordingMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/recordings(?:\/([a-zA-Z0-9_-]+))?(?:\/(collect))?$/);
       if (recordingMatch) {
@@ -160,11 +185,48 @@ export async function createApp(store = new Store(), options: { research?: typeo
         if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
         return send(res,405,{error:'Unsupported prompt operation.'});
       }
-      const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations))?$/);
+      const spacesMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/diagnosis-spaces(?:\/([a-zA-Z0-9_-]+))?$/);
+      if (spacesMatch) {
+        const projectId = spacesMatch[1], spaceId = spacesMatch[2];
+        const project = await store.get<Project>('projects', projectId);
+        if (!project) return send(res, 404, { error: '项目不存在' });
+        if (method === 'GET' && !spaceId) return send(res, 200, project.diagnosisSpaces || []);
+        const input = await body(req);
+        if (method === 'POST' && !spaceId) {
+          const result = await store.updateProject(projectId, current => {
+            const existing = current.diagnosisSpaces?.find(space => space.queryVersion === current.queryVersion && JSON.stringify(space.queries) === JSON.stringify(current.queries));
+            if (existing) return existing;
+            const now = new Date().toISOString();
+            const space: NonNullable<Project['diagnosisSpaces']>[number] = { id: randomUUID(), name: `问题集 v${current.queryVersion}`, queryVersion: current.queryVersion, queries: structuredClone(current.queries), targetIds: [] as string[], createdAt: now, updatedAt: now };
+            (current.diagnosisSpaces ||= []).push(space); return space;
+          });
+          return send(res, 200, result.result);
+        }
+        if (method === 'PATCH' && spaceId) {
+          if (!Array.isArray(input.targetIds) || !input.targetIds.length || input.targetIds.some((id: unknown) => !diagnosisTemplates().some(t => t.id === id)) || new Set(input.targetIds).size !== input.targetIds.length) throw new WorkspaceError('请选择有效且不重复的平台');
+          const result = await store.updateProject(projectId, current => {
+            const space = current.diagnosisSpaces?.find(s => s.id === spaceId);
+            if (!space) throw new WorkspaceError('诊断空间不存在');
+            if (input.queryIds !== undefined) {
+              if (!Array.isArray(input.queryIds) || !input.queryIds.length || input.queryIds.length > BATCH_LIMITS.questions || new Set(input.queryIds).size !== input.queryIds.length || input.queryIds.some((id: unknown) => !space.queries.some(q=>q.id===id))) throw new WorkspaceError('请选择空间内 1–50 个不重复的问题');
+              space.selectedQueryIds = [...input.queryIds];
+            }
+            space.targetIds = [...input.targetIds]; space.updatedAt = new Date().toISOString(); return space;
+          });
+          return send(res, 200, result.result);
+        }
+        return send(res, 405, { error: '不支持的空间操作' });
+      }
+      const projectMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)(?:\/(claims|queries|samples|observations|analytics))?$/);
       if (projectMatch) {
         const project = await store.get<Project>('projects', projectMatch[1]); if (!project) return send(res, 404, { error: '项目不存在' });
         const action = projectMatch[2];
-        if (method === 'GET' && !action) return send(res, 200, project);
+        if (method === 'DELETE' && !action) {
+          if (activeRunId) return send(res, 409, { error: '当前有运行正在执行，请等待结束后删除项目' });
+          return send(res, 200, await store.deleteProject(project.id));
+        }
+        if (method === 'GET' && action === 'analytics') { const days = Number(url.searchParams.get('days')); return send(res, 200, analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }, { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined })); }
+        if (method === 'GET' && !action) return send(res, 200, { ...project, analytics: analyzeRun({ ...createRun(project, 'replay'), id: 'project-evidence', createdAt: project.updatedAt, queries: project.queries, samples: project.samples, status: 'completed' }) });
         if (method === 'GET' && action === 'observations') {
           const runs = (await store.list<AgentRun>('runs')).filter(r => r.projectId === project.id);
           const observations = [...project.samples, ...runs.flatMap(r => r.samples)];
@@ -182,19 +244,20 @@ export async function createApp(store = new Store(), options: { research?: typeo
           const claim = project.claims.find(c => c.id === input.claimId);
           if (!claim) throw new Error('事实不存在');
           if (!project.sources.some(s => s.id === input.sourceId)) throw new Error('需要选择存在的资料来源');
+          if (!claim.sourceIds.includes(input.sourceId) && !claim.alternatives?.some(option => option.sourceId === input.sourceId)) throw new Error('来源必须属于当前事实');
           if (claim.status === 'conflict') {
             const option = claim.alternatives?.find(a => a.sourceId === input.sourceId);
             if (!option) throw new Error('需要选择一个事实口径'); claim.value = option.value;
           }
           claim.status = 'confirmed'; claim.confirmation = { sourceId: input.sourceId, at: new Date().toISOString() };
         } else if (method === 'PUT' && action === 'queries') {
-          if (!Array.isArray(input.questions) || input.questions.length < 1 || input.questions.length > 40) throw new Error('问题集需要 1–40 条问题');
-          const questions: string[] = input.questions.map((s: unknown) => textField(s, '问题', 800)).filter(Boolean);
+          const questions: string[] = parseQuestionSet(input.questions, { min: 1, max: BATCH_LIMITS.questions, maxLength: 800 }).questions;
+          const changed = JSON.stringify(questions) !== JSON.stringify(project.queries.map(q=>q.text));
           project.queries = [...new Set<string>(questions)].map((text, i): Query => ({
             ...project.queries.find(q => q.text === text),
             id: project.queries.find(q => q.text === text)?.id || `q-v${project.queryVersion + 1}-${i + 1}`, text,
             intent: project.queries.find(q => q.text === text)?.intent || '用户问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '用户确认的问题集',
-          })); project.queryVersion += 1;
+          })); if (changed) project.queryVersion += 1;
         } else if (method === 'POST' && action === 'samples') {
           const imported = validateImport(input.samples);
           let added = false;
@@ -215,12 +278,24 @@ export async function createApp(store = new Store(), options: { research?: typeo
       }
       if (path === '/api/runs' && method === 'GET') {
         const runs = (await store.list<AgentRun>('runs')).filter(r => !url.searchParams.get('projectId') || r.projectId === url.searchParams.get('projectId'));
-        return send(res, 200, runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 60).map(r => ({ id: r.id, projectId: r.projectId, createdAt: r.createdAt, status: r.status, mode: r.mode, goal: r.goal, sampleCount: r.samples.length })));
+        return send(res, 200, runs.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 60).map(r => ({ id: r.id, projectId: r.projectId, createdAt: r.createdAt, status: r.status, mode: r.mode, spaceId: r.spaceId, queryVersion: r.projectSnapshot.queryVersion, goal: r.goal, sampleCount: r.samples.length })));
       }
       if (path === '/api/runs' && method === 'POST') {
-        if ((await store.list<AgentRun>('runs')).some(r => ['queued', 'running'].includes(r.status))) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const input = await body(req), project = await store.get<Project>('projects', String(input.projectId || ''));
         if (!project) throw new Error('请选择项目');
+        const {apiKey:_key,apiKeys:_keys,requestKey,...submissionInput}=input;
+        const fingerprint=createHash('sha256').update(JSON.stringify(submissionInput)).digest('hex');
+        if(requestKey!==undefined && (typeof requestKey!=='string' || !/^[a-zA-Z0-9_-]{8,100}$/.test(requestKey))) throw new Error('无效的提交标识');
+        if(requestKey) {
+          const previous=store.submission(project.id,requestKey);
+          if(previous) return send(res,previous.fingerprint===fingerprint?202:409,previous.fingerprint===fingerprint?{id:previous.run_id,reused:true}:{error:'同一提交标识不能用于不同输入'});
+        }
+
+        if (input.spaceId) {
+          const space = project.diagnosisSpaces?.find(s => s.id === input.spaceId);
+          if (!space) throw new WorkspaceError('诊断空间不属于当前项目');
+          project.queries = structuredClone(space.queries); project.queryVersion = space.queryVersion;
+        }
         const mode = input.mode === 'live' ? 'live' : 'replay'; let config: LiveConfig | undefined;
         const channel = input.channel === 'browser' ? 'browser' : 'api';
         let browserEngine: BrowserEngine | undefined;
@@ -237,8 +312,8 @@ export async function createApp(store = new Store(), options: { research?: typeo
             });
             project.queries = selected;
           } else if (Array.isArray(input.questions)) {
-            project.queries = input.questions.slice(0, maxQuestions).map((s: unknown, i: number): Query => {
-              const text = textField(s, '问题', 800); if (!text) throw new Error('采样问题不能为空');
+            const confirmedQuestions = parseQuestionSet(input.questions, { min: 1, max: maxQuestions, maxLength: 800 }).questions;
+            project.queries = confirmedQuestions.map((text, i): Query => {
               const known = project.queries.find(q => q.text === text);
               if (known?.status && known.status !== 'active') throw new WorkspaceError('Track a suggested or inactive prompt before collection.');
               return known || { id: `adhoc-${randomUUID()}`, text, intent: '用户确认的 API 采样问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '本轮确认' };
@@ -251,15 +326,12 @@ export async function createApp(store = new Store(), options: { research?: typeo
             const apiKey = textField(input.apiKey, 'API Key', 2000) || resolveProviderKey(provider);
             config = { provider, model, apiKey, maxQuestions, webSearch: input.webSearch === true };
           } else {
-            if (input.engine && input.engine !== 'chatgpt') throw new WorkspaceError('网页采样目前只支持 ChatGPT。');
-            browserEngine = 'chatgpt';
-            project.queries = project.queries.slice(0, maxQuestions);
-            if (!validBrowserPrompts(project.queries.map(q => q.text))) throw new WorkspaceError('网页采样需要 1–3 条有效问题。');
+            browserEngine = input.engine === 'perplexity' ? 'perplexity' : 'chatgpt';
           }
         }
         if (input.diagnosis === true) {
           if (mode !== 'live') throw new WorkspaceError('Diagnosis must start a live run.');
-          const maxQuestions = Math.min(10, Math.max(1, Number(input.maxQuestions) || 5));
+          const maxQuestions = Math.min(BATCH_LIMITS.questions, Math.max(1, Number(input.maxQuestions) || 5));
           const activeQueries = project.queries.filter(q => !q.status || q.status === 'active');
           let selectedQueries: Query[];
           if (Array.isArray(input.queryIds)) {
@@ -272,6 +344,11 @@ export async function createApp(store = new Store(), options: { research?: typeo
           } else selectedQueries = activeQueries.slice(0, maxQuestions);
           project.queries = selectedQueries;
 
+          const managedTargets = Array.isArray(input.targetIds) ? diagnosisTemplates() : undefined;
+          if (managedTargets) {
+            if (input.targetIds.some((id: unknown) => !managedTargets.some(t => t.id === id))) throw new WorkspaceError('Unknown diagnosis platform.');
+            input.targets = input.targetIds.map((id: string) => managedTargets.find(t => t.id === id));
+          }
           if (!Array.isArray(input.targets) || !input.targets.length || input.targets.length > 6) throw new WorkspaceError('Select 1–6 diagnosis platforms.');
           const parsedTargets: MeasurementTarget[] = input.targets.map((value: any): MeasurementTarget => {
             const id = textField(value?.id, '平台 ID', 40), platform = textField(value?.platform, '平台名称', 80);
@@ -279,10 +356,17 @@ export async function createApp(store = new Store(), options: { research?: typeo
             const provider = value?.provider === undefined || value?.provider === null || value?.provider === '' ? undefined : textField(value.provider, 'Provider', 30);
             const model = value?.model === undefined || value?.model === null || value?.model === '' ? undefined : textField(value.model, '模型', 200);
             if (!/^[a-z0-9][a-z0-9-]*$/.test(id) || !platform) throw new WorkspaceError('Invalid diagnosis platform.');
-            if (provider && !PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
+            if (provider && !MEASUREMENT_PROVIDERS.includes(provider)) throw new WorkspaceError('Unsupported diagnosis provider.');
+            if (provider === 'cloro' && (value?.webSearch === true || value?.searchMode === 'provider_native' || value?.browserPreference === 'browser_first')) throw new WorkspaceError('Cloro monitor search execution is not a caller-controlled model search toggle.');
+            if (provider === 'cloro' && (preferredChannel !== 'api' || !['chatgpt', 'gemini'].includes(model || ''))) throw new WorkspaceError('Cloro only supports the chatgpt and gemini monitor targets.');
             if ((provider && !model) || (!provider && model)) throw new WorkspaceError('API fallback needs both provider and model.');
             if (preferredChannel === 'web' && value?.webEngine && value.webEngine !== 'chatgpt') throw new WorkspaceError('Only the ChatGPT web adapter is implemented.');
-            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: value?.webSearch === true };
+            const searchMode = value?.searchMode === 'browser_ui' || value?.searchMode === 'provider_native' || value?.searchMode === 'disabled'
+              ? value.searchMode : (value?.webSearch === true ? 'provider_native' : 'disabled');
+            const browserPreference = value?.browserPreference === 'browser_first' || value?.browserPreference === 'api_only'
+              ? value.browserPreference : (searchMode === 'browser_ui' || preferredChannel === 'web' ? 'browser_first' : 'api_only');
+            const apiFallback = managedTargets?.find(t => t.id === id)?.apiFallback;
+            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: searchMode === 'provider_native', searchMode, browserPreference, ...(apiFallback ? { apiFallback: structuredClone(apiFallback) } : {}) };
           });
           if (new Set(parsedTargets.map(target => target.id)).size !== parsedTargets.length) throw new WorkspaceError('Diagnosis platforms must be unique.');
           if (!parsedTargets.some(target => target.preferredChannel === 'web' || target.provider)) throw new WorkspaceError('Select at least one collectable platform.');
@@ -296,43 +380,106 @@ export async function createApp(store = new Store(), options: { research?: typeo
             if (!key) throw new WorkspaceError(`Provider ${provider} is not configured for API fallback.`);
             apiKeys[provider!] = key;
           }
-          diagnosis = { targets: parsedTargets, apiKeys };
+          diagnosis = { targets: parsedTargets, apiKeys, durableQueue: parsedTargets.every(t=>t.preferredChannel==='api' && t.browserPreference!=='browser_first'), batch:true };
           diagnosisTargets = parsedTargets;
           browserEngine = parsedTargets.some(target => target.preferredChannel === 'web' && target.webEngine === 'chatgpt') ? 'chatgpt' : undefined;
         }
         if (activeRunId) return send(res, 409, { error: '当前有一轮执行中，请等待完成' });
         const run = createRun(project, mode, textField(input.goal, '目标', 2000, project.goal) || project.goal, config, diagnosisTargets);
-        activeRunId = run.id;
-        try { await store.save('runs', run); } catch (error) { activeRunId = null; throw error; }
+        if (input.spaceId) run.spaceId = input.spaceId;
+        run.projectSnapshot.diagnosisSpaces = undefined;
+        if (diagnosis?.durableQueue) {
+          run.queries=structuredClone(project.queries);
+          run.measurementUnits=run.queries.flatMap(query=>diagnosisTargets!.map(target=>({id:`${query.id}--${target.id}`,queryId:query.id,question:query.text,targetId:target.id,platform:target.platform,preferredChannel:target.preferredChannel,status:'planned',attempts:[]})));
+          initializeSamplingQueue(run,true);
+          if(requestKey) run.submission={key:requestKey,fingerprint};
+        }
+        activeRunId = run.id; liveRun=run;
+        try { await store.save('runs', run); } catch (error) { activeRunId = null; liveRun=null; throw error; }
         void (async () => {
           let collector: { close: () => Promise<void> } | undefined;
           try {
             const browserRuntime = browserEngine
-              ? options.browserWorker ? hostWebCollector(options.browserWorker) : await createBrowserCollector(browserEngine)
+              ? options.browserWorker ? hostWebCollector(options.browserWorker, browserEngine) : await createBrowserCollector(browserEngine)
               : undefined;
             collector = browserRuntime;
             await executeRun(run, store, config, browserRuntime, diagnosis ? { ...diagnosis, ...(browserRuntime ? { browser: browserRuntime } : {}) } : undefined);
           } catch (error) {
             run.status = 'failed'; run.error = error instanceof Error ? error.message : '执行异常，已有证据已保留'; await store.save('runs', run);
           } finally {
-            await collector?.close().catch(() => {}); activeRunId = null;
+            await collector?.close().catch(() => {}); activeRunId = null; liveRun=null;
+            if(closed) {store.releaseWorker(workerToken);store.close();}
           }
         })();
         return send(res, 202, { id: run.id });
       }
-      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(report|export|actions|draft|publications))?$/);
+      const runMatch = path.match(/^\/api\/runs\/([a-zA-Z0-9_-]+)(?:\/(queue|stop|resume|redrive|reconcile|report|report-html|report-evidence|report-evidence-html|analytics|export|actions|draft|publications))?$/);
       if (runMatch) {
-        const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run) return send(res, 404, { error: '运行不存在' });
+        const run = await store.get<AgentRun>('runs', runMatch[1]); if (!run || (url.searchParams.has('projectId') && url.searchParams.get('projectId') !== run.projectId)) return send(res, 404, { error: '运行不存在或不属于当前项目' });
         const action = runMatch[2];
-        if (method === 'GET' && !action) return send(res, 200, run);
+        if(method==='GET' && action==='queue') return send(res,200,run.samplingQueue || {error:'历史运行没有持久队列'});
+        if(method==='POST' && action==='stop') {
+          if(!liveRun?.samplingQueue || liveRun.id!==run.id) return send(res,409,{error:'没有可停止的运行'});
+          liveRun.samplingQueue.stopRequested=true; await store.save('runs',liveRun);
+          return send(res,202,{id:run.id,message:'停止后续发送；已发出的请求可能仍在生成或收费。'});
+        }
+        if(method==='POST' && ['resume','redrive','reconcile'].includes(action || '')) {
+          if(activeRunId) return send(res,409,{error:'当前有一轮执行中'});
+          if(!run.samplingQueue || !run.measurementTargets) throw new Error('历史运行不可按队列恢复');
+          const input=await body(req);
+          const recoveryJobs=action==='reconcile' && typeof input.jobId==='string' ? [input.jobId] : undefined;
+          if(action==='reconcile') {
+            const job=run.samplingQueue.jobs.find(j=>j.id===input.jobId);
+            if(run.samplingQueue.version!=='sampling-queue/v2' || !job?.remote || job.remote.status==='FAILED' || !['review_required','paused','queued'].includes(job.state)) throw new Error('请选择有远端任务身份的待核对任务');
+            // A submitted identity expires at the provider after ~24h. Never create a new identity here.
+            job.state='queued';job.reason=undefined;
+            job.remote.deadlineAt=new Date(Date.now()+(run.samplingQueue.policy?.remoteDeadlineMs || 20*60_000)).toISOString();
+            job.remote.nextPollAt=undefined;
+            if(run.samplingQueue.blockedProviders) delete run.samplingQueue.blockedProviders.cloro;
+          } else if(action==='redrive') {
+            if(!Array.isArray(input.jobIds) || input.jobIds.some((id:unknown)=>typeof id!=='string')) throw new Error('请选择任务');
+            redriveJobs(run,input.jobIds,input.acknowledgeCost===true);
+            for(const id of input.jobIds) {const job=run.samplingQueue.jobs.find(j=>j.id===id)!;const provider=run.measurementTargets.find(t=>t.id===job.targetId)?.provider;if(provider && run.samplingQueue.blockedProviders) delete run.samplingQueue.blockedProviders[provider];}
+          } else {
+            for(const job of run.samplingQueue.jobs) if(job.state==='paused' && job.reason==='用户停止了后续发送。') {job.state='queued';job.reason=undefined;}
+          }
+          if(!run.samplingQueue.jobs.some(j=>['queued','retry_wait'].includes(j.state))) throw new Error('没有可继续的任务；失败或费用不确定的任务需明确确认后重投');
+          const apiKeys:Record<string,string>={};
+          for(const target of run.measurementTargets.filter(t=>!recoveryJobs || run.samplingQueue!.jobs.some(j=>recoveryJobs.includes(j.id) && j.targetId===t.id))) {
+            const key=resolveProviderKey(target.provider!);
+            if(!key) throw new Error(`请先在服务商设置配置 ${target.provider}`);
+            apiKeys[target.provider!]=key;
+          }
+          if(activeRunId) return send(res,409,{error:'当前有一轮执行中'});
+          run.samplingQueue.stopRequested=false;run.status='queued';run.error=undefined;run.finishedAt=undefined;
+          activeRunId=run.id;liveRun=run;
+          try {await store.save('runs',run);} catch(error) {activeRunId=null;liveRun=null;throw error;}
+          void executeRun(run,store,undefined,undefined,{targets:run.measurementTargets,apiKeys,durableQueue:true,jobIds:recoveryJobs}).catch(()=>{}).finally(()=>{activeRunId=null;liveRun=null;if(closed){store.releaseWorker(workerToken);store.close();}});
+          return send(res,202,{id:run.id});
+        }
+
+        const days = Number(url.searchParams.get('days'));
+        const filter: AnalyticsFilter = { model: url.searchParams.get('model') || undefined, channel: url.searchParams.get('channel') || undefined, days: [7,30].includes(days) ? days : undefined };
+        if (method === 'GET' && !action) return send(res, 200, { ...run, analytics: analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter) });
+        if (method === 'GET' && action === 'analytics') return send(res, 200, {...analyzeRun(run, filter), diagnosis: diagnoseRun(run, filter)});
+        if (method === 'GET' && action === 'report-html') {
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-${run.id}.html"`, 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(reportHtml(run, filter));
+        }
+        if (method === 'GET' && action === 'report-evidence-html') {
+          res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-${run.id}-evidence.html"`, 'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(reportEvidenceHtml(run, filter));
+        }
+        if (method === 'GET' && action === 'report-evidence') {
+          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="opengeo-evidence-${run.id}.md"` }); return res.end(evidenceMarkdown(run, filter));
+        }
         if (method === 'GET' && action === 'export') return send(res, 200, exportRun(run));
         if (method === 'GET' && action === 'report') {
-          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="citekeel-${run.id}.md"` }); return res.end(reportMarkdown(run));
+          res.writeHead(200, { 'content-type': 'text/markdown; charset=utf-8', 'content-disposition': `attachment; filename="citekeel-${run.id}.md"` }); return res.end(reportMarkdown(run, filter));
         }
         if (['queued', 'running'].includes(run.status)) return send(res, 409, { error: '运行结束后才能修改交付记录' });
         const input = await body(req);
         if (method === 'PATCH' && action === 'actions') {
-          const item = run.actions.find(a => a.id === input.id); if (!item || !['proposed', 'in_progress', 'done'].includes(input.status)) throw new Error('任务或状态无效'); item.status = input.status;
+          const item = diagnoseRun(run).actions.find(a => a.id === input.id); if (!item || !['proposed', 'in_progress', 'done', 'skipped'].includes(input.status)) throw new Error('任务或状态无效');
+          run.actionStates = {...run.actionStates, [item.id]: input.status};
         } else if (method === 'PATCH' && action === 'draft') {
           if (!run.draft || run.draft.status === 'blocked') throw new Error('请先解决事实阻塞并重新运行');
           run.draft.markdown = textField(input.markdown, '草稿', 50000, run.draft.markdown);
@@ -343,16 +490,17 @@ export async function createApp(store = new Store(), options: { research?: typeo
           if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('发布链接仅支持 http 或 https');
           run.publications.push({ id: randomUUID(), url: parsed.toString(), recordedAt: new Date().toISOString(), note: textField(input.note, '说明', 1000), state: 'recorded_not_verified' });
         } else return send(res, 405, { error: '不支持的运行操作' });
-        await store.save('runs', run); return send(res, 200, run);
+        await store.save('runs', run); return send(res, 200, {...run, diagnosis: diagnoseRun(run)});
       }
       return send(res, 404, { error: '没有这个页面或接口' });
     } catch (error) { send(res, error instanceof WorkspaceError ? error.status : 400, { error: error instanceof Error ? error.message : '请求失败', ...(error instanceof WorkspaceError ? {code:error.code} : {}) }); }
   });
+  server.on('close',()=>{closed=true;if(!activeRunId){store.releaseWorker(workerToken);store.close();}else if(liveRun?.samplingQueue)liveRun.samplingQueue.stopRequested=true;});
   return { server, store };
 }
 
 if (process.argv[1]?.endsWith('/server.ts') || process.argv[1]?.endsWith('/server.js')) {
-  loadDotEnv(); const port = Number(process.env.CITEKEEL_PORT || 8847);
+  loadDotEnv(); configureNetwork(); const port = Number(process.env.CITEKEEL_PORT || 8847);
   const container = process.env.OPENGEO_CONTAINER === '1';
   const browserWorker = container ? new HostBrowserMailbox((await readFile('/run/secrets/opengeo_worker_token', 'utf8')).trim()) : undefined;
   const { server } = await createApp(undefined, { browserWorker });

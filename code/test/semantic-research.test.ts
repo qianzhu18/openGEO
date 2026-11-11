@@ -17,7 +17,7 @@ function output(sourceId: string) {
 test('single semantic operation produces source-linked English suggestions with stable IDs and recorded model metadata', async () => {
   const research = await fixture(), payload = output(research.sources[0]!.id); let calls = 0;
   const generate = async (request: import('../src/citekeel/semantic-research.js').SemanticResearchRequest): Promise<SemanticResearchResponse> => {
-    calls++; assert.equal(request.maxTokens, 2500); assert.equal(request.webSearchEnabled, false); assert.ok(request.prompt.includes('untrusted DATA')); assert.ok(!request.prompt.includes(config.apiKey));
+    calls++; assert.equal(request.maxTokens, 2500); assert.equal(request.webSearchEnabled, false); assert.ok(request.prompt.includes('untrusted DATA')); assert.ok(request.prompt.includes('"targetLanguage":"English"')); assert.ok(!request.prompt.includes(config.apiKey));
     return { text: JSON.stringify(payload), rawResponse: { choices: [{ finish_reason: 'stop' }] }, costUsd: 0.001 };
   };
   const result = await enrichWebsiteResearch(research, config, { generate });
@@ -27,6 +27,36 @@ test('single semantic operation produces source-linked English suggestions with 
   assert.ok(result.claims.every(claim => claim.status === 'unconfirmed'));
   const again = await enrichWebsiteResearch(research, config, { generate }); assert.deepEqual(result.prompts.map(p => p.id), again.prompts.map(p => p.id));
   assert.equal(research.methodology, 'source-derived-templates/v1');
+});
+test('Chinese semantic research requests Chinese buyer questions and replaces the no-model template warning only after success', async () => {
+  const research = await researchWebsite({ url: 'https://acme.example', language: 'zh', country: 'CN' }, { fetchPage: async url => ({ url, contentType: 'text/html', text: '<title>Acme | Analytics</title><meta name="description" content="Product analytics for software teams."><h1>Product analytics</h1>' }) });
+  const payload = output(research.sources[0]!.id);
+  payload.profile.description = '为软件团队提供产品分析工具。';
+  payload.profile.industry = '产品分析';
+  payload.topics[0]!.name = '软件团队的产品分析工具选型';
+  payload.prompts[0]!.text = 'Acme 如何帮助软件团队分析产品使用情况？';
+  payload.prompts[1]!.text = '小型软件团队应如何比较产品分析工具？';
+  let calls = 0;
+  const result = await enrichWebsiteResearch(research, config, { generate: async request => {
+    calls++;
+    assert.ok(request.prompt.includes('"targetLanguage":"Simplified Chinese"'));
+    assert.ok(request.prompt.includes('"targetCountry":"CN"'));
+    assert.ok(request.prompt.includes('Write the profile description, industry, topic names and buyer questions in Simplified Chinese'));
+    assert.ok(!request.prompt.includes('English-language') && !request.prompt.includes('an English question'));
+    return { text: JSON.stringify(payload) };
+  } });
+  assert.equal(calls, 1); assert.equal(result.enrichment.status, 'completed');
+  assert.equal(result.profile?.brand, 'Acme'); assert.equal(result.profile?.description, payload.profile.description);
+  assert.deepEqual(result.prompts.map(prompt => prompt.text), payload.prompts.map(prompt => prompt.text));
+  assert.ok(result.warnings.some(w => w.includes('不代表已测量的搜索需求')));
+  assert.ok(result.warnings.some(w => w.includes('未返回已知费用')));
+  assert.ok(!result.warnings.some(w => w.includes('未调用模型')));
+  assert.ok(result.claims.some(claim => claim.label === '模型归纳的网站摘要' && claim.status === 'unconfirmed'));
+  const failed = await enrichWebsiteResearch(research, config, { generate: async () => ({ text: '{}' }) });
+  assert.equal(failed.enrichment.status, 'failed');
+  assert.ok(failed.warnings.some(w => w.includes('未调用模型')));
+  assert.deepEqual(failed.prompts, research.prompts);
+  assert.ok(research.warnings.some(w => w.includes('未调用模型')));
 });
 test('unknown model cost is explicit and does not trigger another request', async () => {
   const research = await fixture(); let calls = 0;

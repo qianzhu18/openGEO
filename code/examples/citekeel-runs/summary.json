@@ -1,0 +1,71 @@
+{
+  "version": "0.1.0",
+  "executedAt": "2026-10-29T12:04:23.784Z",
+  "kind": "local-workflow-replay",
+  "newPaidModelCalls": 0,
+  "results": [
+    {
+      "caseId": "sensor",
+      "runId": "7c0ba10e-d7f0-4573-b45f-a27f40eb4e76",
+      "status": "needs_review",
+      "planned": 20,
+      "collected": 19,
+      "analyzed": 18,
+      "providerCitations": 3,
+      "answerUrls": 2,
+      "actions": 3,
+      "draftStatus": "draft",
+      "newModelCalls": 0
+    },
+    {
+      "caseId": "posthog",
+      "runId": "03bba9ff-d51b-4c15-8f01-7a445852c7ae",
+      "status": "needs_review",
+      "planned": 27,
+      "collected": 27,
+      "analyzed": 24,
+      "providerCitations": 3,
+      "answerUrls": 12,
+      "actions": 3,
+      "draftStatus": "blocked",
+      "newModelCalls": 0
+    },
+    {
+      "caseId": "niubistar",
+      "runId": "59ea342d-2568-4540-9307-52e4ff31b8b2",
+      "status": "needs_review",
+      "planned": 3,
+      "collected": 3,
+      "analyzed": 3,
+      "providerCitations": 0,
+      "answerUrls": 0,
+      "actions": 1,
+      "draftStatus": "blocked",
+      "newModelCalls": 0
+    }
+  ],
+  "checks": {
+    "core": {
+      "passed": 12
+    },
+    "browser": {
+      "passed": 4,
+      "widths": [
+        1440,
+        375,
+        320
+      ]
+    },
+    "upstream": {
+      "passed": 280,
+      "skipped": 10,
+      "failed": 0
+    },
+    "verifiedAt": "2026-10-29T12:18:51.414Z"
+  },
+  "limitations": [
+    "Synthetic fixture and historical archive replay only.",
+    "Live provider transport was tested with mocks, not paid API credentials.",
+    "No online optimization effect is claimed."
+  ]
+}

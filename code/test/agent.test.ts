@@ -8,7 +8,7 @@ import { loadCases, syntheticProject } from '../src/citekeel/cases.js';
 import { createRun, executeRun } from '../src/citekeel/engine.js';
 import { Store } from '../src/citekeel/storage.js';
 import { exportRun, redactExportText } from '../src/citekeel/report.js';
-import { validateModelActions } from '../src/citekeel/skills.js';
+import { planActions, validateModelActions } from '../src/citekeel/skills.js';
 import { createApp } from '../src/citekeel/server.js';
 import type { AgentRun, Project } from '../src/citekeel/types.js';
 
@@ -82,7 +82,8 @@ test('truncation and missing fact references cannot become valid analysis or mod
     const run = await executeRun(createRun(project, 'live', project.goal, config), store, config);
     assert.ok(run.samples[0].answer); assert.equal(run.samples[0].analysisStatus, 'failed');
     assert.equal(run.audit?.mention.denominator, 0); assert.equal(run.draft?.generator, 'rules');
-    assert.ok(!run.draft?.markdown.includes('保证提升')); assert.ok(run.limitations.some(l => l.includes('没有可定位的事实引用')));
+    assert.ok(!run.draft?.markdown.includes('保证提升')); assert.ok(run.limitations.some(l => l.includes('已暂停后续模型调用')));
+    assert.equal(run.calls.length, 1, 'an incomplete paid observation must stop subsequent model operations');
   } finally { globalThis.fetch = original; await cleanup(); }
 });
 
@@ -118,11 +119,27 @@ test('model plans with fabricated evidence IDs are rejected', () => {
   assert.throws(() => validateModelActions([{ title: 'test', rationale: 'test', acceptance: 'test', queryIds: [], sampleIds: ['invented'], claimIds: [] }], run));
 });
 
+test('content opportunities keep candidate comparisons separate and expose review gates', () => {
+  const project = syntheticProject();
+  project.market = 'china';
+  project.queries = [{ ...project.queries[0], id: 'candidate-q', text: '比较 PiPER、xArm 和 myCobot，按预算和 ROS 2 兼容性分段推荐。', intent: 'candidate_comparison', branded: true }];
+  const run = createRun(project, 'replay');
+  run.queries = structuredClone(project.queries);
+  run.samples = [];
+  run.audit = { planned: 0, collected: 0, analyzed: 0, collectionFailed: 0, analysisFailed: 0, mention: { numerator: 0, denominator: 0, value: null }, recommendation: { numerator: 0, denominator: 0, value: null }, judgments: [], providerCitations: 0, searchResults: 0, groundings: 0, answerUrls: 0, citationIntegrityFailures: 0, strata: [] };
+  const action = planActions(project, run).find(item => item.contentType === 'comparison');
+  assert.ok(action);
+  assert.equal(action?.queryIds[0], 'candidate-q');
+  assert.equal(action?.contentStatus, 'needs-review');
+  assert.ok(action?.outline?.includes('预算/任务/软件生态分段'));
+});
+
 test('live transport uses upstream provider, isolates measurement prompts, validates plans and strips secrets', async () => {
   const { store, cleanup } = await temporaryStore(); const original = globalThis.fetch;
   const prompts: string[] = []; const key = 'citekeel-test-key-not-a-real-credential';
   globalThis.fetch = async (_url: any, init: any) => {
     const payload = JSON.parse(init.body), prompt = payload.messages[0].content; prompts.push(prompt);
+    if (!prompt.startsWith('你是 GEO') && !prompt.startsWith('请写一份')) assert.equal(payload.max_tokens, 2500);
     const content = prompt.startsWith('你是 GEO') ? JSON.stringify([{ title: '补选型说明', kind: 'content', priority: 'P1', rationale: '关联确认量程', queryIds: [], sampleIds: [], claimIds: ['c-range'], acceptance: '保留参数来源' }]) : prompt.startsWith('请写一份') ? '# 选型说明\n测试量程为 -40 至 250℃。〔c-range〕' : '可考虑衡川传感，但需核验量程。';
     return new Response(JSON.stringify({ choices: [{ message: { content } }], model: 'mock-model', usage: { cost: 0.001, total_tokens: 30 }, api_key: key }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
@@ -187,35 +204,33 @@ test('diagnosis runs platforms concurrently, keeps web failures separate and ado
     const webUnit = run.measurementUnits!.find(unit => unit.queryId === project.queries[1]!.id && unit.targetId === 'chatgpt')!;
     assert.equal(webUnit.selectedChannel, 'web'); assert.equal(webUnit.attempts.length, 1);
     assert.equal(run.audit?.mention.denominator, 4);
-        assert.equal(run.samples.filter(sample => sample.fallback).length, 1);
-    assert.ok(run.actions.some(action => action.kind === 'content'));
+    assert.equal(run.samples.filter(sample => sample.fallback).length, 1);
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });
 
-
-test('an empty searched answer falls back once without search and does not block the diagnosis draft', async () => {
+test('browser-first policy falls back to API without relabeling the sample as web', async () => {
   const { store, cleanup } = await temporaryStore(); const originalFetch = globalThis.fetch;
   globalThis.fetch = async (_url: unknown, init: any) => {
-    const payload = JSON.parse(init.body), prompt = payload.messages[0].content;
-    const searched = Boolean(payload.tools || payload.web_search_options);
-    const content = prompt.startsWith('你是 GEO') ? '{"actions":[]}'
-      : prompt.startsWith('请写一份') ? '本地诊断草稿。'
-      : searched ? '' : `可考虑衡川传感，回答来自 ${payload.model}。`;
-    return new Response(JSON.stringify({ choices: [{ finish_reason: searched ? 'length' : 'stop', message: { content } }], model: payload.model, usage: { cost: 0.001 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+    const payload = JSON.parse(init.body);
+    return new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: `API answer for ${payload.model}` } }], usage: { cost: 0.001 } }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
   try {
     const project = syntheticProject(); project.queries = project.queries.slice(0, 1);
-    project.claims = project.claims.filter(claim => claim.id === 'c-domain');
-    const targets = [{ id: 'gemini', platform: 'Gemini', preferredChannel: 'api' as const, provider: 'openrouter', model: 'google/gemini-3.8-flash', webSearch: true }];
-    const run = await executeRun(createRun(project, 'live', project.goal, undefined, targets), store, undefined, undefined, { targets, apiKeys: { openrouter: 'test-openrouter-key' } });
-    assert.equal(run.measurementUnits?.[0]?.attempts.length, 2);
-    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.status, 'failed');
-    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.status, 'completed');
-    assert.equal(run.measurementUnits?.[0]?.selectedChannel, 'api');
-    assert.equal(run.draft?.status, 'draft');
-    assert.match(run.draft?.markdown || '', /本轮诊断观察/);
+    const target = { id: 'qwen', platform: '千问', preferredChannel: 'api' as const, provider: 'openrouter', model: 'qwen/qwen3.8-flash', webSearch: false, searchMode: 'disabled' as const, browserPreference: 'browser_first' as const };
+    const run = await executeRun(createRun(project, 'live', project.goal, undefined, [target]), store, undefined, undefined, {
+      targets: [target], apiKeys: { openrouter: 'fixture' },
+    });
+    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.channel, 'web');
+    assert.equal(run.measurementUnits?.[0]?.attempts[0]?.status, 'skipped');
+    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.channel, 'api');
+    assert.equal(run.measurementUnits?.[0]?.attempts[1]?.fallback, true);
+    const selected = run.samples.find(sample => sample.selected);
+    assert.equal(selected?.origin, 'api');
+    assert.match(selected?.protocolId || '', /mode=disabled/);
+    assert.doesNotMatch(selected?.protocolId || '', /browser-ui\/v2/);
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });
+
 test('web diagnosis asks the browser even when no API fallback is configured', async () => {
   const { store, cleanup } = await temporaryStore();
   try {
@@ -283,6 +298,14 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     assert.ok(response.ok, await response.clone().text()); return response.json();
   };
   try {
+    const status = await request('/api/status');
+    const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    assert.equal(status.version, manifest.version);
+    assert.deepEqual(status.diagnosisTargets.map((target: any) => target.id), ['chatgpt', 'gemini', 'deepseek', 'qwen', 'seed']);
+    assert.equal(status.diagnosisTargets[0].provider, 'openrouter');
+    assert.equal(status.diagnosisTargets[0].apiFallback.mode, 'configured');
+    assert.equal(status.diagnosisTargets[1].provider, 'cloro');
+    assert.ok(status.diagnosisTargets.slice(2).every((target: any) => target.provider === 'openrouter' && target.browserPreference === 'api_only' && target.searchMode === 'disabled'));
     const project = await request('/api/projects', 'POST', { brand: '临界仪器', industry: '温度仪表', brief: '产品：温度探头' }) as Project;
     await request(`/api/projects/${project.id}/claims`, 'POST', { claimId: 'claim-1', sourceId: 'user-brief' });
     await request(`/api/projects/${project.id}/samples`, 'POST', { samples: [{ question: '温度探头怎么选？', answer: '可以考虑临界仪器，先核对规格。' }] });
@@ -297,4 +320,44 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     const report = await fetch(`${base}/api/runs/${run.id}/report`); assert.ok((await report.text()).includes('临界仪器'));
     const forbidden = await fetch(base + '/api/projects', { headers: { Origin: 'https://elsewhere.example' } }); assert.equal(forbidden.status, 403);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await cleanup(); }
+});
+
+test('diagnosis retains target failure state across questions and makes no further network calls', async () => {
+ const {store,cleanup}=await temporaryStore();const original=globalThis.fetch;let failedRouteCalls=0;
+ globalThis.fetch=async (_url:unknown,init:any)=>{const p=JSON.parse(init.body);if(p.model==='blocked-model'){failedRouteCalls++;return new Response(JSON.stringify({error:{message:'Model is not available in your region'}}),{status:403});}return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'衡川传感'}}],usage:{cost:0.001}}),{status:200,headers:{'content-type':'application/json'}});};
+ try{const p=syntheticProject();p.queries=p.queries.slice(0,3);const targets=[{id:'blocked',platform:'Blocked',provider:'deepseek',model:'blocked-model',preferredChannel:'api' as const}];const r=await executeRun(createRun(p,'live',p.goal,undefined,targets),store,undefined,undefined,{targets,apiKeys:{deepseek:'fixture'}});assert.equal(failedRouteCalls,1);assert.equal(r.measurementUnits?.length,3);assert.equal(r.samples.filter(s=>s.analysisStatus==='completed').length,0);assert.match(r.samples[1]?.error||'',/暂停后续模型调用/);}finally{globalThis.fetch=original;await cleanup();}
+});
+
+test('managed diagnosis resolves platform IDs on the server and provider settings never return credentials', async () => {
+ const {store,cleanup}=await temporaryStore();const original=globalThis.fetch;
+ const previousOpenRouter=process.env.OPENROUTER_API_KEY,previousCloro=process.env.CLORO_API_KEY;
+ const key='fixture-managed-key',cloroKey='fixture-monitor-key';const requests:any[]=[];
+ globalThis.fetch=async(url:any,init:any)=>{
+  if (!String(url).startsWith('https://openrouter.ai/'))return original(url,init);
+  const payload=JSON.parse(init.body);requests.push(payload);
+  const prompt=payload.messages[0].content;
+  const content=prompt.startsWith('你是 GEO')?'[]':prompt.startsWith('请写一份')?'No verified facts.':'A sourced observation of the robotics selection criteria.';
+  return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content}}],usage:{cost:0.001}}),{headers:{'content-type':'application/json'}});
+ };
+ const {server}=await createApp(store);await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const base=`http://127.0.0.1:${(server.address() as {port:number}).port}`;
+ const post=(path:string,value:object)=>fetch(base+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(value)});
+ try {
+  const saved=await post('/api/provider-session',{openrouter:key,cloro:cloroKey});assert.equal(saved.status,200);
+  assert.ok(!(await saved.text()).includes(key));
+  const statusText=await(await fetch(base+'/api/status')).text();assert.ok(!statusText.includes(key));assert.ok(!statusText.includes(cloroKey));
+  const project=syntheticProject();await store.save('projects',project);
+  const response=await post('/api/runs',{projectId:project.id,mode:'live',diagnosis:true,queryIds:[project.queries[0].id],targetIds:['qwen']});
+  assert.equal(response.status,202);const {id}=await response.json();let run:AgentRun;
+  for(let i=0;;i++){run=await(await fetch(base+`/api/runs/${id}`)).json();if(!['queued','running'].includes(run.status))break;assert.ok(i<100);await new Promise(resolve=>setTimeout(resolve,10));}
+  assert.equal(run.measurementTargets?.[0].model,'qwen/qwen3.8-flash');assert.equal(run.measurementTargets?.[0].browserPreference,'api_only');
+  assert.equal(run.measurementUnits?.[0].attempts.length,1);assert.equal(run.measurementUnits?.[0].attempts[0].channel,'api');
+  assert.ok(requests.some(r=>r.model==='qwen/qwen3.8-flash'));
+  assert.ok(!(await readFile(join(store.root,'runs',id+'.json'),'utf8')).includes(key));
+ } finally {
+  globalThis.fetch=original;
+  if(previousOpenRouter===undefined)delete process.env.OPENROUTER_API_KEY;else process.env.OPENROUTER_API_KEY=previousOpenRouter;
+  if(previousCloro===undefined)delete process.env.CLORO_API_KEY;else process.env.CLORO_API_KEY=previousCloro;
+  server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));await cleanup();
+ }
 });

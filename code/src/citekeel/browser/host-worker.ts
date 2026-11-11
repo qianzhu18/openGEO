@@ -4,6 +4,11 @@ import { CollectionError, pause } from './bridge.js';
 import { createScriptCollector } from './script-collector.js';
 import { type HostRow, type HostTask, validBrowserPrompts, workerProof, workerProofMatches } from './host-mailbox.js';
 
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log('OpenGEO 宿主机浏览器 worker\n  npm run browser:worker\n仅连接本机 Docker 工作台，使用已配置的 Xue + Kimi 扩展。当前仅支持 ChatGPT。\n默认地址 http://127.0.0.1:8848；令牌文件 data/docker-worker/token。\n修改端口时设置 OPENGEO_WORKER_APP_URL，修改令牌路径时设置 OPENGEO_HOST_WORKER_TOKEN_FILE。\nCtrl+C 停止，不自动重试已提交问题。');
+  process.exit(0);
+}
+if (process.argv.length > 2) throw new Error('worker 不接受任务参数，请运行 --help。');
 const base = new URL(process.env.OPENGEO_WORKER_APP_URL || 'http://127.0.0.1:8848');
 if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost'].includes(base.hostname) || base.username || base.password || base.pathname !== '/' || base.search || base.hash) {
   throw new Error('worker 只连接本机 OpenGEO 工作台的 HTTP 根地址。');
@@ -59,6 +64,9 @@ while (!stopped.signal.aborted) {
   const heartbeat = setInterval(() => void active(), 1500);
   let reply: { ok: true; rows?: HostRow[] } | { ok: false; error: string };
   try {
+    if (task.kind === 'batch' && task.engine !== undefined && task.engine !== 'chatgpt') {
+      throw new CollectionError('engine_not_supported', '宿主机 worker 当前仅支持 ChatGPT；该平台未采集，不会替换为其他平台。');
+    }
     await active(); signal.throwIfAborted();
     collector = await createScriptCollector('chatgpt', {
       signal, configPath: process.env.OPENGEO_BROWSER_CONFIG_FILE, lockPath: process.env.OPENGEO_BROWSER_LOCK_FILE,
@@ -74,7 +82,7 @@ while (!stopped.signal.aborted) {
         } catch (e) {
           halted = true;
           const evidenceId = e instanceof CollectionError ? e.evidenceId : undefined;
-          rows.push({ ok: false, error: errorMessage(e), ...(evidenceId ? { evidenceId } : {}) });
+          rows.push({ ok: false, error: errorMessage(e), ...(e instanceof CollectionError ? { code: e.code } : {}), ...(evidenceId ? { evidenceId } : {}) });
         }
       }
       reply = { ok: true, rows };

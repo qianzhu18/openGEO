@@ -147,8 +147,8 @@ export async function verifyProfile(bridge: BrowserBridge, options: {
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('No loopback address');
     const url = `http://127.0.0.1:${address.port}${path}`;
-    await bridge.command('navigate', { url, newTab: true, group_title: 'OpenGEO 采集' });
-    const deadline = Date.now() + (options.timeoutMs ?? 20_000);
+    await taskNavigate(bridge, url, 'https://chatgpt.com/');
+    const deadline = Date.now() + (options.timeoutMs ?? 10_000);
     do {
       options.signal?.throwIfAborted();
       try {

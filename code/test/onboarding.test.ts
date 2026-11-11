@@ -82,11 +82,13 @@ test('credentials in a discovered link never enter requests or persisted attempt
   assert.ok(!JSON.stringify(result).includes('secret-password'));
 });
 
-test('a stalled fetch cannot exceed the overall research deadline', async () => {
-  const started = Date.now();
+test('a stalled fetch preserves the timeout reason even before the wall-clock deadline', async t => {
+  const wallTime = Date.now();
+  t.mock.method(Date, 'now', () => wallTime);
+  const started = performance.now();
   const result = await researchWebsite({ url: 'https://acme.example' }, { fetchPage: () => new Promise(() => {}), timeoutMs: 25 });
   assert.equal(result.status, 'failed');
-  assert.ok(Date.now() - started < 1000);
+  assert.ok(performance.now() - started < 1000);
   assert.match(result.attempts[0]!.reason!, /time budget/);
 });
 

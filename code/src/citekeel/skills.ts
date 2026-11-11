@@ -5,22 +5,46 @@ import { OpenAICompatibleProvider } from '../../vendor/niubigeo/src/providers/op
 import { dedupeCitations, extractAnnotationCitations, extractPerplexityCitations } from '../../vendor/niubigeo/src/providers/citation-extractors.js';
 import { openRouterNativeWebSearch } from '../../vendor/niubigeo/src/providers/openrouter-native-search.js';
 import { withRequestProviderKeys } from '../../vendor/niubigeo/src/config/env.js';
-import { withProviderHttpAttempts } from '../../vendor/niubigeo/src/providers/http.js';
+import { withProviderHttpAttempts, withProviderHttpObserver, withProviderHttpTimeout } from '../../vendor/niubigeo/src/providers/http.js';
 import type { AnswerResult } from '../../vendor/niubigeo/src/core/types.js';
-import type { Action, AgentRun, Draft, LiveConfig, Project } from './types.js';
+import type { Action, AgentRun, Draft, LiveConfig, Project, ModelCall } from './types.js';
+import { newReceipt, retainApiResponse, redactApiEvidence, apiAnswerProblem, diagnoseApiFailure, type CallContext } from './api-receipts.js';
+import { answerTruncated } from './analysis.js';
+import { networkRoute } from './network.js';
+
+// Public model catalog checked 2026-11-09: these models allow optional reasoning.
+export function disablesOptionalReasoning(provider: string, model: string) {
+  return provider === 'openrouter' && ['deepseek/deepseek-v4.1-flash', 'qwen/qwen3.8-flash', 'qwen/qwen3-32b', 'bytedance-seed/seed-2-1-turbo'].includes(model);
+}
 
 export class ModelSession {
   private unknownCost = false;
-  constructor(private config: LiveConfig, private run: AgentRun, private persist: () => Promise<void>) {}
-  async call(purpose: string, prompt: string, search = false): Promise<AnswerResult> {
-    if (this.run.calls.length >= 80) throw new Error('已达到本轮 80 次请求上限');
-    if (this.unknownCost) throw new Error('上次调用未返回费用，已暂停后续模型调用；现有结果仍可使用');
-    const optionalThinking = this.config.provider === 'openrouter' && ['qwen/qwen3.5-flash-02-23', 'qwen/qwen3-32b', 'qwen/qwen3.8-flash', 'google/gemini-3.8-flash', 'deepseek/deepseek-v4.1-flash', 'bytedance-seed/seed-2-1-turbo', 'openai/gpt-6-luna'].includes(this.config.model);
-    const maxTokens = purpose === 'content' ? 2500 : purpose === 'strategy' ? 2200 : 2500;
-    const call = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
+  private unusableAnswer = false;
+  constructor(private config: LiveConfig, private run: AgentRun, private persist: () => Promise<void>, private beforeSend?: () => Promise<void>) {}
+  async call(purpose: string, prompt: string, search = false, context: CallContext = {}): Promise<AnswerResult> {
+    const batch = this.run.samplingQueue?.version === 'sampling-queue/v2';
+    const blocked = this.run.calls.length >= (this.run.samplingQueue?.policy?.maxRequests || 64) ? '已达到本轮请求上限'
+      : !batch && this.unknownCost ? '上次调用后费用无法确认，已暂停后续模型调用；现有结果仍可使用'
+      : !batch && this.unusableAnswer ? '上次回答不可用或不完整，已暂停后续模型调用；先复核原文与请求预算，不自动重试' : null;
+    if (blocked) {
+      if (purpose === 'measurement') {
+        this.run.calls.push({ id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
+          startedAt: new Date().toISOString(), status: 'failed', promptHash: createHash('sha256').update(prompt).digest('hex'),
+          error: blocked, receipt: { ...newReceipt(context, search), finishedAt: new Date().toISOString(), failure: diagnoseApiFailure({ error: blocked, stage: 'preflight' }) } });
+        await this.persist();
+      }
+      throw new Error(blocked);
+    }
+    const optionalThinking = disablesOptionalReasoning(this.config.provider, this.config.model);
+    // The AgileX run truncated 9/10 Qwen observations at 1200 tokens. Keep the
+    // larger observation budget in the persisted protocol; never join old cohorts.
+    const maxTokens = purpose === 'content' ? 2000 : purpose === 'strategy' ? 2200 : this.run.samplingQueue?.policy?.outputTokens || 2500;
+    const timeoutMs = this.run.samplingQueue?.policy?.requestTimeoutMs || 45000;
+    const call: ModelCall = { id: randomUUID(), purpose, provider: this.config.provider, model: this.config.model,
       startedAt: new Date().toISOString(), status: 'running' as const,
       promptHash: createHash('sha256').update(prompt).digest('hex'),
-      requestParameters: { maxTokens, temperature: 0, webSearch: search, responseFormat: purpose === 'strategy' ? 'json_object' : 'text', ...(optionalThinking ? { reasoning: { effort: 'none', exclude: true } } : {}) } };
+      receipt: { ...newReceipt(context, search), route: networkRoute() },
+      requestParameters: { maxTokens, timeoutMs, temperature: 0, webSearch: search, httpAttempts: 1, responseFormat: purpose === 'strategy' ? 'json_object' : 'text', ...(optionalThinking ? { reasoning: { effort: 'none', exclude: true } } : {}) } };
     this.run.calls.push(call);
     await this.persist();
     try {
@@ -30,26 +54,46 @@ export class ModelSession {
       const provider = optionalThinking
         ? new OpenAICompatibleProvider({ definition: catalogProvider.definition, endpoint: 'https://openrouter.ai/api/v1/chat/completions',
             extraHeaders: { 'X-Title': 'CiteKeel', 'X-OpenRouter-Metadata': 'enabled' },
-            extraBody: { reasoning: { effort: 'none', exclude: true } }, nativeWebSearch: openRouterNativeWebSearch,
+            extraBody: { reasoning: { effort: 'none', enabled: false, exclude: true } }, nativeWebSearch: openRouterNativeWebSearch,
             citationExtractor: raw => dedupeCitations([...extractAnnotationCitations(raw), ...extractPerplexityCitations(raw)]) })
         : catalogProvider;
       const answer = await withRequestProviderKeys({ [this.config.provider]: this.config.apiKey }, () =>
-        withProviderHttpAttempts(1, () => provider.run({
+        withProviderHttpObserver(async event => {
+          if (event.phase === 'attempted') { await this.beforeSend?.(); call.receipt!.dispatch = 'attempted'; }
+          else {
+            retainApiResponse(call, event.data, event.status, event.requestId, this.config.apiKey); call.receipt!.retryAfterMs = event.retryAfterMs;
+            if(batch && ['authentication','billing'].includes(call.receipt!.failure?.code || '')) (this.run.samplingQueue!.blockedProviders ||= {})[this.config.provider]=call.receipt!.failure!.code;
+          }
+          await this.persist();
+        }, () => withProviderHttpTimeout(timeoutMs, () => withProviderHttpAttempts(1, () => provider.run({
           prompt, model: this.config.model, apiKey: this.config.apiKey, temperature: 0,
           maxTokens, webSearchEnabled: search,
           ...(search ? { webSearchMode: 'provider_native' as const } : {}),
           ...(purpose === 'strategy' ? { responseFormat: 'json_object' as const } : {}),
-        })));
-      Object.assign(call, { status: 'completed', response: answer.rawProviderResponse, answer: answer.text,
-        ...(typeof answer.costUsd === 'number' ? { costUsd: answer.costUsd } : {}) });
-      this.unknownCost = typeof answer.costUsd !== 'number';
-      if (this.unknownCost) this.run.limitations.push('Provider 未返回本次费用，后续模型调用已停止。');
+        })))));
+      const safeAnswer = redactApiEvidence(answer, this.config.apiKey) as AnswerResult;
+      const answerProblem = purpose === 'measurement' ? apiAnswerProblem(safeAnswer.text, safeAnswer.rawProviderResponse) : null;
+      const cost = safeAnswer.costUsd ?? call.costUsd;
+      const costKnown = typeof cost === 'number' && Number.isFinite(cost) && cost >= 0;
+      Object.assign(call, { status: 'completed', response: safeAnswer.rawProviderResponse, answer: safeAnswer.text,
+        ...(costKnown ? { costUsd: cost } : {}) });
+      Object.assign(call.receipt!, { costStatus: costKnown ? 'reported' : 'unknown',
+        ...(answerProblem ? { failure: diagnoseApiFailure({ provider: this.config.provider, raw: safeAnswer.rawProviderResponse, answer: safeAnswer.text, stage: 'answer_validation' }) } : {}),
+        answerState: answerTruncated(safeAnswer.rawProviderResponse) ? 'partial' : answerProblem ? 'rejected' : 'complete',
+        searchState: safeAnswer.search?.used === true && safeAnswer.search?.executionMode !== 'unverified' ? 'confirmed' : search ? 'unconfirmed' : 'not_requested',
+        finishedAt: new Date().toISOString() });
+      this.unusableAnswer = call.receipt!.answerState !== 'complete';
+      this.unknownCost = !costKnown;
+      if (this.unknownCost) this.run.limitations.push(batch?'Provider 本次费用未知；队列按费用与失败类型决定后续任务，需核对账单。':'Provider 未返回本次费用，后续模型调用已停止。');
+      if (this.unusableAnswer) this.run.limitations.push(batch?'Provider 回答不可用或不完整，已保留响应；本题不自动重新生成，其他任务按队列策略处理。':'Provider 回答不可用或不完整，已保留响应并停止同目标后续调用，避免继续产生不可用费用。');
       await this.persist();
-      return answer;
+      return safeAnswer;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const safe = this.config.apiKey ? message.split(this.config.apiKey).join('[REDACTED]') : message;
+      const safe = redactApiEvidence(message, this.config.apiKey) as string;
       Object.assign(call, { status: 'failed', error: safe });
+      call.receipt!.finishedAt = new Date().toISOString();
+      if (!call.receipt!.failure) call.receipt!.failure = diagnoseApiFailure({ provider: this.config.provider, error: safe });
       // A failed request can have incurred an unknown upstream charge.
       this.unknownCost = true;
       await this.persist();
@@ -67,8 +111,7 @@ export function planActions(project: Project, run: AgentRun): Action[] {
     rationale: `${conflicts.map(c => c.label).join('、')}存在不同来源的冲突，对外内容在确认前暂停。`,
     queryIds: run.queries.filter(q => q.branded).map(q => q.id), sampleIds: [], claimIds: conflicts.map(c => c.id),
     acceptance: '逐项选择有依据的事实值并记录来源，旧版本仍保留。' });
-  const considered = run.samples.filter(s => s.selected !== false);
-  const failures = considered.filter(s => s.collectionStatus === 'failed' || s.analysisStatus !== 'completed');
+  const failures = run.samples.filter(s => s.collectionStatus === 'failed' || s.analysisStatus !== 'completed');
   if (failures.length) add({ title: '复核失败样本，保留已有回答原文', priority: 'P0', kind: 'measurement',
     rationale: `${failures.length} 条记录采集或分析未完成，不能作为未提及统计。`,
     queryIds: [...new Set(failures.map(s => s.queryId))], sampleIds: failures.map(s => s.id), claimIds: [],
@@ -77,18 +120,30 @@ export function planActions(project: Project, run: AgentRun): Action[] {
   if (missing.length) add({ title: '补齐资质与关键声明的证据', priority: 'P1', kind: 'fact',
     rationale: missing.map(c => `${c.label}：${c.value}`).join('；'), queryIds: run.queries.filter(q => q.intent === '信任核验').map(q => q.id),
     sampleIds: [], claimIds: missing.map(c => c.id), acceptance: '提供可核对的原始文件与适用范围，缺失前不作确定性宣传。' });
-  const completed = considered.filter(s => s.collectionStatus === 'completed' && s.analysisStatus === 'completed');
-  if (completed.length) add({ title: '整理已采纳回答，形成可复核的选型说明', priority: 'P1', kind: 'content',
-    rationale: `${completed.length} 条已采纳回答可以进入内容草稿；失败和未采纳尝试不进入结论。`,
-    queryIds: [...new Set(completed.map(s => s.queryId))].slice(0, 6), sampleIds: completed.slice(0, 6).map(s => s.id),
-    claimIds: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
-    acceptance: '产出一份可审核草稿。回答观察与已确认事实分开标注，不把未确认观察写成品牌事实。' });
-  const missed = considered.filter(s => !s.branded && run.audit?.judgments.find(j => j.sampleId === s.id)?.mentioned === false);
+  const missed = run.samples.filter(s => !s.branded && run.audit?.judgments.find(j => j.sampleId === s.id)?.mentioned === false);
   if (missed.length) add({ title: '围绕非品牌采购问题补充选型说明', priority: 'P1', kind: 'content',
     rationale: `${missed.length} 条可判定的非品牌回答没有品牌名称；先补充适用场景、参数限制和选择依据。`,
     queryIds: [...new Set(missed.map(s => s.queryId))].slice(0, 6), sampleIds: missed.slice(0, 6).map(s => s.id),
     claimIds: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
-    acceptance: '产出一份含事实来源的选型内容，发布后使用原问题版本复测；不预设推荐提升。' });
+    acceptance: '产出一份含事实来源的选型内容，发布后使用原问题版本复测；不预设推荐提升。',
+    contentType: 'selection_guide', trigger: missed.map(s => s.question).join('；'),
+    evidenceGap: '有效回答未点名品牌，当前缺少能让读者比较适用场景、参数和限制的公开内容。',
+    recommendedFacts: project.claims.filter(c => c.status === 'confirmed').map(c => c.id),
+    outline: ['适用场景与排除条件', '关键参数与版本边界', '与替代方案的选择依据', '验证步骤与来源'],
+    contentStatus: project.claims.some(c => c.status !== 'confirmed') ? 'needs-review' : 'ready' });
+  const candidateQuery = run.queries.find(q => q.intent === 'candidate_comparison');
+  if (candidateQuery) {
+    const related = run.samples.filter(s => s.queryId === candidateQuery.id);
+    const confirmed = project.claims.filter(c => c.status === 'confirmed').map(c => c.id);
+    add({ title: '把候选比较题整理成分段选型页', priority: 'P1', kind: 'content',
+      rationale: '候选比较题已经给出比较集合，适合用预算、任务、软件生态和维护条件分段回答，避免生成无依据的单一排名。',
+      queryIds: [candidateQuery.id], sampleIds: related.map(s => s.id).slice(0, 6), claimIds: confirmed,
+      acceptance: '每个比较维度都能回到确认事实或明确标为待核对；发布后用同一候选集合复测。',
+      contentType: 'comparison', trigger: candidateQuery.text,
+      evidenceGap: '候选集合有明确题目来源，但品牌型号、兼容版本和性能差异尚未全部核验。',
+      recommendedFacts: confirmed, outline: ['比较范围与不适用条件', '预算/任务/软件生态分段', '候选产品证据表', '采购前验证清单'],
+      contentStatus: project.claims.some(c => c.status !== 'confirmed') ? 'needs-review' : 'ready' });
+  }
   if (!run.audit?.providerCitations || run.audit.answerUrls > run.audit.providerCitations) add({ title: '核对来源类型和页面证据', priority: 'P1', kind: 'source',
     rationale: `目前有 ${run.audit?.providerCitations || 0} 个 Provider 引用项，${run.audit?.answerUrls || 0} 个正文链接，二者需要分别核对。`,
     queryIds: [], sampleIds: run.samples.filter(s => s.citations.length).slice(0, 5).map(s => s.id), claimIds: [],
@@ -115,7 +170,13 @@ export function validateModelActions(value: unknown, run: AgentRun): Action[] {
     return { id: `model-action-${i + 1}`, title: row.title, rationale: row.rationale, acceptance: row.acceptance,
       kind: ['fact', 'content', 'source', 'measurement'].includes(row.kind) ? row.kind : 'content',
       priority: ['P0', 'P1', 'P2'].includes(row.priority) ? row.priority : 'P1',
-      queryIds: row.queryIds, sampleIds: row.sampleIds, claimIds: row.claimIds, status: 'proposed' };
+      queryIds: row.queryIds, sampleIds: row.sampleIds, claimIds: row.claimIds, status: 'proposed',
+      ...(typeof row.contentType === 'string' ? { contentType: row.contentType } : {}),
+      ...(typeof row.trigger === 'string' ? { trigger: row.trigger } : {}),
+      ...(typeof row.evidenceGap === 'string' ? { evidenceGap: row.evidenceGap } : {}),
+      ...(Array.isArray(row.recommendedFacts) ? { recommendedFacts: row.recommendedFacts.filter((id: unknown) => typeof id === 'string' && known.claimIds.has(id)) } : {}),
+      ...(Array.isArray(row.outline) ? { outline: row.outline.filter((item: unknown) => typeof item === 'string').slice(0, 8) } : {}),
+      ...(row.contentStatus === 'ready' || row.contentStatus === 'needs-review' || row.contentStatus === 'blocked' ? { contentStatus: row.contentStatus } : {}) };
   });
 }
 export function strategyPrompt(run: AgentRun): string {
@@ -127,27 +188,8 @@ export function makeDraft(project: Project, run: AgentRun): Draft {
   const conflicts = project.claims.filter(c => c.status === 'conflict');
   const facts = project.claims.filter(c => c.status === 'confirmed');
   const warnings = project.claims.filter(c => c.status !== 'confirmed').map(c => `${c.label}：${c.value}`);
-  if (conflicts.length) return { title: '内容等待事实确认', markdown: '', claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings };
-  if (!facts.some(c => c.id !== 'c-domain')) {
-    const answers = run.samples.filter(s => s.selected !== false && s.collectionStatus === 'completed' && s.answer.trim()).slice(0, 8);
-    if (!answers.length) return { title: '内容等待事实确认', markdown: '', claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings: ['目前只有观察域名，且本轮没有可采纳回答，请补充并确认产品事实后再生成品牌内容。'] };
-    const markdown = [
-      `# ${project.brand}：本轮诊断观察`,
-      '',
-      '> 观察稿，不是已确认事实，发布前必须人工审核。',
-      '',
-      ...answers.flatMap(sample => [
-        `### ${sample.question}`,
-        '',
-        `通道：${sample.origin === 'browser' ? '网页' : 'API'} · ${sample.model}`,
-        '',
-        sample.answer.slice(0, 900),
-        '',
-      ]),
-    ].join('\n');
-    return { title: `${project.brand}：诊断观察稿`, status: 'draft', generator: 'rules', claimIds: [],
-      warnings: ['项目还没有已确认的产品事实。以下只整理本轮已采纳回答，不能当作品牌事实或发布稿。'], markdown };
-  }
+  if (conflicts.length || !facts.some(c => c.id !== 'c-domain')) return { title: '内容等待事实确认', markdown: '',
+    claimIds: facts.map(c => c.id), status: 'blocked', generator: 'rules', warnings: conflicts.length ? warnings : ['目前只有观察域名，请补充并确认产品事实后再生成品牌内容。'] };
   const lines = facts.map(c => `- ${c.label}：${c.value}。〔${c.id}〕`).join('\n');
   const question = run.queries.find(q => !q.branded)?.text || `${project.brand}的产品适合哪些需求？`;
   return { title: `${project.brand}：选型与事实说明`, status: 'draft', generator: 'rules', claimIds: facts.map(c => c.id), warnings,
