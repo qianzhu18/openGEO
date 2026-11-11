@@ -1544,7 +1544,7 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <select
           className="input"
           aria-label={t("行动类别", "Action category")}
