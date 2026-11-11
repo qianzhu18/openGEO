@@ -22,6 +22,7 @@ import {
   LoaderCircle,
   Play,
   Search,
+  Sparkles,
   Upload,
   X,
 } from "lucide-react";
@@ -93,9 +94,7 @@ function Heading({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold text-neutral-950">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-semibold text-neutral-950">{title}</h1>
         <p className="muted mt-2 leading-7">{description}</p>
       </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
@@ -377,6 +376,7 @@ function Prompts({
     [showEditor, setShowEditor] = useState(false),
     [detail, setDetail] = useState<Row | null>(null),
     [sample, setSample] = useState<Row | null>(null),
+    [recommend, setRecommend] = useState(false),
     [measure, setMeasure] = useState(false);
   const [observations, setObservations] = useState<Row[]>([]),
     [settings, setSettings] = useState<Row>({
@@ -471,6 +471,13 @@ function Prompts({
         </button>
         <button
           className="button button-primary"
+          onClick={() => setRecommend(true)}
+        >
+          <Sparkles size={16} aria-hidden="true" />
+          {t("智能推荐", "Recommend prompts")}
+        </button>
+        <button
+          className="button"
           onClick={() => {
             setEditor(null);
             setShowEditor(true);
@@ -1041,12 +1048,12 @@ function Prompts({
                 name="country"
                 defaultValue={
                   editor?.country ||
-                  (["US", "GB", "CA", "AU"].includes(project.country)
+                  (["US", "GB", "CA", "AU", "CN"].includes(project.country)
                     ? project.country
                     : "US")
                 }
               >
-                {["US", "GB", "CA", "AU"].map((value) => (
+                {["US", "GB", "CA", "AU", "CN"].map((value) => (
                   <option key={value}>{value}</option>
                 ))}
               </select>
@@ -1068,11 +1075,63 @@ function Prompts({
           </form>
         </Modal>
       )}
+      {recommend && (
+        <Modal
+          title={t("推荐问题集", "Question recommendations")}
+          lang={lang}
+          onClose={() => setRecommend(false)}
+        >
+          <PromptRecommendations
+            project={project}
+            lang={lang}
+            refresh={refresh}
+            onAccepted={() => {
+              setFilter("suggested");
+              setPage(1);
+              setSearch("");
+              setTopic("");
+              setRecommend(false);
+            }}
+          />
+        </Modal>
+      )}
       {detail && !sample && (
         <Modal title={detail.text} lang={lang} onClose={() => setDetail(null)}>
           <p className="muted">
             {detail.intent} · {detail.country || project.country || "UNKNOWN"}
           </p>
+          <details className="rounded-lg bg-neutral-50 p-4 text-sm">
+            <summary className="font-medium">
+              {t("问题来源与审核", "Question provenance")}
+            </summary>
+            <p className="muted mt-3 break-words leading-6">{detail.origin}</p>
+            {detail.sourceIds?.map((id: string) => {
+              const source = project.sources.find(
+                (source: Row) => source.id === id,
+              );
+              return (
+                source && (
+                  <p key={id} className="mt-2 text-xs leading-6">
+                    {source.title}
+                    {source.url && safeUrl(source.url) && (
+                      <>
+                        {" "}
+                        ·{" "}
+                        <a
+                          href={safeUrl(source.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline"
+                        >
+                          {source.url}
+                        </a>
+                      </>
+                    )}
+                  </p>
+                )
+              );
+            })}
+          </details>
           <h3 className="font-semibold">
             {t("所有运行中的原始回答", "Original answers across runs")}
           </h3>
@@ -1107,6 +1166,392 @@ function Prompts({
           onClose={() => setSample(null)}
         />
       )}
+    </div>
+  );
+}
+
+function PromptRecommendations({
+  project,
+  lang,
+  refresh,
+  onAccepted,
+}: {
+  project: Row;
+  lang: Lang;
+  refresh: () => Promise<void>;
+  onAccepted: () => void;
+}) {
+  const t = copy(lang),
+    mutation = useMutation(),
+    [items, setItems] = useState<Row[]>([]),
+    [job, setJob] = useState<Row | null>(null),
+    [selected, setSelected] = useState<string[]>([]),
+    [loading, setLoading] = useState(true),
+    [loadError, setLoadError] = useState("");
+  const requestId = useRef(crypto.randomUUID());
+  const base = `/api/projects/${project.id}/prompt-recommendations`;
+  const load = async () => {
+    const value = await workbenchApi(base);
+    setItems(value.items);
+    setJob(value.job);
+    return value;
+  };
+  useEffect(() => {
+    let active = true;
+    workbenchApi(base)
+      .then((value) => {
+        if (active) {
+          setItems(value.items);
+          setJob(value.job);
+        }
+      })
+      .catch((error) => {
+        if (active) setLoadError(error.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [base]);
+  useEffect(() => {
+    if (job?.status !== "running") return;
+    let active = true;
+    const timer = setInterval(() => {
+      workbenchApi(base)
+        .then((value) => {
+          if (active) {
+            setItems(value.items);
+            setJob(value.job);
+            setLoadError("");
+          }
+        })
+        .catch((error) => {
+          if (active) setLoadError(error.message);
+        });
+    }, 1500);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [base, job?.status]);
+  const busy = mutation.busy || job?.status === "running";
+  async function generate(source: string, prompts?: unknown) {
+    await mutation.mutate(async () => {
+      const value = await workbenchApi(`${base}/generate`, "POST", {
+        source,
+        prompts,
+        requestId: requestId.current,
+      });
+      setItems(value.items);
+      setJob(value.job);
+      setSelected([]);
+      requestId.current = crypto.randomUUID();
+    });
+  }
+  const labels: Row = {
+    informational: t("了解与学习", "Learning"),
+    commercial: t("比较与选择", "Choosing"),
+    brand_awareness: t("品牌核验", "Brand check"),
+    navigational: t("寻找入口", "Navigation"),
+    transactional: t("采取行动", "Action"),
+  };
+  return (
+    <div className="space-y-5" data-prompt-recommendations>
+      <div>
+        <p className="leading-7 text-neutral-700">
+          {t(
+            `根据 ${project.brand} 的品牌资料，发现更具体的场景与问题。先审核加入建议库，再启用采样。`,
+            `Use ${project.brand}'s saved sources to propose specific scenarios and questions. Review suggestions before tracking and sampling.`,
+          )}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-500">
+          <span>
+            {project.country || "US"} · {project.language || "en"}
+          </span>
+          <span>
+            · {project.sources?.length || 0} {t("份品牌来源", "brand sources")}
+          </span>
+          <span>
+            ·{" "}
+            {t("候选题不代表已测量需求", "Suggestions are not measured demand")}
+          </span>
+        </div>
+      </div>
+      <div className="rounded-lg bg-neutral-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-medium">
+              {t("从品牌资料智能生成", "Generate from brand sources")}
+            </p>
+            <p className="muted mt-1 text-xs leading-5">
+              {t(
+                "一次 OpenRouter 模型调用，生成 2–8 题；可能产生 API 费用。不会开始采样。",
+                "One OpenRouter model call proposes 2–8 questions and may incur API costs. Sampling starts separately.",
+              )}
+            </p>
+          </div>
+          <button
+            className="button button-primary"
+            disabled={busy || loading}
+            onClick={() => void generate("model-assisted")}
+          >
+            <Sparkles size={16} aria-hidden="true" />
+            {busy
+              ? t("正在生成", "Generating")
+              : t("生成问题集", "Generate questions")}
+          </button>
+        </div>
+        {job?.status === "running" && (
+          <p role="status" className="mt-3 flex items-center gap-2 text-sm">
+            <LoaderCircle
+              size={15}
+              className="animate-spin"
+              aria-hidden="true"
+            />
+            {t(
+              "正在理解来源和设计问题，可关闭弹层，稍后返回。",
+              "Reading sources and proposing questions. You can close this dialog and return later.",
+            )}
+          </p>
+        )}
+        {job?.status === "completed" && (
+          <p role="status" className="muted mt-3 text-xs">
+            {t("上次生成已完成", "Last generation completed")} ·{" "}
+            {job.call?.provider}/{job.call?.model} ·{" "}
+            {job.call?.costStatus === "known"
+              ? `$${Number(job.call.costUsd).toFixed(5)}`
+              : t("费用 UNKNOWN", "Cost UNKNOWN")}
+          </p>
+        )}
+        {["failed", "interrupted"].includes(job?.status) && (
+          <p role="alert" className="mt-3 text-sm text-red-800">
+            {t(
+              "上次生成未完成或未通过校验。原有问题已保留；未自动重试，请核对服务商用量后再生成。",
+              "The last generation failed or was interrupted. Existing prompts are retained. No automatic retry was sent; review provider usage before trying again.",
+            )}
+          </p>
+        )}
+      </div>
+      <Feedback error={mutation.error || loadError} lang={lang} />
+      {loading ? (
+        <p role="status" className="muted">
+          {t("正在读取候选", "Loading suggestions")}
+        </p>
+      ) : items.length ? (
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={
+                  items.length > 0 &&
+                  items.every((item) => selected.includes(item.id))
+                }
+                onChange={(event) =>
+                  setSelected(
+                    event.target.checked ? items.map((item) => item.id) : [],
+                  )
+                }
+              />
+              {t("全选候选", "Select all suggestions")}
+            </label>
+            <span className="muted text-xs">
+              {selected.length} / {items.length}
+            </span>
+          </div>
+          <div className="divide-y divide-neutral-200 rounded-lg border border-neutral-200">
+            {items.map((item) => (
+              <div key={item.id} className="p-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1.5 shrink-0"
+                    aria-label={`${t("选择候选", "Select suggestion")} ${item.text}`}
+                    checked={selected.includes(item.id)}
+                    onChange={(event) =>
+                      setSelected(
+                        event.target.checked
+                          ? [...selected, item.id]
+                          : selected.filter((id) => id !== item.id),
+                      )
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-medium leading-6">
+                      {item.text}
+                    </span>
+                    <span className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-xs leading-5 text-neutral-500">
+                      <span>{labels[item.intent] || item.intent}</span>
+                      <span>
+                        ·{" "}
+                        {item.branded
+                          ? t("点名问题", "Branded")
+                          : t("自然发现", "Unbranded")}
+                      </span>
+                      {item.topicName && <span>· {item.topicName}</span>}
+                    </span>
+                  </span>
+                </label>
+                <details className="ml-7 mt-2 text-xs text-neutral-500">
+                  <summary>{t("查看依据", "View rationale")}</summary>
+                  <p className="mt-2 leading-6">
+                    {item.source === "open-seo"
+                      ? t(
+                          "用户导入的 OpenSEO 候选，保留美国英语市场标签；没有在此工作台执行需求测量。",
+                          "User-imported OpenSEO suggestions retain the US English market label; demand was not measured by this workbench.",
+                        )
+                      : item.reason}
+                  </p>
+                  <p className="mt-1 break-words">{item.sourceLabel}</p>
+                  {item.sourceIds?.map((id: string) => {
+                    const source = project.sources.find(
+                      (source: Row) => source.id === id,
+                    );
+                    return (
+                      source && (
+                        <p key={id} className="mt-1 break-words">
+                          {source.title}
+                          {source.url && safeUrl(source.url) && (
+                            <>
+                              {" "}
+                              ·{" "}
+                              <a
+                                className="underline"
+                                href={safeUrl(source.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {source.url}
+                              </a>
+                            </>
+                          )}
+                        </p>
+                      )
+                    );
+                  })}
+                </details>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <button
+              className="button button-primary"
+              disabled={!selected.length || busy}
+              onClick={() =>
+                void mutation.mutate(async () => {
+                  await workbenchApi(`${base}/accept`, "POST", {
+                    ids: selected,
+                    expectedVersion: project.queryVersion,
+                  });
+                  await refresh();
+                  onAccepted();
+                })
+              }
+            >
+              {t(
+                `加入建议库（${selected.length}）`,
+                `Add suggestions (${selected.length})`,
+              )}
+            </button>
+            <button
+              className="button"
+              disabled={!selected.length || busy}
+              onClick={() =>
+                void mutation.mutate(async () => {
+                  await workbenchApi(`${base}/dismiss`, "POST", {
+                    ids: selected,
+                  });
+                  setSelected([]);
+                  await load();
+                })
+              }
+            >
+              {t("忽略所选", "Dismiss selected")}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="rounded-lg border border-dashed border-neutral-200 p-6 text-center text-sm leading-7 text-neutral-500">
+          {t(
+            "还没有新候选。生成品牌问题集，或导入外部研究。与现有问题重复的候选会自动略过。",
+            "No new suggestions yet. Generate a set or import research. Questions already in the library are skipped.",
+          )}
+        </p>
+      )}
+      <details className="border-t border-neutral-200 pt-4">
+        <summary className="text-sm font-medium">
+          {t(
+            "其他来源：模板与 OpenSEO",
+            "Other sources: templates and OpenSEO",
+          )}
+        </summary>
+        <div className="mt-4 space-y-5">
+          <div>
+            <p className="muted mb-2 text-xs leading-6">
+              {t(
+                "不调用模型，根据已有主题生成基础模板。",
+                "Use saved topics to create basic templates without a model call.",
+              )}
+            </p>
+            <button
+              className="button"
+              disabled={busy}
+              onClick={() => void generate("local-source-derived")}
+            >
+              {t("生成基础模板", "Generate basic templates")}
+            </button>
+          </div>
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const raw = new FormData(event.currentTarget).get("prompts");
+              void mutation.mutate(async () => {
+                const prompts = JSON.parse(String(raw));
+                const value = await workbenchApi(`${base}/generate`, "POST", {
+                  source: "open-seo",
+                  prompts,
+                });
+                setItems(value.items);
+                setSelected([]);
+              });
+            }}
+          >
+            <div>
+              <p className="text-sm font-medium">
+                {t("导入 OpenSEO 研究结果", "Import OpenSEO research")}
+              </p>
+              <p className="muted mt-1 text-xs leading-6">
+                {t(
+                  "OpenSEO 在外部 MCP 客户端中运行。本工作台暂不直接连接其付费服务。Prompt Research 主要来自 Google PAA，覆盖美国英语，不是 ChatGPT 提问日志。",
+                  "Run OpenSEO in an external MCP client. This workbench does not directly connect to the paid service. Prompt Research is mostly Google PAA data for US English, not ChatGPT prompt logs.",
+                )}
+              </p>
+            </div>
+            <Field
+              label={t(
+                "候选 JSON（text、intent）",
+                "Suggestion JSON (text, intent)",
+              )}
+            >
+              <textarea
+                className="input min-h-28 font-mono text-xs"
+                name="prompts"
+                required
+                maxLength={50000}
+                placeholder={
+                  '[{"text":"Which tools fit a small team?","intent":"commercial"}]'
+                }
+              />
+            </Field>
+            <button className="button" disabled={busy}>
+              {t("预览导入候选", "Preview imported suggestions")}
+            </button>
+          </form>
+        </div>
+      </details>
     </div>
   );
 }

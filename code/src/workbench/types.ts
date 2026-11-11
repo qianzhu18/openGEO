@@ -11,7 +11,22 @@ export interface Claim {
   confirmation?: { sourceId: string; at: string };
   quote?: string;
 }
-export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; country?: string; language?: string; revision?: number; previousVersionId?: string; createdAt?: string; updatedAt?: string }
+export interface Query { id: string; text: string; intent: string; branded: boolean; origin: string; status?: 'suggested' | 'active' | 'inactive'; topicId?: string; sourceIds?: string[]; recommendationId?: string; country?: string; language?: string; revision?: number; previousVersionId?: string; createdAt?: string; updatedAt?: string }
+export interface PromptRecommendation {
+  id: string;
+  text: string;
+  intent: string;
+  branded: boolean;
+  topicId?: string;
+  topicName?: string;
+  source: 'local-source-derived' | 'model-assisted' | 'open-seo';
+  sourceLabel: string;
+  sourceIds: string[];
+  reason: string;
+  batchId?: string;
+  status: 'candidate' | 'accepted' | 'dismissed';
+  generatedAt: string;
+}
 export interface Citation {
   url: string; kind: 'provider_citation' | 'search_result' | 'grounding' | 'answer_url';
   source: string; payloadPath?: string; integrity: 'matched' | 'unverified' | 'mismatch';
@@ -56,6 +71,12 @@ export interface Project {
   competitors?: TrackedBrand[];
   tableSettings?: { hiddenColumns: string[]; deltaDisplay: 'full' | 'icon' | 'none'; version: number };
   promptChanges?: { requestId: string; fingerprint: string; ids: string[]; version: number }[];
+  promptRecommendations?: PromptRecommendation[];
+  promptRecommendationJobs?: {
+    id: string; fingerprint: string; status: 'running' | 'completed' | 'failed' | 'interrupted';
+    createdAt: string; finishedAt?: string; error?: string;
+    call?: import('./semantic-research.js').ResearchModelCall;
+  }[];
   market?: 'international' | 'china'; language?: string; country?: string; researchId?: string;
   topics?: { id: string; name: string; sourceIds: string[] }[];
   /** Optional business context for reviewable hypotheses in client-facing reports. */

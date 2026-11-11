@@ -12,7 +12,7 @@ function text(value:unknown,label:string,max=2000):string {
 }
 const status=(q:Query)=>q.status||'active';
 function version(project:Project,expected:unknown){if(expected!==project.queryVersion)throw new WorkspaceError('The question library changed. Refresh before saving.','STALE_REVISION',409);}
-function country(value:unknown,project:Project){const result=value??project.country??'US';if(typeof result!=='string'||!['US','GB','CA','AU'].includes(result))throw new WorkspaceError('Select a supported target market.');return result;}
+function country(value:unknown,project:Project){const result=value??project.country??'US';if(typeof result!=='string'||!['US','GB','CA','AU','CN'].includes(result))throw new WorkspaceError('Select a supported target market.');return result;}
 function topic(value:unknown,project:Project){if(value===undefined||value===null||value==='')return undefined;if(typeof value!=='string'||!project.topics?.some(t=>t.id===value))throw new WorkspaceError('Unknown topic.');return value;}
 export class PromptService {
   constructor(private store:Store){}

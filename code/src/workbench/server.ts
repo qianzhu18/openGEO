@@ -23,6 +23,7 @@ import { parseQuestionSet } from './question-set.js';
 import { networkRoute } from './network.js';
 import { BATCH_LIMITS } from './batch-policy.js';
 import { diagnosisRoutes } from './diagnosis-routes.js';
+import { PromptRecommendationService } from './prompt-recommendations.js';
 
 const { version: APP_VERSION } = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as { version: string };
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
@@ -69,6 +70,7 @@ export async function createApp(store = new Store(), options: {
   try { await store.initialize(examples); } catch(error) { store.releaseWorker(workerToken); store.close(); throw error; }
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
+  const recommendations = new PromptRecommendationService(store, options.enrich); await recommendations.initialize();
   const recordings = new RecordingService(store);
   const brandSources = new BrandSourceService(store, options.research);
   let activeRunId: string | null = null;
@@ -186,6 +188,16 @@ export async function createApp(store = new Store(), options: {
         if (resource === 'topics' && method === 'POST') return send(res,201,await prompts.addTopic(id,input));
         if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
         return send(res,405,{error:'Unsupported prompt operation.'});
+      }
+      const recommendationMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/prompt-recommendations(?:\/(generate|accept|dismiss))?$/);
+      if (recommendationMatch) {
+        const [, id, action] = recommendationMatch;
+        if (method === 'GET' && !action) return send(res, 200, await recommendations.list(id));
+        if (method !== 'POST' || !action) return send(res, 405, { error: 'Unsupported recommendation operation.' });
+        const input = await body(req);
+        if (action === 'generate') return send(res, 200, await recommendations.generate(id, input));
+        if (action === 'accept') return send(res, 200, await recommendations.accept(id, input.ids, input.expectedVersion));
+        return send(res, 200, await recommendations.dismiss(id, input.ids));
       }
       const spacesMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/diagnosis-spaces(?:\/([a-zA-Z0-9_-]+))?$/);
       if (spacesMatch) {

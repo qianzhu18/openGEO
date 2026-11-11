@@ -760,3 +760,141 @@ test("Next provider memory settings, answer imports and project recycle preserve
     ),
   ).toBe(true);
 });
+
+test("question recommendations preserve source review, CN market, dismissed items and separate sampling", async ({
+  page,
+  request,
+}) => {
+  const project = await (
+    await request.post("/api/projects", {
+      data: {
+        brand: "Recommendation fixture",
+        industry: "AI community",
+        brief: "定位：AI 产品共学与黑客松社区",
+      },
+    })
+  ).json();
+  const store = new Store("data/browser-tests");
+  await store.updateProject(project.id, (current) => {
+    current.language = "zh";
+    current.country = "CN";
+    current.topics = [
+      { id: "community", name: "AI 产品共学", sourceIds: ["user-brief"] },
+    ];
+  });
+  let paidCalls = 0;
+  await page.route(
+    `**/api/projects/${project.id}/prompt-recommendations/generate`,
+    async (route) => {
+      if (route.request().postDataJSON().source === "model-assisted") {
+        paidCalls++;
+        const rec = {
+          id: "model-community",
+          text: "初学者如何选择有真实项目实践的 AI 共学社区？",
+          intent: "commercial",
+          branded: false,
+          source: "model-assisted" as const,
+          topicName: "AI 共学实践",
+          sourceLabel: "OpenRouter · fixture-model",
+          sourceIds: ["user-brief"],
+          reason: "由已有品牌原文提出的待审核问题。",
+          status: "candidate" as const,
+          generatedAt: new Date().toISOString(),
+        };
+        await store.updateProject(project.id, (current) => {
+          current.promptRecommendations = [rec];
+        });
+        await route.fulfill({
+          json: {
+            items: [rec],
+            job: {
+              id: "fixture-generation",
+              status: "completed",
+              call: {
+                provider: "openrouter",
+                model: "fixture-model",
+                costStatus: "unknown",
+              },
+            },
+          },
+        });
+      } else await route.continue();
+    },
+  );
+  await page.goto(`/?project=${project.id}&view=queries`);
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "生成问题集", exact: true }).click();
+  await expect(
+    dialog.getByText("初学者如何选择有真实项目实践的 AI 共学社区？", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await dialog.getByText("查看依据", { exact: true }).click();
+  await expect(dialog.getByText("用户输入资料", { exact: true })).toBeVisible();
+  await dialog.getByLabel("全选候选", { exact: true }).check();
+  await dialog
+    .getByRole("button", { name: "加入建议库（1）", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const row = page
+    .locator(".prompt-table tr")
+    .filter({ hasText: "初学者如何选择有真实项目实践的 AI 共学社区？" });
+  await expect(row).toContainText("CN");
+  await expect(row).toContainText("建议");
+  const value = await (await request.get(`/api/projects/${project.id}`)).json();
+  const query = value.queries.find((query: any) =>
+    query.text.includes("初学者如何选择"),
+  );
+  expect(query).toMatchObject({
+    status: "suggested",
+    country: "CN",
+    sourceIds: ["user-brief"],
+  });
+  expect(value.samples).toEqual([]);
+  expect(paidCalls).toBe(1);
+  await row.getByRole("button", { name: "编辑", exact: true }).click();
+  await expect(
+    page.getByRole("dialog").getByLabel("市场", { exact: true }),
+  ).toHaveValue("CN");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByText("其他来源：模板与 OpenSEO", { exact: true }).click();
+  await dialog
+    .getByLabel("候选 JSON（text、intent）", { exact: true })
+    .fill(
+      '[{"text":"Which AI communities offer hands-on projects?","intent":"commercial"}]',
+    );
+  await dialog
+    .getByRole("button", { name: "预览导入候选", exact: true })
+    .click();
+  await dialog.getByLabel("全选候选", { exact: true }).check();
+  await dialog.getByRole("button", { name: "忽略所选", exact: true }).click();
+  await expect(
+    dialog.getByText("还没有新候选。", { exact: false }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByText("其他来源：模板与 OpenSEO", { exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "生成基础模板", exact: true })
+    .click();
+  for (const width of [1440, 375, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const box = (await dialog.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+  }
+  await expect(
+    dialog.getByText("Which AI communities offer hands-on projects?", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+});
