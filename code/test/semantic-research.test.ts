@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { researchWebsite } from '../src/citekeel/onboarding.js';
-import { enrichWebsiteResearch, type SemanticResearchResponse } from '../src/citekeel/semantic-research.js';
-import type { LiveConfig } from '../src/citekeel/types.js';
+import { researchWebsite } from '../src/workbench/onboarding.js';
+import { enrichWebsiteResearch, type SemanticResearchResponse } from '../src/workbench/semantic-research.js';
+import type { LiveConfig } from '../src/workbench/types.js';
 
 const config: LiveConfig = { provider: 'openrouter', model: 'test/model', apiKey: 'semantic-test-secret-do-not-retain', maxQuestions: 3, webSearch: false };
 async function fixture() {
@@ -16,7 +16,7 @@ function output(sourceId: string) {
 }
 test('single semantic operation produces source-linked English suggestions with stable IDs and recorded model metadata', async () => {
   const research = await fixture(), payload = output(research.sources[0]!.id); let calls = 0;
-  const generate = async (request: import('../src/citekeel/semantic-research.js').SemanticResearchRequest): Promise<SemanticResearchResponse> => {
+  const generate = async (request: import('../src/workbench/semantic-research.js').SemanticResearchRequest): Promise<SemanticResearchResponse> => {
     calls++; assert.equal(request.maxTokens, 2500); assert.equal(request.webSearchEnabled, false); assert.ok(request.prompt.includes('untrusted DATA')); assert.ok(request.prompt.includes('"targetLanguage":"English"')); assert.ok(!request.prompt.includes(config.apiKey));
     return { text: JSON.stringify(payload), rawResponse: { choices: [{ finish_reason: 'stop' }] }, costUsd: 0.001 };
   };

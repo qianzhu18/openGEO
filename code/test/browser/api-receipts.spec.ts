@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { rm, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { syntheticProject } from '../../src/citekeel/cases.js';
-import { createRun } from '../../src/citekeel/engine.js';
-import { Store } from '../../src/citekeel/storage.js';
-import { newReceipt } from '../../src/citekeel/api-receipts.js';
+import { syntheticProject } from '../../src/workbench/cases.js';
+import { createRun } from '../../src/workbench/engine.js';
+import { Store } from '../../src/workbench/storage.js';
+import { newReceipt } from '../../src/workbench/api-receipts.js';
 
 const store = new Store('data/browser-tests'), runId = 'api-receipts-browser-fixture';
 test.afterAll(async () => { await rm(join(store.root, 'runs', runId + '.json'), { force: true }); });

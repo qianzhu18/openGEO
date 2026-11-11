@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { researchWebsite } from '../src/citekeel/onboarding.js';
+import { researchWebsite } from '../src/workbench/onboarding.js';
 
 const home = `<html><head><title>Acme | Product analytics</title><meta property="og:site_name" content="Acme"><meta name="description" content="Product analytics for software teams."></head><body><h1>Product analytics</h1><h2>Session replay</h2><a href="/product">Product</a><a href="/about">About</a><a href="https://unrelated.example/">Outside</a><script>private-script-marker</script></body></html>`;
 const page = (url: string, text = home) => ({ url, text, contentType: 'text/html; charset=utf-8' });

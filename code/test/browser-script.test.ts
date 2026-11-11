@@ -5,8 +5,8 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, access } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { CollectionError, KimiBridge, collectorLock, historyContains, selectedHistory, verifyProfile, type BrowserBridge, type VerifiedProfile } from '../src/citekeel/browser/bridge.js';
-import { createScriptCollector } from '../src/citekeel/browser/script-collector.js';
+import { CollectionError, KimiBridge, collectorLock, historyContains, selectedHistory, verifyProfile, type BrowserBridge, type VerifiedProfile } from '../src/workbench/browser/bridge.js';
+import { createScriptCollector } from '../src/workbench/browser/script-collector.js';
 
 const profile: VerifiedProfile = { profileName: 'Xue', profileDirectory: 'Profile 11', method: 'exact-task-history-url', verifiedAt: '2026-11-06T00:00:00Z' };
 const isCode = (code: string) => (error: unknown) => error instanceof CollectionError && error.code === code;
@@ -75,6 +75,35 @@ test('bridge speaks the local JSON protocol and refuses remote addresses and red
     await assert.rejects(bridge.command('navigate'), isCode('extension_not_connected'));
     assert.throws(() => new KimiBridge('https://remote.example'), isCode('invalid_bridge_url'));
     assert.throws(() => new KimiBridge('http://user:password@localhost'), isCode('invalid_bridge_url'));
+  } finally { server.closeAllConnections(); await new Promise<void>(done => server.close(() => done())); }
+});
+
+test('bridge preserves daemon error envelopes and safely replaces a closed owned tab', async () => {
+  const actions: string[] = [];
+  const server = createServer(async (req, res) => {
+    let body = ''; for await (const chunk of req) body += chunk;
+    const input = JSON.parse(body); actions.push(input.action);
+    res.setHeader('content-type', 'application/json');
+    if (input.action === 'find_tab') {
+      res.writeHead(502);
+      res.end(JSON.stringify({ ok: false, error: { code: 'tool_error', message: 'session "opengeo-collector": current tab 123 was closed; call list_tabs to re-target, or navigate to open a new tab' } }));
+    } else if (input.action === 'snapshot') {
+      res.writeHead(503);
+      res.end(JSON.stringify({ ok: false, error: { code: 'extension_not_connected' } }));
+    } else {
+      assert.equal(input.args.newTab, true);
+      assert.equal(input.args.url, 'http://127.0.0.1:8847/opengeo-profile-check/fixture');
+      res.end(JSON.stringify({ ok: true, data: {} }));
+    }
+  });
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  try {
+    const address = server.address(); assert.ok(address && typeof address !== 'string');
+    const bridge = new KimiBridge(`http://127.0.0.1:${address.port}`);
+    const { taskNavigate } = await import('../src/workbench/browser/bridge.js');
+    await taskNavigate(bridge, 'http://127.0.0.1:8847/opengeo-profile-check/fixture');
+    assert.deepEqual(actions, ['find_tab', 'navigate']);
+    await assert.rejects(bridge.command('snapshot'), isCode('extension_not_connected'));
   } finally { server.closeAllConnections(); await new Promise<void>(done => server.close(() => done())); }
 });
 

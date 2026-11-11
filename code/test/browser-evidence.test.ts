@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evidenceId } from '../src/citekeel/browser/evidence.js';
+import { evidenceId } from '../src/workbench/browser/evidence.js';
 
 test('evidence ids are readable, unique per capture and safe as directory names', () => {
   const first = evidenceId('chatgpt', 'What is GEO?');

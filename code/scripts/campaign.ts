@@ -1,12 +1,12 @@
 import { readFile, writeFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { importAttempt } from '../src/citekeel/campaign/import-attempt.js';
-import { collectSources } from '../src/citekeel/campaign/evidence.js';
-import { compareCampaigns, validateCampaign, writeCampaign } from '../src/citekeel/campaign/run.js';
-import { renderCampaignComparison } from '../src/citekeel/campaign/render.js';
-import { Store } from '../src/citekeel/storage.js';
-import type { CampaignAttempt, CampaignRun, CampaignSpec } from '../src/citekeel/campaign/model.js';
-import type { Project } from '../src/citekeel/types.js';
+import { importAttempt } from '../src/workbench/campaign/import-attempt.js';
+import { collectSources } from '../src/workbench/campaign/evidence.js';
+import { compareCampaigns, validateCampaign, writeCampaign } from '../src/workbench/campaign/run.js';
+import { renderCampaignComparison } from '../src/workbench/campaign/render.js';
+import { Store } from '../src/workbench/storage.js';
+import type { CampaignAttempt, CampaignRun, CampaignSpec } from '../src/workbench/campaign/model.js';
+import type { Project } from '../src/workbench/types.js';
 
 const [command, directory, other] = process.argv.slice(2);
 if (!directory || !['collect', 'run', 'compare', 'install', 'import-attempt'].includes(command || '')) throw new Error('用法：npm run campaign -- collect|run|install <案例目录>；compare <前轮目录> <后轮目录>；import-attempt <案例目录> --id ... --question ... --platform ... --evidence ...');

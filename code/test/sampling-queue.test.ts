@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import {mkdtemp,rm,unlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {createRun,executeRun} from '../src/citekeel/engine.js';
-import {syntheticProject} from '../src/citekeel/cases.js';
-import {Store} from '../src/citekeel/storage.js';
-import {initializeSamplingQueue,recoverSamplingQueue,redriveJobs,retryDecision,type QueueClock} from '../src/citekeel/sampling-queue.js';
-import {newReceipt,diagnoseApiFailure} from '../src/citekeel/api-receipts.js';
+import {createRun,executeRun} from '../src/workbench/engine.js';
+import {syntheticProject} from '../src/workbench/cases.js';
+import {Store} from '../src/workbench/storage.js';
+import {initializeSamplingQueue,recoverSamplingQueue,redriveJobs,retryDecision,type QueueClock} from '../src/workbench/sampling-queue.js';
+import {newReceipt,diagnoseApiFailure} from '../src/workbench/api-receipts.js';
 import {retryAfterMs} from '../vendor/niubigeo/src/providers/http.js';
-import type {ModelCall} from '../src/citekeel/types.js';
+import type {ModelCall} from '../src/workbench/types.js';
 async function fixture(count=2) {
  const root=await mkdtemp(join(tmpdir(),'opengeo-queue-')),store=new Store(root),project=syntheticProject();project.queries=project.queries.slice(0,count);
  const targets=[{id:'fixture',platform:'Fixture',provider:'cloro',model:'chatgpt',preferredChannel:'api' as const}];
@@ -71,7 +71,7 @@ test('stop persists in-flight completion and pauses later jobs',async()=>{
  try{await executeRun(f.run,f.store,undefined,undefined,f.runtime);assert.equal(sent,1);assert.deepEqual(f.run.samplingQueue!.jobs.map(j=>j.state),['succeeded','paused']);}finally{globalThis.fetch=original;await f.cleanup();}
 });
 test('API submission deduplicates across restart and rejects a changed request',async()=>{
- const f=await fixture(1),original=globalThis.fetch;const {createApp}=await import('../src/citekeel/server.js');
+ const f=await fixture(1),original=globalThis.fetch;const {createApp}=await import('../src/workbench/server.js');
  const app=await createApp(f.store);await new Promise<void>(r=>app.server.listen(0,'127.0.0.1',r));
  const base=`http://127.0.0.1:${(app.server.address() as {port:number}).port}`;let sent=0;
  globalThis.fetch=async(url,init)=>String(url).startsWith(base)?original(url,init):init?.method==='POST'

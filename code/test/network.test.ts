@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { getGlobalDispatcher, setGlobalDispatcher } from 'undici';
-import { configureNetwork, networkRoute } from '../src/citekeel/network.js';
+import { configureNetwork, networkRoute } from '../src/workbench/network.js';
 
 test('configured proxy receives HTTPS CONNECT; localhost bypasses proxy; proxy rejection does not fall back', async () => {
   const original = getGlobalDispatcher();

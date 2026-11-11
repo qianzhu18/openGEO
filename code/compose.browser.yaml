@@ -1,0 +1,7 @@
+services:
+  web:
+    secrets:
+      - opengeo_worker_token
+secrets:
+  opengeo_worker_token:
+    file: ./data/docker-worker/token

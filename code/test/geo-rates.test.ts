@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aggregateGeoRates, answerExclusion, extractEnumeratedRanking, judgeGeoAnswer, type GeoObservation } from '../src/citekeel/geo-rates.js';
+import { aggregateGeoRates, answerExclusion, extractEnumeratedRanking, judgeGeoAnswer, type GeoObservation } from '../src/workbench/geo-rates.js';
 
 const aliases = ['松灵机器人', 'AgileX Robotics', 'AgileX', 'AGILE·X', '松灵'];
 

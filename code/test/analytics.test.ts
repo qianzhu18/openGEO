@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRun } from '../src/citekeel/engine.js';
-import { analyzeRun } from '../src/citekeel/analytics.js';
-import { evidenceMarkdown, reportMarkdown, reportHtml, reportEvidenceMarkdown, reportEvidenceHtml, exportRun } from '../src/citekeel/report.js';
-import { diagnoseBusiness } from '../src/citekeel/business-diagnosis.js';
-import { initializeSamplingQueue } from '../src/citekeel/sampling-queue.js';
-import type { Project, Sample } from '../src/citekeel/types.js';
+import { createRun } from '../src/workbench/engine.js';
+import { analyzeRun } from '../src/workbench/analytics.js';
+import { evidenceMarkdown, reportMarkdown, reportHtml, reportEvidenceMarkdown, reportEvidenceHtml, exportRun } from '../src/workbench/report.js';
+import { diagnoseBusiness } from '../src/workbench/business-diagnosis.js';
+import { initializeSamplingQueue } from '../src/workbench/sampling-queue.js';
+import type { Project, Sample } from '../src/workbench/types.js';
 const project: Project = { id:'analysis-fixture', name:'松灵', brand:'松灵机器人', aliases:['AgileX'], domain:'agilex.ai',industry:'机器人', description:'',origin:'manual',goal:'测量',sources:[],claims:[],queries:[{id:'q1',text:'机器人底盘怎么选？',intent:'选型',branded:false,origin:'manual'}],queryVersion:5,samples:[],createdAt:'2026-11-08T00:00:00Z',updatedAt:'2026-11-08T00:00:00Z' };
 const sample = (id:string, patch:Partial<Sample>={}): Sample => ({ id,queryId:'q1',question:'机器人底盘怎么选？',intent:'选型',branded:false,origin:'api',model:'deepseek/test',observedAt:'2026-11-08T00:00:00Z',runGroup:'baseline',protocolId:'api/v1',collectionStatus:'completed',analysisStatus:'completed',answer:'AgileX 可以列入核对范围。',citations:[{url:'https://agilex.ai/page',kind:'provider_citation',source:'provider',integrity:'matched'}],...patch });
 test('diagnostic uses adopted units, preserves fallback and separates conditions',()=>{
@@ -43,7 +43,7 @@ test('diagnostic report is concise while full evidence remains separately availa
 });
 
 test('diagnostic briefs never reuse counts or evidence outside the selected scope', async()=>{
- const {diagnoseRun}=await import('../src/citekeel/diagnosis.js');
+ const {diagnoseRun}=await import('../src/workbench/diagnosis.js');
  const run=createRun(project,'replay');run.status='completed';run.samples=[sample('good'),sample('bad',{model:'other',analysisStatus:'failed'})];
  run.actions=[{id:'old',kind:'content',title:'UNSCOPED COUNT',priority:'P1',rationale:'2 observations',queryIds:['q1'],sampleIds:['good','bad'],claimIds:[],acceptance:'',status:'proposed'}];
  const d=diagnoseRun(run,{model:'deepseek/test'});assert.ok(!d.actions.some(a=>a.id==='old'));assert.ok(d.actions.every(a=>a.sampleIds.every(id=>id==='good')));
@@ -164,4 +164,11 @@ test('business exports preserve queue recovery, action state and legacy evidence
  assert.equal(evidenceMarkdown(run), reportEvidenceMarkdown(run));
  assert.match(reportHtml(run, {}, true), /COMPATIBILITY_EVIDENCE/);
  assert.doesNotMatch(reportHtml(run, { model: 'absent' }, true), /COMPATIBILITY_EVIDENCE/);
+});
+
+test('analytics rows expose exact cohorts for citation denominators and day-specific evidence', () => {
+ const run=createRun(project,'replay');run.status='completed';
+ run.samples=[sample('reused',{origin:'api',intent:'natural',answer:'AgileX API source.'}),sample('reused',{origin:'browser',intent:'natural',citations:[],answer:'AgileX browser answer.'}),sample('comparison',{origin:'api',intent:'candidate_comparison',citations:[],answer:'AgileX supplied comparison.'})];
+ const a=analyzeRun(run);assert.equal(a.quality.valid,3);assert.equal(a.metrics.cohorts.length,3);
+ for(const cohort of a.metrics.cohorts){const rows=a.rows.filter(row=>row.status==='valid'&&row.cohortKey===cohort.key);assert.equal(rows.length,1);assert.equal(rows[0]!.channel,cohort.origin==='browser'?'web':cohort.origin);assert.equal(rows[0]!.providerCitations,cohort.origin==='api'&&cohort.intent==='natural'?1:0);}
 });

@@ -3,12 +3,17 @@
 !package.json
 !package-lock.json
 !tsconfig.json
+!tsconfig.backend.json
+!next.config.ts
+!postcss.config.mjs
 !src
 !src/**
 !public
 !public/**
 !scripts
 !scripts/campaign.ts
+!scripts/serve.ts
+!scripts/prepare-browser-worker.ts
 !LICENSE
 !vendor
 !vendor/niubigeo

@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Store } from '../src/citekeel/storage.js';
-import { ResearchService, type ResearchJob } from '../src/citekeel/research-service.js';
-import { researchWebsite } from '../src/citekeel/onboarding.js';
-import { createApp } from '../src/citekeel/server.js';
+import { Store } from '../src/workbench/storage.js';
+import { ResearchService, type ResearchJob } from '../src/workbench/research-service.js';
+import { researchWebsite } from '../src/workbench/onboarding.js';
+import { createApp } from '../src/workbench/server.js';
 
 const research = (input: { url: string; language?: string; country?: string }) => researchWebsite(input, { fetchPage: async url => ({url,contentType:'text/html',text:'<title>Northstar | Analytics</title><meta name="description" content="Analytics for independent software teams."><h1>Product analytics</h1>'}) });
 async function fixture() { const root=await mkdtemp(join(tmpdir(),'opengeo-research-'));return {store:new Store(root),cleanup:()=>rm(root,{recursive:true,force:true})}; }
@@ -40,11 +40,12 @@ test('interrupted research is explicit after restart; unsafe URLs and out-of-sco
   } finally {await cleanup();}
 });
 test('HTTP research route persists progress and accepts reviewed prompts, with local origin checks',async()=>{
-  const {store,cleanup}=await fixture();const {server}=await createApp(store,{research});
+  const {store,cleanup}=await fixture();const {server}=await createApp(store,{research,frontend:(_req,res)=>{res.writeHead(200,{'content-type':'text/html'});res.end('<main>OpenGEO onboarding</main>');}});
   await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${(server.address() as import('node:net').AddressInfo).port}`;
   const post=(path:string,data:unknown,origin?:string)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json',...(origin?{Origin:origin}:{})},body:JSON.stringify(data)});
   try {
-    assert.equal((await fetch(base+'/create-workspace')).status,200);
+    const frontend=await fetch(base+'/create-workspace');assert.equal(frontend.status,200);assert.match(await frontend.text(),/OpenGEO onboarding/);
+    assert.equal((await fetch(base+'/create-workspace',{headers:{Origin:'https://evil.example'}})).status,403);
     const response=await post('/api/researches',{url:'https://example.com'});assert.equal(response.status,202);const started=await response.json() as ResearchJob;
     const job=await finished(new ResearchService(store),started.id);
     const accepted=await post(`/api/researches/${job.id}/accept`,{selectedPromptIds:job.result!.prompts.map(p=>p.id)});

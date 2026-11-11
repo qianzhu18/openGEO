@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { Store } from '../src/citekeel/storage.js';
-import { initializeSamplingQueue, recoverSamplingQueue, type QueueClock } from '../src/citekeel/sampling-queue.js';
-import { collectCloroAsync } from '../src/citekeel/cloro-async.js';
-import { batchPolicy, backoffMs, ProviderSlots } from '../src/citekeel/batch-policy.js';
-import { newReceipt } from '../src/citekeel/api-receipts.js';
-import { retryDecision } from '../src/citekeel/sampling-queue.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { Store } from '../src/workbench/storage.js';
+import { initializeSamplingQueue, recoverSamplingQueue, type QueueClock } from '../src/workbench/sampling-queue.js';
+import { collectCloroAsync } from '../src/workbench/cloro-async.js';
+import { batchPolicy, backoffMs, ProviderSlots } from '../src/workbench/batch-policy.js';
+import { newReceipt } from '../src/workbench/api-receipts.js';
+import { retryDecision } from '../src/workbench/sampling-queue.js';
 
 function clock(): QueueClock {
   let now = Date.now();

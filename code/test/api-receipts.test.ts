@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { Store } from '../src/citekeel/storage.js';
-import { exportRun, evidenceMarkdown } from '../src/citekeel/report.js';
-import { diagnoseApiFailure, newReceipt, retainApiResponse, apiReceipts } from '../src/citekeel/api-receipts.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { Store } from '../src/workbench/storage.js';
+import { exportRun, evidenceMarkdown } from '../src/workbench/report.js';
+import { diagnoseApiFailure, newReceipt, retainApiResponse, apiReceipts } from '../src/workbench/api-receipts.js';
 
 test('Cloro HTTP200 task FAILED is an upstream failure, and credits stay separate from USD',()=>{
  const run=createRun(syntheticProject(),'live');

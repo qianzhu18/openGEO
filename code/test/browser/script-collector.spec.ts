@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { chatgptScript } from '../../src/citekeel/browser/chatgpt-script.js';
+import { chatgptScript } from '../../src/workbench/browser/chatgpt-script.js';
 
 const prompt = 'Which tools\nshould a small team use?';
 const html = `<!doctype html><meta charset="utf-8"><main><div class="ProseMirror" contenteditable="true" role="textbox" aria-label="询问 ChatGPT"></div><button aria-label="听写">Dictate</button><button aria-label="发送">Send</button></main>`;

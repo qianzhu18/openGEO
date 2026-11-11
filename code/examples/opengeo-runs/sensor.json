@@ -1,0 +1,1014 @@
+{
+  "schemaVersion": "opengeo-public-run/v1",
+  "id": "7c0ba10e-d7f0-4573-b45f-a27f40eb4e76",
+  "createdAt": "2026-10-29T12:04:23.431Z",
+  "mode": "replay",
+  "project": {
+    "name": "衡川传感 · 制造业样例",
+    "brand": "衡川传感",
+    "origin": "synthetic"
+  },
+  "goal": "梳理供应商选型中的品牌事实与信任缺口，形成能追溯到证据的改进任务。",
+  "audit": {
+    "planned": 20,
+    "collected": 19,
+    "analyzed": 18,
+    "collectionFailed": 1,
+    "analysisFailed": 1,
+    "mention": {
+      "numerator": 8,
+      "denominator": 18,
+      "value": 0.4444444444444444
+    },
+    "recommendation": {
+      "numerator": 3,
+      "denominator": 14,
+      "value": 0.21428571428571427
+    },
+    "judgments": [
+      {
+        "sampleId": "synthetic-q01",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "衡川传感提供工业温度探头，适用于车间温度监测。采购前应核对温度范围、精度和安装方式。",
+          "start": 0,
+          "end": 42
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q02",
+        "mentioned": true,
+        "recommended": true,
+        "evidence": {
+          "quote": "衡川传感支持按安装方式和线长定制，可考虑先申请样件，再确认量产参数。",
+          "start": 0,
+          "end": 34
+        },
+        "reason": "品牌附近有推荐措辞，需人工核对语境",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q03",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "衡川传感的摘要写月产能 900 件。该数字可能与实际出货口径混淆，建议确认规格书。",
+          "start": 0,
+          "end": 41
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q04",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "目前资料没有可核验的 ISO 9001 证书，不能确认衡川传感已经取得该认证。",
+          "start": 0,
+          "end": 39
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q05",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q06",
+        "mentioned": true,
+        "recommended": null,
+        "evidence": {
+          "quote": "对于特殊线长的小批量探头，可以考虑衡川传感。先确认图纸、样件和检验条件，再决定批量订单。",
+          "start": 0,
+          "end": 44
+        },
+        "reason": "出现品牌，但无法据规则确定是否推荐",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q07",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q08",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q09",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q10",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q11",
+        "mentioned": true,
+        "recommended": true,
+        "evidence": {
+          "quote": "资料显示衡川传感的量程为 -40 至 250℃，适合在这一范围内进一步评估，超过量程需要另行确认。",
+          "start": 0,
+          "end": 49
+        },
+        "reason": "品牌附近有推荐措辞，需人工核对语境",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q12",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q13",
+        "mentioned": true,
+        "recommended": false,
+        "evidence": {
+          "quote": "不推荐在 300℃ 环境使用衡川传感现有型号，其公开测试量程上限为 250℃。",
+          "start": 0,
+          "end": 39
+        },
+        "reason": "品牌附近有否定推荐表述",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q14",
+        "mentioned": true,
+        "recommended": true,
+        "evidence": {
+          "quote": "需要特殊线长时，应确认材料、信号衰减和接头方式；衡川传感支持线长定制，可考虑送样验证。",
+          "start": 0,
+          "end": 43
+        },
+        "reason": "品牌附近有推荐措辞，需人工核对语境",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q15",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q16",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q17",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q18",
+        "mentioned": false,
+        "recommended": false,
+        "evidence": null,
+        "reason": "原文未命中已确认的品牌名称或别名",
+        "needsReview": false
+      },
+      {
+        "sampleId": "synthetic-q19",
+        "mentioned": null,
+        "recommended": null,
+        "evidence": null,
+        "reason": "未取得有效原文",
+        "needsReview": true
+      },
+      {
+        "sampleId": "synthetic-q20",
+        "mentioned": null,
+        "recommended": null,
+        "evidence": null,
+        "reason": "原文已保存，分析未完成",
+        "needsReview": true
+      }
+    ],
+    "providerCitations": 3,
+    "searchResults": 1,
+    "groundings": 0,
+    "answerUrls": 2,
+    "citationIntegrityFailures": 0,
+    "strata": [
+      {
+        "label": "synthetic · 合成回答 fixture/v1 · 品牌问题 · synthetic-baseline",
+        "count": 4,
+        "collected": 4,
+        "mentioned": 4,
+        "denominator": 4
+      },
+      {
+        "label": "synthetic · 合成回答 fixture/v1 · 非品牌问题 · synthetic-baseline",
+        "count": 16,
+        "collected": 15,
+        "mentioned": 4,
+        "denominator": 14
+      }
+    ]
+  },
+  "queries": [
+    {
+      "id": "q01",
+      "text": "衡川传感是做什么的？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q02",
+      "text": "衡川传感支持定制吗？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q03",
+      "text": "衡川传感的额定产能是多少？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q04",
+      "text": "衡川传感有 ISO 9001 证书吗？",
+      "intent": "信任核验",
+      "branded": true,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q05",
+      "text": "工业温度传感器供应商怎么选？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q06",
+      "text": "小批量定制温度探头找哪类厂商？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q07",
+      "text": "车间温度监测有哪些供应商可以考虑？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q08",
+      "text": "工业传感器采购需要比较什么？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q09",
+      "text": "温度探头供应商的交付能力如何核验？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q10",
+      "text": "中小工厂怎么选择温度监测设备？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q11",
+      "text": "高温车间选择温度探头要确认什么？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q12",
+      "text": "精度要求正负 0.5 度怎么选型？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q13",
+      "text": "温度传感器可用于 300 度环境吗？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q14",
+      "text": "需要特殊线长的温度探头怎么办？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q15",
+      "text": "怎样核验供应商检测报告？",
+      "intent": "信任核验",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q16",
+      "text": "没有质量证书的传感器供应商如何评估？",
+      "intent": "信任核验",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q17",
+      "text": "打样到量产的采购流程怎么安排？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q18",
+      "text": "额定产能和实际出货量有何区别？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q19",
+      "text": "批量采购温度探头需要哪些验收材料？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    },
+    {
+      "id": "q20",
+      "text": "供应商的参数和介绍冲突时怎么办？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "合成案例预设，非搜索量数据"
+    }
+  ],
+  "actions": [
+    {
+      "title": "复核失败样本，保留已有回答原文",
+      "priority": "P0",
+      "kind": "measurement",
+      "rationale": "2 条记录采集或分析未完成，不能作为未提及统计。",
+      "queryIds": [
+        "q19",
+        "q20"
+      ],
+      "sampleIds": [
+        "synthetic-q19",
+        "synthetic-q20"
+      ],
+      "claimIds": [],
+      "acceptance": "先重做本地解析；需要重新采集时创建新尝试，不覆盖旧记录。",
+      "id": "action-1",
+      "status": "proposed"
+    },
+    {
+      "title": "补齐资质与关键声明的证据",
+      "priority": "P1",
+      "kind": "fact",
+      "rationale": "ISO 9001 资质：尚未提供证书，不对外宣称已认证",
+      "queryIds": [
+        "q04",
+        "q15",
+        "q16"
+      ],
+      "sampleIds": [],
+      "claimIds": [
+        "c-certificate"
+      ],
+      "acceptance": "提供可核对的原始文件与适用范围，缺失前不作确定性宣传。",
+      "id": "action-2",
+      "status": "proposed"
+    },
+    {
+      "title": "围绕非品牌采购问题补充选型说明",
+      "priority": "P1",
+      "kind": "content",
+      "rationale": "10 条可判定的非品牌回答没有品牌名称；先补充适用场景、参数限制和选择依据。",
+      "queryIds": [
+        "q05",
+        "q07",
+        "q08",
+        "q09",
+        "q10",
+        "q12"
+      ],
+      "sampleIds": [
+        "synthetic-q05",
+        "synthetic-q07",
+        "synthetic-q08",
+        "synthetic-q09",
+        "synthetic-q10",
+        "synthetic-q12"
+      ],
+      "claimIds": [
+        "c-product",
+        "c-range",
+        "c-accuracy",
+        "c-custom",
+        "c-capacity",
+        "c-shipping"
+      ],
+      "acceptance": "产出一份含事实来源的选型内容，发布后使用原问题版本复测；不预设推荐提升。",
+      "id": "action-3",
+      "status": "proposed"
+    }
+  ],
+  "draft": {
+    "title": "衡川传感：选型与事实说明",
+    "status": "draft",
+    "generator": "rules",
+    "claimIds": [
+      "c-product",
+      "c-range",
+      "c-accuracy",
+      "c-custom",
+      "c-capacity",
+      "c-shipping"
+    ],
+    "warnings": [
+      "ISO 9001 资质：尚未提供证书，不对外宣称已认证"
+    ],
+    "markdown": "# 衡川传感：选型与事实说明\n\n> 合成示例内容，仅用于演示。\n\n## 已确认的信息\n\n- 主营产品：工业温度探头。〔c-product〕\n- 测试量程：-40 至 250℃。〔c-range〕\n- 标称精度：±0.5℃，具体应用需验证测试条件。〔c-accuracy〕\n- 定制范围：支持安装方式与线长定制。〔c-custom〕\n- 额定月产能：每月 2400 件额定产能。〔c-capacity〕\n- 最近月实际出货：900 件，不能替代额定产能。〔c-shipping〕\n\n## 工业温度传感器供应商怎么选？\n\n采购时应先确认现场需求，再与上述事实逐项匹配。对超出已确认参数范围的应用，应要求补充验证，避免仅凭品牌描述决定选型。\n\n## 还需要核对什么\n\n- ISO 9001 资质：尚未提供证书，不对外宣称已认证\n\n## 事实来源\n\n- 〔c-product〕合成规格书 v1\n- 〔c-range〕合成规格书 v1\n- 〔c-accuracy〕合成规格书 v1\n- 〔c-custom〕合成规格书 v1\n- 〔c-capacity〕合成规格书 v1；含错误口径的合成摘要\n- 〔c-shipping〕合成出货记录\n"
+  },
+  "samples": [
+    {
+      "id": "synthetic-q01",
+      "queryId": "q01",
+      "question": "衡川传感是做什么的？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "衡川传感提供工业温度探头，适用于车间温度监测。采购前应核对温度范围、精度和安装方式。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q02",
+      "queryId": "q02",
+      "question": "衡川传感支持定制吗？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "衡川传感支持按安装方式和线长定制，可考虑先申请样件，再确认量产参数。",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/specification",
+          "kind": "provider_citation",
+          "source": "provider_annotation",
+          "payloadPath": "annotations[0].url",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q03",
+      "queryId": "q03",
+      "question": "衡川传感的额定产能是多少？",
+      "intent": "品牌核验",
+      "branded": true,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "衡川传感的摘要写月产能 900 件。该数字可能与实际出货口径混淆，建议确认规格书。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q04",
+      "queryId": "q04",
+      "question": "衡川传感有 ISO 9001 证书吗？",
+      "intent": "信任核验",
+      "branded": true,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "目前资料没有可核验的 ISO 9001 证书，不能确认衡川传感已经取得该认证。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q05",
+      "queryId": "q05",
+      "question": "工业温度传感器供应商怎么选？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "选供应商时，先核对测温范围、精度、接口和环境要求，再比较批次一致性与交付流程。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q06",
+      "queryId": "q06",
+      "question": "小批量定制温度探头找哪类厂商？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "对于特殊线长的小批量探头，可以考虑衡川传感。先确认图纸、样件和检验条件，再决定批量订单。",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/specification",
+          "kind": "provider_citation",
+          "source": "provider_annotation",
+          "payloadPath": "annotations[0].url",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q07",
+      "queryId": "q07",
+      "question": "车间温度监测有哪些供应商可以考虑？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "建议先建立统一参数表，再对照现场温度和接线方式选择设备。不要只看品牌宣传。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q08",
+      "queryId": "q08",
+      "question": "工业传感器采购需要比较什么？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "工业传感器采购应比较精度、环境适用性、校准方式、验收条件和售后边界。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q09",
+      "queryId": "q09",
+      "question": "温度探头供应商的交付能力如何核验？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "交付能力需要结合设备能力、当前订单、交期和检验流程核验。公开介绍不足以确认即时可供货量。",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/capacity",
+          "kind": "search_result",
+          "source": "provider_search_result",
+          "integrity": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q10",
+      "queryId": "q10",
+      "question": "中小工厂怎么选择温度监测设备？",
+      "intent": "供应商发现",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "中小工厂可先做小范围试装，验证信号稳定性与安装适配，再扩大部署。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q11",
+      "queryId": "q11",
+      "question": "高温车间选择温度探头要确认什么？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "资料显示衡川传感的量程为 -40 至 250℃，适合在这一范围内进一步评估，超过量程需要另行确认。",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/specification",
+          "kind": "provider_citation",
+          "source": "provider_annotation",
+          "payloadPath": "annotations[0].url",
+          "integrity": "matched"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q12",
+      "queryId": "q12",
+      "question": "精度要求正负 0.5 度怎么选型？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "精度要求为 ±0.5℃ 时，应确认该指标的测试条件和整个测量链路误差，不能只看探头标称值。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q13",
+      "queryId": "q13",
+      "question": "温度传感器可用于 300 度环境吗？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "不推荐在 300℃ 环境使用衡川传感现有型号，其公开测试量程上限为 250℃。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q14",
+      "queryId": "q14",
+      "question": "需要特殊线长的温度探头怎么办？",
+      "intent": "产品匹配",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "需要特殊线长时，应确认材料、信号衰减和接头方式；衡川传感支持线长定制，可考虑送样验证。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q15",
+      "queryId": "q15",
+      "question": "怎样核验供应商检测报告？",
+      "intent": "信任核验",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "检测报告应检查报告编号、检测对象、条件、日期和出具机构。普通网页链接不等于报告已经核验。https://docs.sensor-demo.example/reports",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/reports",
+          "source": "answer_text_url",
+          "kind": "answer_url",
+          "integrity": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q16",
+      "queryId": "q16",
+      "question": "没有质量证书的传感器供应商如何评估？",
+      "intent": "信任核验",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "缺少证书时，先记录证据缺口，并要求提供可核对的资质文件；不要把口头陈述写成已认证。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q17",
+      "queryId": "q17",
+      "question": "打样到量产的采购流程怎么安排？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "从需求表、图纸、打样、测试到量产分步确认，每一步约定验收方式与变更记录。https://docs.sensor-demo.example/process",
+      "citations": [
+        {
+          "url": "https://docs.sensor-demo.example/process",
+          "source": "answer_text_url",
+          "kind": "answer_url",
+          "integrity": "unverified"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-q18",
+      "queryId": "q18",
+      "question": "额定产能和实际出货量有何区别？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "completed",
+      "answer": "额定产能指特定条件下的生产能力；实际出货是某个周期的交付结果，二者不能互相替代。",
+      "citations": []
+    },
+    {
+      "id": "synthetic-q19",
+      "queryId": "q19",
+      "question": "批量采购温度探头需要哪些验收材料？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "failed",
+      "analysisStatus": "failed",
+      "answer": "",
+      "citations": [],
+      "error": "示例：请求超时"
+    },
+    {
+      "id": "synthetic-q20",
+      "queryId": "q20",
+      "question": "供应商的参数和介绍冲突时怎么办？",
+      "intent": "采购决策",
+      "branded": false,
+      "origin": "synthetic",
+      "model": "合成回答 fixture/v1",
+      "observedAt": "2026-10-29T00:00:00.000Z",
+      "runGroup": "synthetic-baseline",
+      "protocolId": "synthetic/v1",
+      "collectionStatus": "completed",
+      "analysisStatus": "failed",
+      "answer": "{\"brand\":\"衡川传感\",\"judgment\":",
+      "citations": [],
+      "error": "示例：结构化回答截断，解析失败"
+    }
+  ],
+  "calls": [],
+  "steps": [
+    {
+      "id": "ground",
+      "label": "品牌事实",
+      "skill": "brand-grounding",
+      "status": "completed",
+      "evidenceIds": [
+        "c-product",
+        "c-range",
+        "c-accuracy",
+        "c-custom",
+        "c-capacity",
+        "c-shipping",
+        "c-certificate"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.432Z",
+      "summary": "读取 7 项事实，0 项冲突，1 项待确认。",
+      "finishedAt": "2026-10-29T12:04:23.432Z"
+    },
+    {
+      "id": "queries",
+      "label": "问题空间",
+      "skill": "query-discovery",
+      "status": "completed",
+      "evidenceIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08",
+        "q09",
+        "q10",
+        "q11",
+        "q12",
+        "q13",
+        "q14",
+        "q15",
+        "q16",
+        "q17",
+        "q18",
+        "q19",
+        "q20"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.432Z",
+      "summary": "采用问题集 v1，本轮 20 个问题。候选来自本地问题模板与人工输入，不推断搜索量。",
+      "finishedAt": "2026-10-29T12:04:23.433Z"
+    },
+    {
+      "id": "audit",
+      "label": "可见度诊断",
+      "skill": "visibility-audit",
+      "status": "completed",
+      "evidenceIds": [
+        "synthetic-q01",
+        "synthetic-q02",
+        "synthetic-q03",
+        "synthetic-q04",
+        "synthetic-q05",
+        "synthetic-q06",
+        "synthetic-q07",
+        "synthetic-q08",
+        "synthetic-q09",
+        "synthetic-q10",
+        "synthetic-q11",
+        "synthetic-q12",
+        "synthetic-q13",
+        "synthetic-q14",
+        "synthetic-q15",
+        "synthetic-q16",
+        "synthetic-q17",
+        "synthetic-q18",
+        "synthetic-q19",
+        "synthetic-q20"
+      ],
+      "executor": "archive",
+      "startedAt": "2026-10-29T12:04:23.433Z",
+      "summary": "20 条样本，19 条有原文，18 条分析完成。仅回放原始数据，未调用模型。",
+      "finishedAt": "2026-10-29T12:04:23.434Z"
+    },
+    {
+      "id": "sources",
+      "label": "信源分析",
+      "skill": "source-analysis",
+      "status": "completed",
+      "evidenceIds": [
+        "synthetic-q02",
+        "synthetic-q06",
+        "synthetic-q09",
+        "synthetic-q11",
+        "synthetic-q15",
+        "synthetic-q17"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.435Z",
+      "summary": "3 个 Provider 引用、1 个搜索结果、0 个 grounding 来源、2 个正文 URL；分别记录。",
+      "finishedAt": "2026-10-29T12:04:23.436Z"
+    },
+    {
+      "id": "strategy",
+      "label": "策略规划",
+      "skill": "strategy-planning",
+      "status": "completed",
+      "evidenceIds": [
+        "action-1",
+        "action-2",
+        "action-3"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.436Z",
+      "summary": "3 个任务。根据事实冲突、失败记录、品牌缺口与来源类型生成任务。",
+      "finishedAt": "2026-10-29T12:04:23.436Z"
+    },
+    {
+      "id": "content",
+      "label": "内容工程",
+      "skill": "content-engineering",
+      "status": "completed",
+      "evidenceIds": [
+        "c-product",
+        "c-range",
+        "c-accuracy",
+        "c-custom",
+        "c-capacity",
+        "c-shipping"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.437Z",
+      "summary": "已生成带事实 ID 的草稿，等待人工审核。未执行发布。",
+      "finishedAt": "2026-10-29T12:04:23.437Z"
+    },
+    {
+      "id": "monitor",
+      "label": "监测比较",
+      "skill": "monitoring-analysis",
+      "status": "completed",
+      "evidenceIds": [
+        "synthetic-baseline"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.437Z",
+      "summary": "保留 1 个原始采样批次，按模型、品牌词与非品牌词分组。没有干预对照，不输出提升结论。",
+      "finishedAt": "2026-10-29T12:04:23.438Z"
+    },
+    {
+      "id": "review",
+      "label": "实验复盘",
+      "skill": "experiment-retrospective",
+      "status": "completed",
+      "evidenceIds": [
+        "action-1",
+        "action-2",
+        "action-3"
+      ],
+      "executor": "rules",
+      "startedAt": "2026-10-29T12:04:23.438Z",
+      "summary": "本轮完成案例回放。计划 20 条，取得原文 19 条。可继续审核内容与执行任务。下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。",
+      "finishedAt": "2026-10-29T12:04:23.439Z"
+    }
+  ],
+  "limitations": [
+    "推荐判定采用公开的文本规则，含品牌的回答需要人工复核语境。",
+    "引用项存在不证明来源正确，也不证明导致了推荐。",
+    "全部回答为合成 fixture，只检验业务流程。"
+  ],
+  "review": "本轮完成案例回放。计划 20 条，取得原文 19 条。可继续审核内容与执行任务。下一轮保持相同问题版本，分别记录发布动作和采样条件。本轮不提供优化效果的因果结论。"
+}

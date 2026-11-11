@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { answerTruncated, findMention, auditSamples, classifyCitation, normalizeCitation, validateImport } from '../src/citekeel/analysis.js';
-import { loadCases, syntheticProject } from '../src/citekeel/cases.js';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { Store } from '../src/citekeel/storage.js';
-import { exportRun, redactExportText } from '../src/citekeel/report.js';
-import { planActions, validateModelActions } from '../src/citekeel/skills.js';
-import { createApp } from '../src/citekeel/server.js';
-import type { AgentRun, Project } from '../src/citekeel/types.js';
+import { answerTruncated, findMention, auditSamples, classifyCitation, normalizeCitation, validateImport } from '../src/workbench/analysis.js';
+import { loadCases, syntheticProject } from '../src/workbench/cases.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { Store } from '../src/workbench/storage.js';
+import { exportRun, redactExportText } from '../src/workbench/report.js';
+import { planActions, validateModelActions } from '../src/workbench/skills.js';
+import { createApp } from '../src/workbench/server.js';
+import type { AgentRun, Project } from '../src/workbench/types.js';
 
-async function temporaryStore() { const root = await mkdtemp(join(tmpdir(), 'citekeel-test-')); return { store: new Store(root), cleanup: () => rm(root, { recursive: true, force: true }) }; }
+async function temporaryStore() { const root = await mkdtemp(join(tmpdir(), 'opengeo-test-')); return { store: new Store(root), cleanup: () => rm(root, { recursive: true, force: true }) }; }
 
 test('brand matching avoids ASCII partial matches and URL-only mentions, and retains exact offsets', () => {
   assert.equal(findMention('PostHogger is a different name.', ['PostHog']), null);
@@ -136,7 +136,7 @@ test('content opportunities keep candidate comparisons separate and expose revie
 
 test('live transport uses upstream provider, isolates measurement prompts, validates plans and strips secrets', async () => {
   const { store, cleanup } = await temporaryStore(); const original = globalThis.fetch;
-  const prompts: string[] = []; const key = 'citekeel-test-key-not-a-real-credential';
+  const prompts: string[] = []; const key = 'opengeo-test-key-not-a-real-credential';
   globalThis.fetch = async (_url: any, init: any) => {
     const payload = JSON.parse(init.body), prompt = payload.messages[0].content; prompts.push(prompt);
     if (!prompt.startsWith('你是 GEO') && !prompt.startsWith('请写一份')) assert.equal(payload.max_tokens, 2500);

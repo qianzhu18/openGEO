@@ -31,3 +31,5 @@ code/vendor/niubigeo/assets/screenshots/
 *.saz
 *.pem
 *.key
+.next/
+*.tsbuildinfo

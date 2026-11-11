@@ -6,9 +6,7 @@ services:
     ports:
       - "127.0.0.1:${OPENGEO_PORT:-8848}:8847"
     volumes:
-      - workbench:/app/data/citekeel
-    secrets:
-      - opengeo_worker_token
+      - workbench:/app/data/opengeo
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8847/api/status').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
       interval: 5s
@@ -16,6 +14,3 @@ services:
       retries: 8
 volumes:
   workbench:
-secrets:
-  opengeo_worker_token:
-    file: ./data/docker-worker/token

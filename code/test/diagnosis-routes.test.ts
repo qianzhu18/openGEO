@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { createApp } from '../src/citekeel/server.js';
-import { Store } from '../src/citekeel/storage.js';
-import { diagnosisRoutes } from '../src/citekeel/diagnosis-routes.js';
-import { initializeSamplingQueue } from '../src/citekeel/sampling-queue.js';
-import { analyzeRun } from '../src/citekeel/analytics.js';
-import { reportMarkdown, exportRun } from '../src/citekeel/report.js';
-import type { AgentRun } from '../src/citekeel/types.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { createApp } from '../src/workbench/server.js';
+import { Store } from '../src/workbench/storage.js';
+import { diagnosisRoutes } from '../src/workbench/diagnosis-routes.js';
+import { initializeSamplingQueue } from '../src/workbench/sampling-queue.js';
+import { analyzeRun } from '../src/workbench/analytics.js';
+import { reportMarkdown, exportRun } from '../src/workbench/report.js';
+import type { AgentRun } from '../src/workbench/types.js';
 
 const routerAnswer = () => new Response(JSON.stringify({ id: 'router-generation', model: 'openai/gpt-6-luna',
   choices: [{ message: { content: 'A complete answer comparing robot platforms.' }, finish_reason: 'stop' }], usage: { cost: 0.001 } }));

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createApp } from '../src/citekeel/server.js';
-import { Store } from '../src/citekeel/storage.js';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import type { AgentRun } from '../src/citekeel/types.js';
-import { createRun } from '../src/citekeel/engine.js';
-import { initializeSamplingQueue } from '../src/citekeel/sampling-queue.js';
+import { createApp } from '../src/workbench/server.js';
+import { Store } from '../src/workbench/storage.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import type { AgentRun } from '../src/workbench/types.js';
+import { createRun } from '../src/workbench/engine.js';
+import { initializeSamplingQueue } from '../src/workbench/sampling-queue.js';
 
 test('slow Cloro does not hold HTTP submission, reads, stop, or OpenRouter; waiting Cloro work is not sent', async () => {
   const root = await mkdtemp(join(tmpdir(), 'opengeo-architecture-'));

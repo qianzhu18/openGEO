@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CloroMonitor } from '../src/citekeel/cloro-monitor.js';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { Store } from '../src/citekeel/storage.js';
+import { CloroMonitor } from '../src/workbench/cloro-monitor.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { Store } from '../src/workbench/storage.js';
 
 test('Cloro official endpoints preserve monitor identity, redact secrets and do not claim citations or model versions', async () => {
  const original = globalThis.fetch, seen: {url:string;body:any}[] = [];

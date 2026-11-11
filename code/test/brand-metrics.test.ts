@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveBrandMetrics, deriveSourceMetrics, type BrandEntity } from '../src/citekeel/brand-metrics.js';
-import type { Sample, Citation } from '../src/citekeel/types.js';
+import { deriveBrandMetrics, deriveSourceMetrics, type BrandEntity } from '../src/workbench/brand-metrics.js';
+import type { Sample, Citation } from '../src/workbench/types.js';
 const brands: BrandEntity[] = [
   {id:'a',name:'Alpha',aliases:['A Product'],domains:['alpha.example'],status:'active',isOwn:true},
   {id:'b',name:'Beta',aliases:[],domains:['beta.example'],status:'active',isOwn:false},

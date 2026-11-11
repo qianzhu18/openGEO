@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { collectSources, digest, readEvidence } from '../src/citekeel/campaign/evidence.js';
-import { importAttempt } from '../src/citekeel/campaign/import-attempt.js';
-import { compareCampaigns, runCampaign, validateCampaign, writeCampaign } from '../src/citekeel/campaign/run.js';
-import { renderCampaign } from '../src/citekeel/campaign/render.js';
-import { renderCampaignComparison } from '../src/citekeel/campaign/render.js';
-import type { CampaignAttempt, CampaignProtocol, CampaignSpec } from '../src/citekeel/campaign/model.js';
+import { collectSources, digest, readEvidence } from '../src/workbench/campaign/evidence.js';
+import { importAttempt } from '../src/workbench/campaign/import-attempt.js';
+import { compareCampaigns, runCampaign, validateCampaign, writeCampaign } from '../src/workbench/campaign/run.js';
+import { renderCampaign } from '../src/workbench/campaign/render.js';
+import { renderCampaignComparison } from '../src/workbench/campaign/render.js';
+import type { CampaignAttempt, CampaignProtocol, CampaignSpec } from '../src/workbench/campaign/model.js';
 
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'opengeo-campaign-'));

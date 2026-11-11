@@ -7,9 +7,9 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createApp } from '../src/citekeel/server.js';
-import { Store } from '../src/citekeel/storage.js';
-import { HostBrowserMailbox, workerProof } from '../src/citekeel/browser/host-mailbox.js';
+import { createApp } from '../src/workbench/server.js';
+import { Store } from '../src/workbench/storage.js';
+import { HostBrowserMailbox, workerProof } from '../src/workbench/browser/host-mailbox.js';
 
 const token = 'a'.repeat(64);
 const fixture = {
@@ -139,7 +139,7 @@ test('host worker rejects unsupported engines before creating a browser collecto
     if (action === 'finish') finished();
   });
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-  const child = spawn(process.execPath, ['--import', 'tsx', 'src/citekeel/browser/host-worker.ts'], {
+  const child = spawn(process.execPath, ['--import', 'tsx', 'src/workbench/browser/host-worker.ts'], {
     env: { ...process.env, OPENGEO_HOST_WORKER_TOKEN_FILE: tokenFile,
       OPENGEO_WORKER_APP_URL: `http://127.0.0.1:${(server.address() as { port: number }).port}` },
     stdio: 'ignore',

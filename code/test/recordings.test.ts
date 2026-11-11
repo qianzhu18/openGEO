@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { RecordingService, listObservedFanouts, type RecordingFetcher } from '../src/citekeel/recordings.js';
-import { Store } from '../src/citekeel/storage.js';
-import { createApp } from '../src/citekeel/server.js';
-import type { Project, Sample } from '../src/citekeel/types.js';
+import { RecordingService, listObservedFanouts, type RecordingFetcher } from '../src/workbench/recordings.js';
+import { Store } from '../src/workbench/storage.js';
+import { createApp } from '../src/workbench/server.js';
+import type { Project, Sample } from '../src/workbench/types.js';
 
 function project(): Project { const now=new Date().toISOString();return {id:'project-recording-test',name:'Acme',brand:'Acme',aliases:[],domain:'acme.example',industry:'',description:'',origin:'manual',market:'international',language:'en',country:'US',goal:'Diagnose',sources:[],claims:[],queries:[{id:'original-prompt',text:'What does Acme offer?',intent:'brand_awareness',branded:true,origin:'manual',status:'active'}],queryVersion:1,samples:[],createdAt:now,updatedAt:now}; }
 async function fixture() {const root=await mkdtemp(join(tmpdir(),'opengeo-recordings-'));const store=new Store(root);await store.save('projects',project());return {store,service:new RecordingService(store),cleanup:()=>rm(root,{recursive:true,force:true})};}

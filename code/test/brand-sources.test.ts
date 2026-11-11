@@ -4,13 +4,13 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BrandSourceService } from '../src/citekeel/brand-sources.js';
-import { Store } from '../src/citekeel/storage.js';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { createRun } from '../src/citekeel/engine.js';
-import { makeDraft } from '../src/citekeel/skills.js';
-import { createApp } from '../src/citekeel/server.js';
-import type { Project } from '../src/citekeel/types.js';
+import { BrandSourceService } from '../src/workbench/brand-sources.js';
+import { Store } from '../src/workbench/storage.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { createRun } from '../src/workbench/engine.js';
+import { makeDraft } from '../src/workbench/skills.js';
+import { createApp } from '../src/workbench/server.js';
+import type { Project } from '../src/workbench/types.js';
 
 test('source intake preserves provenance, rejects invented claims, deduplicates and keeps run snapshots', async () => {
   const root = await mkdtemp(join(tmpdir(), 'opengeo-sources-'));
@@ -73,7 +73,7 @@ test('website intake preserves returned evidence without confirming it or modify
   try {
     const store = new Store(root), project = syntheticProject();
     await store.save('projects', project);
-    const { researchWebsite } = await import('../src/citekeel/onboarding.js');
+    const { researchWebsite } = await import('../src/workbench/onboarding.js');
     const service = new BrandSourceService(store, input => researchWebsite(input, {
       fetchPage: async url => ({ url, contentType: 'text/html', text: '<html><title>PiPER manual</title><body><main>PiPER payload is 1.5 kg.</main></body></html>' }),
     }));

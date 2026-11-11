@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseQuestionSet } from '../src/citekeel/question-set.js';
+import { parseQuestionSet } from '../src/workbench/question-set.js';
 
 const options = { min: 1, max: 40, maxLength: 800 };
 

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Store } from '../src/citekeel/storage.js';
-import { syntheticProject } from '../src/citekeel/cases.js';
-import { createRun } from '../src/citekeel/engine.js';
+import { Store } from '../src/workbench/storage.js';
+import { syntheticProject } from '../src/workbench/cases.js';
+import { createRun } from '../src/workbench/engine.js';
 
 test('deletion hides only its project and runs, survives seeding, and restores snapshots', async () => {
  const root = await mkdtemp(join(tmpdir(), 'opengeo-delete-'));
@@ -27,7 +27,7 @@ test('deletion hides only its project and runs, survives seeding, and restores s
 
 test('project deletion API scopes runs, refuses writes while deleted and permits recovery',async()=>{
  const root=await mkdtemp(join(tmpdir(),'opengeo-delete-api-'));
- const {createApp}=await import('../src/citekeel/server.js');
+ const {createApp}=await import('../src/workbench/server.js');
  const app=await createApp(new Store(root)); await new Promise<void>(resolve=>app.server.listen(0,'127.0.0.1',resolve));
  const base=`http://127.0.0.1:${(app.server.address() as {port:number}).port}`;
  try {
@@ -46,7 +46,7 @@ test('project deletion API scopes runs, refuses writes while deleted and permits
 
 test('diagnosis spaces persist immutable question versions, platform selection and scoped run association',async()=>{
  const root=await mkdtemp(join(tmpdir(),'opengeo-spaces-'));
- const {createApp}=await import('../src/citekeel/server.js');
+ const {createApp}=await import('../src/workbench/server.js');
  const {server,store}=await createApp(new Store(root));await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
  const base=`http://127.0.0.1:${(server.address() as {port:number}).port}`;
  const call=async(path:string,method='GET',body?:object)=>fetch(base+path,{method,...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});

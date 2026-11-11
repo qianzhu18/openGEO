@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createRun, executeRun } from '../src/citekeel/engine.js';
-import { Store } from '../src/citekeel/storage.js';
-import type { Project } from '../src/citekeel/types.js';
+import { createRun, executeRun } from '../src/workbench/engine.js';
+import { Store } from '../src/workbench/storage.js';
+import type { Project } from '../src/workbench/types.js';
 
 function project(): Project {
   const now = new Date().toISOString();
