@@ -16,8 +16,10 @@ import {
   ArrowUpRight,
   Check,
   CirclePlus,
+  FileText,
   LayoutGrid,
   List,
+  LoaderCircle,
   Play,
   Search,
   Upload,
@@ -91,7 +93,7 @@ function Heading({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div className="max-w-3xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-950">
+        <h1 className="text-2xl font-semibold text-neutral-950">
           {title}
         </h1>
         <p className="muted mt-2 leading-7">{description}</p>
@@ -100,7 +102,34 @@ function Heading({
     </div>
   );
 }
-function Feedback({ message, error }: { message?: string; error?: string }) {
+function Feedback({
+  message,
+  error,
+  lang = "zh",
+}: {
+  message?: string;
+  error?: string;
+  lang?: Lang;
+}) {
+  const [visible, setVisible] = useState(false),
+    id = useId();
+  useEffect(() => {
+    const onNotification = (event: Event) => {
+      if ((event as CustomEvent).detail !== id) setVisible(false);
+    };
+    document.addEventListener("opengeo:notification", onNotification);
+    return () =>
+      document.removeEventListener("opengeo:notification", onNotification);
+  }, [id]);
+  useEffect(() => {
+    setVisible(Boolean(message));
+    if (!message) return;
+    document.dispatchEvent(
+      new CustomEvent("opengeo:notification", { detail: id }),
+    );
+    const timer = setTimeout(() => setVisible(false), 5000);
+    return () => clearTimeout(timer);
+  }, [message, id]);
   return (
     <>
       {error && (
@@ -111,13 +140,29 @@ function Feedback({ message, error }: { message?: string; error?: string }) {
           {error}
         </p>
       )}
-      {message && (
-        <p
+      {message && visible && (
+        <div
+          data-feedback-toast
           role="status"
-          className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900"
+          aria-live="polite"
+          aria-atomic="true"
+          className="fixed right-4 bottom-4 z-[100] flex max-w-[min(400px,calc(100vw_-_32px))] items-start gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 shadow-lg"
         >
-          {message}
-        </p>
+          <Check
+            size={17}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-emerald-700"
+          />
+          <span className="min-w-0 break-words leading-6">{message}</span>
+          <button
+            type="button"
+            className="-mt-1 -mr-2 grid min-h-8 min-w-8 shrink-0 place-items-center rounded-md text-neutral-500 hover:bg-neutral-100"
+            aria-label={copy(lang)("关闭提示", "Dismiss notification")}
+            onClick={() => setVisible(false)}
+          >
+            <X size={15} aria-hidden="true" />
+          </button>
+        </div>
       )}
     </>
   );
@@ -172,7 +217,7 @@ function Status({ value, lang }: { value: string; lang: Lang }) {
   };
   return (
     <span
-      className={`badge ${["confirmed", "done", "reviewed"].includes(value) ? "border-emerald-200 bg-emerald-50 text-emerald-800" : ""}`}
+      className={`badge whitespace-nowrap ${["confirmed", "done", "reviewed"].includes(value) ? "border-emerald-200 bg-emerald-50 text-emerald-800" : ""}`}
     >
       {lang === "zh" ? labels[value] || value : value}
     </span>
@@ -435,30 +480,36 @@ function Prompts({
           {t("添加问题", "Add prompts")}
         </button>
       </Heading>
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <div
-        className="flex flex-wrap gap-2"
+        className="flex flex-wrap gap-x-5 gap-y-1 border-b border-neutral-200"
         role="group"
         aria-label={t("问题状态", "Prompt status")}
       >
         {["active", "suggested", "inactive"].map((value) => (
           <button
             key={value}
-            className={`button ${filter === value ? "bg-neutral-900 text-white" : ""}`}
+            className={`flex min-h-11 items-center gap-2 border-b-2 px-1 text-sm ${filter === value ? "border-neutral-900 font-semibold text-neutral-950" : "border-transparent text-neutral-500 hover:text-neutral-800"}`}
             aria-pressed={filter === value}
             onClick={() => {
               setFilter(value);
               setPage(1);
             }}
           >
-            <Status value={value} lang={lang} />{" "}
-            {queries.filter((q) => (q.status || "active") === value).length}
+            {lang === "zh"
+              ? { active: "已启用", suggested: "建议", inactive: "已停用" }[
+                  value
+                ]
+              : value}{" "}
+            <span className="rounded-md bg-neutral-100 px-1.5 py-0.5 text-xs font-normal tabular-nums text-neutral-600">
+              {queries.filter((q) => (q.status || "active") === value).length}
+            </span>
           </button>
         ))}
       </div>
       <section className="panel">
-        <div className="flex flex-wrap items-center gap-3 border-b border-neutral-200 p-4">
-          <div className="relative min-w-40 flex-1">
+        <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 p-4">
+          <div className="relative min-w-40 flex-[1_1_240px]">
             <Search
               className="absolute left-3 top-3 text-neutral-400"
               size={16}
@@ -475,7 +526,7 @@ function Prompts({
             />
           </div>
           <select
-            className="input max-w-full"
+            className="input w-auto min-w-36 max-w-full flex-[1_1_160px] sm:max-w-52 sm:flex-none"
             aria-label={t("按主题筛选", "Filter by topic")}
             value={topic}
             onChange={(event) => {
@@ -490,27 +541,32 @@ function Prompts({
               </option>
             ))}
           </select>
-          <details className="relative z-50">
-            <summary className="button">{t("显示列", "Columns")}</summary>
+          <details className="relative z-50 basis-full sm:basis-auto">
+            <summary className="button whitespace-nowrap">
+              {t("显示列", "Columns")}
+            </summary>
             <form
-              className="absolute left-0 z-50 w-52 space-y-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-lg"
+              className="absolute left-0 z-50 mt-1 w-52 space-y-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-lg sm:right-0 sm:left-auto"
               onSubmit={(event) => {
                 event.preventDefault();
                 const data = new FormData(event.currentTarget);
-                void mutation.mutate(async () => {
-                  const value = await workbenchApi(
-                    `/api/projects/${project.id}/table-settings`,
-                    "PUT",
-                    {
-                      hiddenColumns: columns.filter(
-                        (column) => !data.has(column),
-                      ),
-                      deltaDisplay: settings.deltaDisplay,
-                      expectedVersion: settings.version,
-                    },
-                  );
-                  setSettings(value);
-                });
+                void mutation.mutate(
+                  async () => {
+                    const value = await workbenchApi(
+                      `/api/projects/${project.id}/table-settings`,
+                      "PUT",
+                      {
+                        hiddenColumns: columns.filter(
+                          (column) => !data.has(column),
+                        ),
+                        deltaDisplay: settings.deltaDisplay,
+                        expectedVersion: settings.version,
+                      },
+                    );
+                    setSettings(value);
+                  },
+                  t("显示列已保存", "Columns saved."),
+                );
               }}
             >
               {columns.map((column) => (
@@ -529,59 +585,64 @@ function Prompts({
             </form>
           </details>
         </div>
-        <div className="flex flex-wrap items-center gap-2 border-b border-neutral-100 px-4 py-3 text-xs">
-          <span className="mr-2 text-neutral-600">
-            {selected.length} {t("项已选", "selected")}
-          </span>
-          <button
-            className="button"
-            disabled={!selected.length || mutation.busy}
-            onClick={() => setMeasure(true)}
+        {selected.length > 0 && (
+          <div
+            className="flex flex-wrap items-center gap-2 border-b border-neutral-200 bg-neutral-50 px-4 py-2.5 text-xs"
+            aria-label={t("批量问题操作", "Bulk prompt actions")}
           >
-            {t("测量所选", "Measure selected")}
-          </button>
-          <button
-            className="button"
-            disabled={!selected.length || mutation.busy}
-            onClick={() => void batch("track")}
-          >
-            {t("启用所选", "Track selected")}
-          </button>
-          <button
-            className="button"
-            disabled={!selected.length || mutation.busy}
-            onClick={() => void batch("untrack")}
-          >
-            {t("停用所选", "Untrack selected")}
-          </button>
-          <select
-            className="input"
-            aria-label={t("所选问题分配主题", "Assign topic")}
-            defaultValue=""
-            disabled={!selected.length || mutation.busy}
-            onChange={(event) => {
-              if (event.target.value !== "__none")
-                void batch("assign-topic", event.target.value);
-              else void batch("assign-topic", "");
-              event.target.value = "";
-            }}
-          >
-            <option value="" disabled>
-              {t("分配主题", "Assign topic")}
-            </option>
-            <option value="__none">{t("无主题", "No topic")}</option>
-            {topics.map((value) => (
-              <option key={value.id} value={value.id}>
-                {value.name}
+            <span className="mr-2 text-neutral-600">
+              {selected.length} {t("项已选", "selected")}
+            </span>
+            <button
+              className="button"
+              disabled={!selected.length || mutation.busy}
+              onClick={() => setMeasure(true)}
+            >
+              {t("测量所选", "Measure selected")}
+            </button>
+            <button
+              className="button"
+              disabled={!selected.length || mutation.busy}
+              onClick={() => void batch("track")}
+            >
+              {t("启用所选", "Track selected")}
+            </button>
+            <button
+              className="button"
+              disabled={!selected.length || mutation.busy}
+              onClick={() => void batch("untrack")}
+            >
+              {t("停用所选", "Untrack selected")}
+            </button>
+            <select
+              className="input w-auto min-w-36 max-w-full"
+              aria-label={t("所选问题分配主题", "Assign topic")}
+              defaultValue=""
+              disabled={!selected.length || mutation.busy}
+              onChange={(event) => {
+                if (event.target.value !== "__none")
+                  void batch("assign-topic", event.target.value);
+                else void batch("assign-topic", "");
+                event.target.value = "";
+              }}
+            >
+              <option value="" disabled>
+                {t("分配主题", "Assign topic")}
               </option>
-            ))}
-          </select>
-        </div>
+              <option value="__none">{t("无主题", "No topic")}</option>
+              {topics.map((value) => (
+                <option key={value.id} value={value.id}>
+                  {value.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="table-wrap">
           <table className="prompt-table w-full min-w-[650px] text-sm">
             <thead>
               <tr>
-                <th className="w-10">
+                <th className="w-10 py-3 align-middle">
                   <input
                     type="checkbox"
                     aria-label={t("选择本页问题", "Select visible prompts")}
@@ -607,9 +668,16 @@ function Prompts({
                 </th>
                 <th>{t("问题 / 主题", "Prompt / topic")}</th>
                 {columns.filter(visibleColumn).map((column) => (
-                  <th key={column}>{columnLabels[column]}</th>
+                  <th
+                    key={column}
+                    className={`${["answers", "excluded"].includes(column) ? "text-right" : ""} whitespace-nowrap py-3`}
+                  >
+                    {columnLabels[column]}
+                  </th>
                 ))}
-                <th />
+                <th className="w-20 min-w-20">
+                  <span className="sr-only">{t("操作", "Actions")}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -622,8 +690,15 @@ function Prompts({
                       s.answer?.trim(),
                   );
                 return (
-                  <tr key={q.id}>
-                    <td>
+                  <tr
+                    key={q.id}
+                    className={
+                      selected.includes(q.id)
+                        ? "bg-neutral-50"
+                        : "hover:bg-neutral-50/60"
+                    }
+                  >
+                    <td className="py-3.5 align-middle">
                       <input
                         type="checkbox"
                         aria-label={`${t("选择", "Select")} ${q.text}`}
@@ -637,14 +712,14 @@ function Prompts({
                         }
                       />
                     </td>
-                    <td className="min-w-64">
+                    <td className="min-w-64 py-3.5">
                       <button
-                        className="text-left leading-7 hover:underline"
+                        className="text-left font-medium leading-6 text-neutral-900 hover:underline"
                         onClick={() => setDetail(q)}
                       >
                         {q.text}
                       </button>
-                      <p className="muted mt-1 text-xs">
+                      <p className="mt-1 text-xs leading-5 text-neutral-500">
                         {topics.find((value) => value.id === q.topicId)?.name ||
                           q.intent}{" "}
                         ·{" "}
@@ -654,25 +729,33 @@ function Prompts({
                       </p>
                     </td>
                     {visibleColumn("answers") && (
-                      <td className="tabular-nums">{valid.length}</td>
+                      <td className="py-3.5 text-right align-middle tabular-nums">
+                        {valid.length}
+                      </td>
                     )}
                     {visibleColumn("excluded") && (
-                      <td className="tabular-nums">
+                      <td className="py-3.5 text-right align-middle tabular-nums text-neutral-500">
                         {answers.length - valid.length}
                       </td>
                     )}
-                    {visibleColumn("intent") && <td>{q.intent}</td>}
+                    {visibleColumn("intent") && (
+                      <td className="py-3.5 align-middle text-neutral-600">
+                        {q.intent}
+                      </td>
+                    )}
                     {visibleColumn("location") && (
-                      <td>{q.country || project.country || "UNKNOWN"}</td>
+                      <td className="py-3.5 align-middle text-neutral-600">
+                        {q.country || project.country || "UNKNOWN"}
+                      </td>
                     )}
                     {visibleColumn("status") && (
-                      <td>
+                      <td className="whitespace-nowrap py-3.5 align-middle">
                         <Status value={q.status || "active"} lang={lang} />
                       </td>
                     )}
-                    <td>
+                    <td className="min-w-20 whitespace-nowrap py-3.5 align-middle">
                       <button
-                        className="button"
+                        className="button button-quiet whitespace-nowrap"
                         onClick={() => {
                           setEditor(q);
                           setShowEditor(true);
@@ -689,13 +772,53 @@ function Prompts({
         </div>
         {!shown.length && (
           <div className="empty">
-            {t(
-              "没有符合条件的问题。试试更改筛选或添加问题。",
-              "No prompts match this view. Add questions or change filters.",
+            <Search
+              size={22}
+              aria-hidden="true"
+              className="mx-auto mb-3 text-neutral-400"
+            />
+            <p className="font-medium text-neutral-800">
+              {search || topic
+                ? t("没有符合筛选的问题", "No prompts match these filters")
+                : t("此分类暂无问题", "No prompts in this status")}
+            </p>
+            <p className="mt-1 text-neutral-500">
+              {search || topic
+                ? t(
+                    "调整关键词或主题，再查看问题。",
+                    "Try a different keyword or topic.",
+                  )
+                : t(
+                    "添加问题，或切换到其他状态。",
+                    "Add a prompt or switch to another status.",
+                  )}
+            </p>
+            {search || topic ? (
+              <button
+                className="button mt-4"
+                onClick={() => {
+                  setSearch("");
+                  setTopic("");
+                  setPage(1);
+                }}
+              >
+                {t("清除筛选", "Clear filters")}
+              </button>
+            ) : (
+              <button
+                className="button mt-4"
+                onClick={() => {
+                  setEditor(null);
+                  setShowEditor(true);
+                }}
+              >
+                <CirclePlus size={15} aria-hidden="true" />
+                {t("添加第一条问题", "Add your first prompt")}
+              </button>
             )}
           </div>
         )}
-        <div className="flex items-center justify-between gap-3 border-t border-neutral-200 p-4 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 px-4 py-3 text-xs">
           <span className="muted">
             {filtered.length} {t("个问题", "prompts")} · {page} /{" "}
             {Math.max(1, Math.ceil(filtered.length / 50))}
@@ -852,31 +975,36 @@ function Prompts({
               const values = Object.fromEntries(
                 new FormData(event.currentTarget),
               );
-              void mutation.mutate(async () => {
-                if (editor)
-                  await workbenchApi(
-                    `/api/projects/${project.id}/prompts/${editor.id}`,
-                    "PATCH",
-                    {
-                      text: values.texts,
-                      topicId: values.topicId,
-                      country: values.country,
-                      expectedRevision: editor.revision || 1,
-                    },
-                  );
-                else
-                  await workbenchApi(
-                    `/api/projects/${project.id}/prompts`,
-                    "POST",
-                    {
-                      ...values,
-                      texts: String(values.texts).split("\n"),
-                      expectedVersion: project.queryVersion,
-                      requestId: crypto.randomUUID(),
-                    },
-                  );
-                setShowEditor(false);
-              });
+              void mutation.mutate(
+                async () => {
+                  if (editor)
+                    await workbenchApi(
+                      `/api/projects/${project.id}/prompts/${editor.id}`,
+                      "PATCH",
+                      {
+                        text: values.texts,
+                        topicId: values.topicId,
+                        country: values.country,
+                        expectedRevision: editor.revision || 1,
+                      },
+                    );
+                  else
+                    await workbenchApi(
+                      `/api/projects/${project.id}/prompts`,
+                      "POST",
+                      {
+                        ...values,
+                        texts: String(values.texts).split("\n"),
+                        expectedVersion: project.queryVersion,
+                        requestId: crypto.randomUUID(),
+                      },
+                    );
+                  setShowEditor(false);
+                },
+                editor
+                  ? t("问题已保存", "Prompt saved.")
+                  : t("问题已添加", "Prompts added."),
+              );
             }}
           >
             <Field
@@ -931,7 +1059,7 @@ function Prompts({
                 </select>
               </Field>
             )}
-            <Feedback error={mutation.error} />
+            <Feedback error={mutation.error} lang={lang} />
             <button className="button button-primary" disabled={mutation.busy}>
               {editor
                 ? t("保存问题", "Save prompt")
@@ -986,61 +1114,57 @@ function Prompts({
 function BrandProject({ project, lang, refresh }: WorkflowProps) {
   const t = copy(lang),
     mutation = useMutation(refresh),
-    [kind, setKind] = useState("file"),
-    [sourceMessage, setSourceMessage] = useState(""),
-    [claimMessage, setClaimMessage] = useState("");
+    sourceMutation = useMutation(refresh),
+    claimMutation = useMutation(refresh),
+    [kind, setKind] = useState("file");
   async function sourceSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget,
       data = new FormData(form);
-    setSourceMessage(t("正在导入…", "Importing…"));
-    const result = await mutation.mutate(async () => {
-      const payload: Row = Object.fromEntries(
-        [...data].filter(([key]) => key !== "file"),
-      );
-      if (kind === "file" || kind === "pdf") {
-        const file = data.get("file") as File;
-        if (!file?.size || file.size > 1_000_000)
-          throw new Error(
-            t("请选择不超过 1MB 的文件", "Select a file up to 1MB."),
-          );
-        if (!/\.(pdf|txt|md|markdown)$/i.test(file.name))
-          throw new Error(
-            t(
-              "仅支持 PDF、TXT 和 Markdown",
-              "Only PDF, TXT and Markdown files are supported.",
-            ),
-          );
-        if (/\.pdf$/i.test(file.name)) {
-          const bytes = new Uint8Array(await file.arrayBuffer());
-          let binary = "";
-          for (const byte of bytes) binary += String.fromCharCode(byte);
-          Object.assign(payload, {
-            kind: "pdf",
-            fileName: file.name,
-            base64: btoa(binary),
-          });
-        } else
-          Object.assign(payload, {
-            kind: "text",
-            title: file.name,
-            text: await file.text(),
-          });
-      }
-      await workbenchApi(
-        `/api/projects/${project.id}/brand-sources`,
-        "POST",
-        payload,
-      );
-      return true;
-    });
-    setSourceMessage(
-      result
-        ? t(
-            "资料已保存，请逐项核对事实；历史运行快照保持原样。",
-            "Sources saved. Review each fact before reuse; historical snapshots remain unchanged.",
-          )
-        : "",
+    await sourceMutation.mutate(
+      async () => {
+        const payload: Row = Object.fromEntries(
+          [...data].filter(([key]) => key !== "file"),
+        );
+        if (kind === "file" || kind === "pdf") {
+          const file = data.get("file") as File;
+          if (!file?.size || file.size > 1_000_000)
+            throw new Error(
+              t("请选择不超过 1MB 的文件", "Select a file up to 1MB."),
+            );
+          if (!/\.(pdf|txt|md|markdown)$/i.test(file.name))
+            throw new Error(
+              t(
+                "仅支持 PDF、TXT 和 Markdown",
+                "Only PDF, TXT and Markdown files are supported.",
+              ),
+            );
+          if (/\.pdf$/i.test(file.name)) {
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            let binary = "";
+            for (const byte of bytes) binary += String.fromCharCode(byte);
+            Object.assign(payload, {
+              kind: "pdf",
+              fileName: file.name,
+              base64: btoa(binary),
+            });
+          } else
+            Object.assign(payload, {
+              kind: "text",
+              title: file.name,
+              text: await file.text(),
+            });
+        }
+        await workbenchApi(
+          `/api/projects/${project.id}/brand-sources`,
+          "POST",
+          payload,
+        );
+      },
+      t(
+        "资料已保存，请逐项核对事实；历史运行快照保持原样。",
+        "Sources saved. Review each fact before reuse; historical snapshots remain unchanged.",
+      ),
     );
   }
   return (
@@ -1052,7 +1176,7 @@ function BrandProject({ project, lang, refresh }: WorkflowProps) {
           "Keep source material and reviewed facts together. Fact review is not required before collecting a diagnostic baseline.",
         )}
       />
-      <Feedback error={mutation.error} message={mutation.message} />
+      <Feedback error={mutation.error} message={mutation.message} lang={lang} />
       <section className="panel p-5 sm:p-6">
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -1171,16 +1295,24 @@ function BrandProject({ project, lang, refresh }: WorkflowProps) {
               </p>
             </>
           )}
-          <p role="status" className="text-sm text-neutral-700">
-            {sourceMessage || mutation.error}
-          </p>
+          <Feedback {...sourceMutation} lang={lang} />
           <button
             className="button button-primary"
-            disabled={mutation.busy}
+            disabled={sourceMutation.busy}
             type="submit"
           >
-            <Upload size={16} />
-            {t("导入来源", "Import source")}
+            {sourceMutation.busy ? (
+              <LoaderCircle
+                size={16}
+                className="animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            ) : (
+              <Upload size={16} />
+            )}
+            {sourceMutation.busy
+              ? t("正在导入…", "Importing…")
+              : t("导入来源", "Import source")}
           </button>
         </form>
         <details className="mt-6 border-t border-neutral-200 pt-5">
@@ -1195,17 +1327,16 @@ function BrandProject({ project, lang, refresh }: WorkflowProps) {
               const values = Object.fromEntries(
                 new FormData(event.currentTarget),
               );
-              setClaimMessage("");
-              void mutation.mutate(async () => {
-                await workbenchApi(
-                  `/api/projects/${project.id}/brand-claims`,
-                  "POST",
-                  values,
-                );
-                setClaimMessage(
-                  t("事实已录入，待人工确认。", "Fact saved for review."),
-                );
-              });
+              void claimMutation.mutate(
+                async () => {
+                  await workbenchApi(
+                    `/api/projects/${project.id}/brand-claims`,
+                    "POST",
+                    values,
+                  );
+                },
+                t("事实已录入，待人工确认。", "Fact saved for review."),
+              );
             }}
           >
             <Field label={t("原文来源／页码", "Source / page")}>
@@ -1238,10 +1369,8 @@ function BrandProject({ project, lang, refresh }: WorkflowProps) {
                 maxLength={2000}
               />
             </Field>
-            <p role="status" className="text-sm text-neutral-700">
-              {claimMessage || mutation.error}
-            </p>
-            <button className="button" disabled={mutation.busy}>
+            <Feedback {...claimMutation} lang={lang} />
+            <button className="button" disabled={claimMutation.busy}>
               {t("录入待确认事实", "Add fact for review")}
             </button>
           </form>
@@ -1378,14 +1507,15 @@ function BrandProject({ project, lang, refresh }: WorkflowProps) {
   );
 }
 
-function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
+function Actions({ project, run, analytics, lang, refresh }: WorkflowProps) {
   const t = copy(lang),
     mutation = useMutation(refresh),
     [category, setCategory] = useState("all"),
     [filter, setFilter] = useState("all"),
     [priority, setPriority] = useState("all"),
     [layout, setLayout] = useState<"board" | "list">("board"),
-    [sample, setSample] = useState<Row | null>(null);
+    [sample, setSample] = useState<Row | null>(null),
+    [pendingAction, setPendingAction] = useState("");
   const actions: Row[] =
     analytics?.diagnosis?.actions ||
     run?.diagnosis?.actions ||
@@ -1408,47 +1538,130 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
     ["fact", t("事实核验", "Fact review")],
     ["source", t("信源改进", "Source review")],
   ];
-  const card = (action: Row) => (
-    <article
-      key={action.id}
-      className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4"
-    >
-      <div className="flex flex-wrap gap-2 text-xs">
-        <span className="badge">{action.priority}</span>
-        <span className="badge">
-          {groups.find((value) => value[0] === action.kind)?.[1] || action.kind}
-        </span>
-      </div>
-      <h3 className="font-semibold leading-7">{action.title}</h3>
-      <p className="text-sm leading-7 text-neutral-600">{action.rationale}</p>
-      {action.trigger && (
-        <blockquote className="rounded-md bg-neutral-50 p-3 text-sm leading-7">
-          {action.trigger}
-        </blockquote>
-      )}
-      <details className="text-sm">
-        <summary className="font-medium">
-          {t("查看制作单与依据", "Show brief and evidence")}
-        </summary>
-        <div className="mt-3 space-y-3 leading-7">
-          {action.evidenceGap && (
-            <p className="text-amber-800">{action.evidenceGap}</p>
-          )}
-          {action.outline?.length > 0 && (
-            <ol className="list-decimal space-y-1 pl-5">
-              {action.outline.map((item: string, index: number) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ol>
-          )}
-          <p>
-            <strong>{t("验收：", "Acceptance: ")}</strong>
-            {action.acceptance}
+  const contentTypes: Row = {
+    faq: t("FAQ", "FAQ"),
+    product_page: t("产品页", "Product page"),
+    comparison: t("对比稿", "Comparison"),
+    implementation_guide: t("实施指南", "Implementation guide"),
+    case_study: t("案例稿", "Case study"),
+    selection_guide: t("选型指南", "Selection guide"),
+  };
+  const emptyStates: Row = {
+    proposed: t("暂无新建议", "No suggestions yet"),
+    in_progress: t("把选中的建议加入待办", "Add a suggestion to start"),
+    done: t("完成的任务会保存在这里", "Completed work appears here"),
+    skipped: t("跳过的建议随时可以恢复", "Skipped work can be restored"),
+  };
+  const card = (action: Row) => {
+    const sampleIds = [...new Set<string>(action.sampleIds || [])],
+      queryIds = [...new Set<string>(action.queryIds || [])],
+      queries: Row[] = run?.queries || project.queries || [],
+      question =
+        action.trigger ||
+        queries.find((query) => queryIds.includes(query.id))?.text,
+      firstSample = run?.samples?.find((value: Row) =>
+        sampleIds.includes(value.id),
+      );
+    return (
+      <article
+        key={action.id}
+        data-action-card={action.id}
+        aria-busy={pendingAction === action.id}
+        className="flex min-w-0 flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4"
+      >
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-medium text-neutral-500">
+            {action.priority}
+          </span>
+          <span className="h-3 w-px bg-neutral-200" aria-hidden="true" />
+          <span className="text-neutral-500">
+            {groups.find((value) => value[0] === action.kind)?.[1] ||
+              action.kind}
+          </span>
+          {layout === "list" && <Status value={action.status} lang={lang} />}
+        </div>
+        <div>
+          <h3 className="break-words font-semibold leading-6 text-neutral-950">
+            {action.title}
+          </h3>
+          <p
+            data-action-summary
+            className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-600"
+          >
+            {action.rationale}
           </p>
-          <div className="flex flex-wrap gap-2">
-            {[...new Set<string>(action.sampleIds || [])]
-              .slice(0, 3)
-              .map((id) => (
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
+          <button
+            type="button"
+            className="inline-flex min-h-8 items-center gap-1.5 text-emerald-800 hover:underline disabled:text-neutral-500"
+            disabled={!firstSample}
+            onClick={() => firstSample && setSample(firstSample)}
+          >
+            <Search size={13} aria-hidden="true" />
+            {sampleIds.length}{" "}
+            {t("条证据", sampleIds.length === 1 ? "answer" : "answers")}
+          </button>
+          {queryIds.length > 0 && (
+            <span>
+              {queryIds.length}{" "}
+              {t("个问题", queryIds.length === 1 ? "prompt" : "prompts")}
+            </span>
+          )}
+          {action.claimIds?.length > 0 && (
+            <span>
+              {action.claimIds.length} {t("项事实", "facts")}
+            </span>
+          )}
+        </div>
+        {question && (
+          <div className="rounded-md bg-neutral-50 px-3 py-2">
+            <p className="text-xs text-neutral-500">
+              {t("目标问题", "Target prompt")}
+            </p>
+            <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-neutral-700">
+              {question}
+            </p>
+          </div>
+        )}
+        <details className="text-sm">
+          <summary className="min-h-8 font-medium leading-6 text-neutral-700">
+            <FileText size={14} aria-hidden="true" className="mr-1 inline" />
+            {contentTypes[action.contentType]
+              ? `${contentTypes[action.contentType]} · ${t("制作单", "Brief")}`
+              : t("制作单与依据", "Brief and evidence")}
+          </summary>
+          <div className="mt-3 space-y-3 leading-7">
+            <div>
+              <h4 className="text-xs font-medium text-neutral-500">
+                {t("完整理由", "Full rationale")}
+              </h4>
+              <p className="mt-1 text-neutral-600">{action.rationale}</p>
+            </div>
+            {question && (
+              <p className="break-words">
+                <strong>{t("目标问题：", "Target prompt: ")}</strong>
+                {question}
+              </p>
+            )}
+            {action.evidenceGap && (
+              <p className="text-amber-800">{action.evidenceGap}</p>
+            )}
+            {action.outline?.length > 0 && (
+              <ol className="list-decimal space-y-1 pl-5">
+                {action.outline.map((item: string, index: number) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ol>
+            )}
+            {action.acceptance && (
+              <p>
+                <strong>{t("验收：", "Acceptance: ")}</strong>
+                {action.acceptance}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {sampleIds.slice(0, 3).map((id, index) => (
                 <button
                   key={id}
                   className="button"
@@ -1461,50 +1674,60 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
                     )
                   }
                 >
-                  {t("查看原文", "View answer evidence")}
+                  {t("原文", "Answer")} {index + 1}
                 </button>
               ))}
+            </div>
+            <p className="muted break-words text-xs">
+              {t("关联问题：", "Question IDs: ")}
+              {action.queryIds?.join(", ") || "UNKNOWN"}
+            </p>
           </div>
-          <p className="muted break-words text-xs">
-            {t("关联问题：", "Question IDs: ")}
-            {action.queryIds?.join(", ") || "UNKNOWN"}
-          </p>
-        </div>
-      </details>
-      <div className="mt-auto flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
-        {(action.status === "proposed"
-          ? [
-              ["in_progress", t("加入待办", "Add to Todo")],
-              ["skipped", t("跳过", "Skip")],
-            ]
-          : action.status === "in_progress"
+        </details>
+        <div className="mt-auto flex flex-wrap gap-2 border-t border-neutral-100 pt-3">
+          {(action.status === "proposed"
             ? [
-                ["done", t("标为完成", "Mark done")],
-                ["proposed", t("移回建议", "Return to suggestions")],
+                ["in_progress", t("加入待办", "Add to Todo")],
+                ["skipped", t("跳过", "Skip")],
               ]
-            : [["proposed", t("恢复建议", "Restore suggestion")]]
-        ).map(([next, label]) => (
-          <button
-            key={next}
-            className={`button ${next === "in_progress" || next === "done" ? "button-primary" : ""}`}
-            disabled={mutation.busy || !run}
-            onClick={() =>
-              void mutation.mutate(
-                () =>
-                  workbenchApi(`/api/runs/${run!.id}/actions`, "PATCH", {
-                    id: action.id,
-                    status: next,
-                  }),
-                t("行动状态已保存", "Action status saved."),
-              )
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-    </article>
-  );
+            : action.status === "in_progress"
+              ? [
+                  ["done", t("标为完成", "Mark done")],
+                  ["proposed", t("移回建议", "Return to suggestions")],
+                ]
+              : [["proposed", t("恢复建议", "Restore suggestion")]]
+          ).map(([next, label]) => (
+            <button
+              key={next}
+              className={`button px-3 text-xs ${next === "in_progress" || next === "done" ? "button-primary" : ""}`}
+              disabled={mutation.busy || !run}
+              onClick={async () => {
+                setPendingAction(action.id);
+                await mutation.mutate(
+                  () =>
+                    workbenchApi(`/api/runs/${run!.id}/actions`, "PATCH", {
+                      id: action.id,
+                      status: next,
+                    }),
+                  t("行动状态已保存", "Action status saved."),
+                );
+                setPendingAction("");
+              }}
+            >
+              {pendingAction === action.id && (
+                <LoaderCircle
+                  size={13}
+                  className="animate-spin motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
+              )}
+              {label}
+            </button>
+          ))}
+        </div>
+      </article>
+    );
+  };
   return (
     <div className="space-y-5">
       <Heading
@@ -1533,7 +1756,7 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
           </button>
         </div>
       </Heading>
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-neutral-200 bg-neutral-200 sm:grid-cols-4">
         {states.map(([state, label]) => (
           <div key={state} className="bg-white px-5 py-4">
@@ -1598,9 +1821,11 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
               <section
                 key={state}
                 aria-label={label}
-                className="min-w-0 rounded-xl bg-neutral-100/80 p-3"
+                data-action-column={state}
+                tabIndex={0}
+                className="min-w-0 rounded-xl bg-neutral-100 p-3 xl:h-[min(70dvh,900px)] xl:min-h-[400px] xl:overflow-y-auto xl:overscroll-y-contain"
               >
-                <div className="mb-3 flex items-center justify-between px-1 text-sm font-medium">
+                <div className="-mx-1 -mt-1 mb-3 flex items-center justify-between bg-neutral-100 px-2 py-2 text-sm font-medium xl:sticky xl:-top-3 xl:z-10">
                   <h2>{label}</h2>
                   <span className="text-neutral-500">
                     {visible.filter((action) => action.status === state).length}
@@ -1611,8 +1836,10 @@ function Actions({ run, analytics, lang, refresh }: WorkflowProps) {
                     .filter((action) => action.status === state)
                     .map(card)}
                   {!visible.some((action) => action.status === state) && (
-                    <p className="py-8 text-center text-xs text-neutral-500">
-                      {t("这里还没有任务", "No tasks here yet")}
+                    <p className="px-2 py-6 text-center text-xs leading-5 text-neutral-500">
+                      {category !== "all" || priority !== "all"
+                        ? t("没有符合筛选的任务", "No matching tasks")
+                        : emptyStates[state]}
                     </p>
                   )}
                 </div>
@@ -1659,7 +1886,7 @@ function Content({ run, lang, refresh }: WorkflowProps) {
           "Keep drafts, human review and publication records separate. A saved link still needs access and citation verification.",
         )}
       />
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       {!draft ? (
         <div className="panel empty">
           {t(
@@ -1916,7 +2143,7 @@ export function QueuePanel({
           {t("未完成", "unfinished")}
         </summary>
         <div className="space-y-3 border-t border-neutral-100 p-4">
-          <Feedback {...mutation} />
+          <Feedback {...mutation} lang={lang} />
           <p className="muted text-xs leading-6">
             {t(
               "已发出的请求可能仍在生成或收费。费用未知的任务需要核对回执；不会自动重新提交。",
@@ -2153,7 +2380,7 @@ function Agent({
           {t("仅回放", "Replay saved evidence")}
         </button>
       </Heading>
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
         <section className="panel p-5 sm:p-6">
           <h2 className="mb-2 text-lg font-semibold">
@@ -2432,7 +2659,7 @@ function Recordings({ project, lang, refresh }: WorkflowProps) {
           "Collect public URLs for prompt discovery. Recorded source material is not an AI answer or provider citation.",
         )}
       />
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <section className="panel overflow-hidden">
         <form
           id="recording-form"
@@ -2688,7 +2915,7 @@ function Evidence({ project, run, lang, refresh }: WorkflowProps) {
           event.target.value = "";
         }}
       />
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <input
         className="input w-full sm:max-w-lg"
         value={search}
@@ -2813,7 +3040,7 @@ export function Settings({
           "OpenGEO uses your own provider account. Keys stay in local process memory and clear on restart.",
         )}
       />
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <form
         className="panel max-w-2xl space-y-5 p-5 sm:p-6"
         onSubmit={(event) => {
@@ -2930,7 +3157,7 @@ export function ProjectManager({
           {t("新建项目", "New project")}
         </a>
       </Heading>
-      <Feedback {...mutation} />
+      <Feedback {...mutation} lang={lang} />
       <label className="flex gap-2 text-sm">
         <input
           type="checkbox"

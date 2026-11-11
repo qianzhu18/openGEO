@@ -109,7 +109,7 @@ test("Next manual creation, source review, replay, draft and publication remain 
   await claim.getByLabel("事实名称（建议包含型号与属性）").fill("额定温度范围");
   await claim.getByLabel("复制一段原文（不能改写）").fill("达到 1000 摄氏度");
   await claim.getByRole("button", { name: "录入待确认事实" }).click();
-  await expect(claim.getByRole("status")).toContainText("原文片段");
+  await expect(claim.getByRole("alert")).toContainText("原文片段");
   await claim
     .getByLabel("复制一段原文（不能改写）")
     .fill("额定温度范围为 -20 至 120 摄氏度。");
@@ -172,11 +172,9 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
   await dialog
     .getByRole("button", { name: "Add prompts", exact: true })
     .click();
-  const row = page
-    .locator(".prompt-table tr")
-    .filter({
-      hasText: "Which analytics tools have verifiable documentation?",
-    });
+  const row = page.locator(".prompt-table tr").filter({
+    hasText: "Which analytics tools have verifiable documentation?",
+  });
   await row.getByRole("button", { name: "Edit", exact: true }).click();
   await page
     .getByRole("dialog")
@@ -199,11 +197,9 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
         q.text === "Which analytics tools have public technical documentation?",
     ).previousVersionId,
   ).toBeTruthy();
-  const revised = page
-    .locator(".prompt-table tr")
-    .filter({
-      hasText: "Which analytics tools have public technical documentation?",
-    });
+  const revised = page.locator(".prompt-table tr").filter({
+    hasText: "Which analytics tools have public technical documentation?",
+  });
   await revised.getByRole("checkbox").check();
   await page
     .getByRole("button", { name: "Untrack selected", exact: true })
@@ -231,6 +227,39 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
       .locator(".prompt-table")
       .getByRole("columnheader", { name: "Intent", exact: true }),
   ).toHaveCount(0);
+  await page.getByText("Columns", { exact: true }).click();
+  const tableTop = (await page.locator(".prompt-table").boundingBox())!.y;
+  const toast = page.locator("[data-feedback-toast]");
+  await expect(toast).toHaveText("Columns saved.");
+  await expect(toast).toHaveAttribute("aria-live", "polite");
+  expect(await toast.evaluate((el) => getComputedStyle(el).position)).toBe(
+    "fixed",
+  );
+  await expect(page.getByLabel("Bulk prompt actions")).toHaveCount(0);
+  await page
+    .getByLabel("Search prompts", { exact: true })
+    .fill("unmatched-keyword");
+  await expect(
+    page.getByText("No prompts match these filters", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await expect(revised).toBeVisible();
+  await expect(toast).toHaveCount(0, { timeout: 6500 });
+  expect((await page.locator(".prompt-table").boundingBox())!.y).toBe(tableTop);
+  for (const width of [1440, 375, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.getByText("Columns", { exact: true }).click();
+    const popup = page.locator("form").filter({
+      has: page.getByRole("button", { name: "Save columns", exact: true }),
+    });
+    const box = (await popup.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    await page.getByText("Columns", { exact: true }).click();
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "Recording", exact: true }).click();
   await page
     .getByLabel("Public URL", { exact: true })
@@ -280,7 +309,7 @@ test("Next PDF imports keep page provenance and reject broken files without losi
   await form
     .getByRole("button", { name: "Import source", exact: true })
     .click();
-  await expect(form.getByRole("status")).toContainText("PDF");
+  await expect(form.getByRole("alert")).toContainText("PDF");
   await page.setViewportSize({ width: 320, height: 780 });
   expect(
     await page.evaluate(
@@ -487,7 +516,8 @@ test("Next actions board saves todo, done, skip and restore states in the same r
     {
       id: "action-fixture",
       title: "Review the documented sensor selection guide",
-      rationale: "Review the saved answer against brand sources.",
+      rationale:
+        "Review the saved answer against brand sources. Compare each specification with its original documentation before preparing the guide. The final paragraph must remain available in the expanded brief without making every board card equally tall.",
       kind: "content",
       priority: "P2",
       status: "proposed",
@@ -497,31 +527,109 @@ test("Next actions board saves todo, done, skip and restore states in the same r
       acceptance: "Confirm sources and repeat the same protocol.",
     },
   ];
+  for (let i = 1; i < 12; i++)
+    run.actions.push({
+      ...run.actions[0]!,
+      id: `action-fixture-${i}`,
+      title: `Review guide section ${i}`,
+    });
   await new Store("data/browser-tests").save("runs", run);
   await page.goto(
     `/workspace?project=${project.id}&run=${run.id}&view=actions`,
   );
-  const card = page
-    .locator("article")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Review the documented sensor selection guide",
-        exact: true,
-      }),
-    });
+  const card = page.locator("article").filter({
+    has: page.getByRole("heading", {
+      name: "Review the documented sensor selection guide",
+      exact: true,
+    }),
+  });
   await expect(
     page.getByRole("button", { name: "Board", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const boardColumns = await Promise.all(
-    ["Suggestions", "Todo", "Done", "Skipped"].map(name =>
+    ["Suggestions", "Todo", "Done", "Skipped"].map((name) =>
       page.getByRole("region", { name, exact: true }).boundingBox(),
     ),
   );
-  expect(boardColumns.every(box => box && box.width > 150)).toBe(true);
-  expect(new Set(boardColumns.map(box => Math.round(box!.y))).size).toBe(1);
+  expect(boardColumns.every((box) => box && box.width > 150)).toBe(true);
+  expect(new Set(boardColumns.map((box) => Math.round(box!.y))).size).toBe(1);
+  const suggestions = page.getByRole("region", {
+    name: "Suggestions",
+    exact: true,
+  });
+  await expect(suggestions).toHaveAttribute("tabindex", "0");
+  expect(
+    await suggestions.evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight),
+  ).toBeLessThan(1600);
+  await suggestions.focus();
+  await page.keyboard.press("PageDown");
+  await expect
+    .poll(() => suggestions.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await suggestions.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const summary = card.locator("[data-action-summary]");
+  expect(
+    await summary.evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  await expect(
+    card.getByRole("button", { name: "1 answer", exact: true }),
+  ).toBeVisible();
+  await card.getByRole("button", { name: "1 answer", exact: true }).click();
+  await expect(page.locator(".answer-text")).toContainText(
+    "Action fixture provides sensors.",
+  );
+  await page.keyboard.press("Escape");
+  await card.getByText("Brief and evidence", { exact: true }).click();
+  await expect(card.getByText("Full rationale", { exact: true })).toBeVisible();
+  await expect(card.locator("details")).toContainText(
+    "The final paragraph must remain available",
+  );
+  await expect(card.locator("details")).toContainText(
+    "Confirm sources and repeat the same protocol.",
+  );
+  await card.getByText("Brief and evidence", { exact: true }).click();
+  let rejectUpdate = true;
+  await page.route(`**/api/runs/${run.id}/actions`, async (route) => {
+    if (rejectUpdate) {
+      rejectUpdate = false;
+      return route.fulfill({
+        status: 500,
+        json: { error: "Action update unavailable" },
+      });
+    }
+    return route.continue();
+  });
+  await card.getByRole("button", { name: "Add to Todo", exact: true }).click();
+  const actionError = page
+    .getByRole("alert")
+    .filter({ hasText: "Action update unavailable" });
+  await expect(actionError).toBeVisible();
+  expect(
+    await actionError.evaluate((el) => getComputedStyle(el).position),
+  ).not.toBe("fixed");
+  await expect(page.locator("[data-feedback-toast]")).toHaveCount(0);
+  expect(
+    (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates?.[
+      "action-fixture"
+    ],
+  ).toBeUndefined();
   await card.getByRole("button", { name: "Add to Todo", exact: true }).click();
   await expect(
     card.getByRole("button", { name: "Mark done", exact: true }),
+  ).toBeVisible();
+  await expect(actionError).toHaveCount(0);
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
+  await expect(
+    page
+      .getByRole("region", { name: "Todo", exact: true })
+      .locator("[data-action-card=action-fixture]"),
   ).toBeVisible();
   await card.getByRole("button", { name: "Mark done", exact: true }).click();
   await expect(
@@ -549,6 +657,9 @@ test("Next actions board saves todo, done, skip and restore states in the same r
     ],
   ).toBe("proposed");
   await page.setViewportSize({ width: 375, height: 812 });
+  expect(
+    await suggestions.evaluate((el) => getComputedStyle(el).overflowY),
+  ).toBe("visible");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

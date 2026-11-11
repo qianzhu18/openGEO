@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { SegmentedControl } from "./ui-controls";
 import {
   ResponsiveContainer,
   LineChart,
@@ -17,6 +18,8 @@ import {
   CheckCircle2,
   FileText,
   ExternalLink,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import type { DiagnosticAnalysis } from "../workbench/analytics";
 type Props = {
@@ -37,6 +40,13 @@ const colors = [
 const pct = (m: any) =>
   m?.value == null ? "UNKNOWN" : `${(m.value * 100).toFixed(1)}%`;
 const ratio = (m: any) => `${m?.numerator ?? 0}/${m?.denominator ?? 0}`;
+const intentLabel = (value: string, lang: "zh" | "en") =>
+  ({
+    natural: lang === "zh" ? "自然发现" : "Discovery",
+    branded_fact: lang === "zh" ? "点名核验" : "Fact check",
+    candidate_comparison: lang === "zh" ? "候选比较" : "Comparison",
+    discovery: lang === "zh" ? "发现" : "Discovery",
+  })[value] || value;
 export function Overview({
   analysis: a,
   lang,
@@ -49,6 +59,7 @@ export function Overview({
     [focus, setFocus] = useState<number | null>(null),
     [hidden, setHidden] = useState<number[]>([]),
     [cohort, setCohort] = useState("");
+  const [questionSearch, setQuestionSearch] = useState("");
   useEffect(() => {
     setHidden([]);
     setFocus(null);
@@ -104,6 +115,18 @@ export function Overview({
       groups.map((c, i) => [`v${i}`, groupMetric(c, day)?.value ?? null]),
     ),
   }));
+  const topics = [...new Set(a.questions.map((q) => q.topic))]
+    .map((topic) => ({
+      topic,
+      questions: a.questions.filter(
+        (q) =>
+          q.topic === topic &&
+          `${q.question} ${q.topic}`
+            .toLowerCase()
+            .includes(questionSearch.toLowerCase()),
+      ),
+    }))
+    .filter((topic) => topic.questions.length);
   return (
     <div className="space-y-6">
       <section
@@ -156,7 +179,7 @@ export function Overview({
           )}
         </p>
       )}
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(350px,1fr)]">
+      <div className="grid items-start gap-5 xl:grid-cols-2">
         <section className="panel overflow-hidden">
           <div className="panel-head">
             <div>
@@ -176,25 +199,18 @@ export function Overview({
             </div>
             <Info size={16} className="text-stone-400" aria-hidden="true" />
           </div>
-          <div
-            className="flex flex-wrap gap-1 border-b border-stone-200 px-4 py-2"
-            aria-label={t("图表指标", "Chart metric")}
-          >
-            {Object.entries(metricNames).map(([id, name]) => (
-              <button
-                className={`min-h-10 rounded-md px-3 text-xs font-medium ${metric === id ? "bg-stone-100 text-stone-950" : "text-stone-600"}`}
-                key={id}
-                aria-pressed={metric === id}
-                onClick={() => setMetric(id)}
-              >
-                {name}
-              </button>
-            ))}
+          <div className="border-b border-stone-200 px-4 py-3">
+            <SegmentedControl
+              label={t("图表指标", "Chart metric")}
+              value={metric}
+              options={Object.entries(metricNames).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={setMetric}
+            />
           </div>
-          <div
-            className="chart-enter px-5 pb-5 pt-4"
-            key={`${metric}-${a.runId}`}
-          >
+          <div className="chart-enter px-5 pb-5 pt-4" key={a.runId}>
             {!groups.length ? (
               <div className="empty">
                 {t("暂无符合筛选条件的观察", "No observations in this scope")}
@@ -221,14 +237,14 @@ export function Overview({
                       tickFormatter={(n) =>
                         new Date(n).toISOString().slice(5, 10)
                       }
-                      tick={{ fill: "#78716c", fontSize: 11 }}
+                      tick={{ fill: "#625f5a", fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
                       domain={[0, 1]}
                       tickFormatter={(n) => `${n * 100}%`}
-                      tick={{ fill: "#78716c", fontSize: 11 }}
+                      tick={{ fill: "#625f5a", fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
@@ -287,7 +303,7 @@ export function Overview({
               </div>
             ) : (
               <div
-                className="min-h-[235px] space-y-4 py-2"
+                className="min-h-[210px] space-y-4 py-2"
                 aria-label={t("分组指标条形图", "Metrics by cohort")}
               >
                 {groups.map((c, i) => {
@@ -313,7 +329,15 @@ export function Overview({
                       <span className="flex items-start justify-between gap-3 text-xs">
                         <span className="min-w-0 break-words">
                           {label(c)}
-                          <span className="muted ml-2">{c.intent}</span>
+                          <span className="muted ml-2">
+                            {c.intent === "natural"
+                              ? t("自然发现", "Discovery")
+                              : c.intent === "branded_fact"
+                                ? t("点名核验", "Fact check")
+                                : c.intent === "candidate_comparison"
+                                  ? t("候选比较", "Comparison")
+                                  : c.intent}
+                          </span>
                         </span>
                         <strong className="number shrink-0">
                           {fmt(m)}{" "}
@@ -370,7 +394,8 @@ export function Overview({
                         : "text-stone-600"
                     }
                   >
-                    {label(c)}
+                    {i + 1}. {c.model.split("/").at(-1)} ·{" "}
+                    {intentLabel(c.intent, lang)}
                   </span>
                 </button>
               ))}
@@ -443,7 +468,7 @@ export function Overview({
               >
                 {groups.map((c, i) => (
                   <option value={c.key} key={c.key}>
-                    {i + 1}. {label(c)} · {c.intent}
+                    {i + 1}. {label(c)} · {intentLabel(c.intent, lang)}
                   </option>
                 ))}
               </select>
@@ -554,50 +579,105 @@ export function Overview({
       )}
       <section className="panel">
         <div className="panel-head">
-          <h2>{t("问题覆盖", "Question coverage")}</h2>
-          <span className="muted text-xs">
-            {a.questions.length} {t("个问题", "questions")}
-          </span>
+          <div>
+            <h2>{t("问题覆盖", "Question coverage")}</h2>
+            <p className="muted mt-1 text-xs">
+              {a.questions.length}{" "}
+              {t("个问题，按主题展开核对回答", "questions, grouped by topic")}
+            </p>
+          </div>
+          <label className="relative w-full sm:w-60">
+            <Search
+              size={15}
+              className="absolute left-3 top-3 text-stone-500"
+            />
+            <input
+              className="input pl-9"
+              aria-label={t("搜索覆盖问题", "Search covered prompts")}
+              placeholder={t("搜索问题或主题", "Search prompts or topics")}
+              value={questionSearch}
+              onChange={(e) => setQuestionSearch(e.target.value)}
+            />
+          </label>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th className="w-3/5">{t("监测问题", "Prompt")}</th>
-                <th className="text-right">
-                  {t("有效 / 计划", "Valid / planned")}
-                </th>
-                <th className="text-right">{t("品牌提及", "Mentions")}</th>
-                <th>{t("证据", "Evidence")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {a.questions.slice(0, 12).map((q) => (
-                <tr key={q.queryId}>
-                  <td className="min-w-[230px]">
-                    {q.question}
-                    <p className="muted mt-1 text-xs">{q.topic}</p>
-                  </td>
-                  <td className="number text-right">
-                    {q.valid}/{q.planned}
-                  </td>
-                  <td className="number text-right">{q.mentioned}</td>
-                  <td>
-                    {q.sampleIds[0] && (
-                      <button
-                        className="link whitespace-nowrap"
-                        onClick={() => openEvidence(q.sampleIds[0])}
-                      >
-                        {t("查看回答", "Read answer")}
-                        <ArrowUpRight size={13} />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {topics.map(({ topic, questions }) => (
+          <details
+            className="topic-row border-b border-stone-200 last:border-0"
+            key={topic}
+          >
+            <summary>
+              <ChevronRight
+                className="topic-chevron shrink-0 text-stone-500"
+                size={16}
+              />
+              <span className="min-w-0 flex-1 break-words font-medium">
+                {intentLabel(topic, lang)}
+              </span>
+              <span className="number shrink-0 text-xs text-stone-600">
+                {questions.length} {t("题", "prompts")}
+              </span>
+              <span className="number shrink-0 rounded-md bg-stone-100 px-2 py-1 text-xs text-stone-700">
+                {questions.filter((q) => q.valid > 0).length}/{questions.length}{" "}
+                {t("已覆盖", "covered")}
+              </span>
+            </summary>
+            <div className="table-wrap border-t border-stone-200">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="w-3/5">{t("监测问题", "Prompt")}</th>
+                    <th className="text-right">
+                      {t("有效 / 计划", "Valid / planned")}
+                    </th>
+                    <th className="text-right">
+                      {t("提及回答数", "Mentioned answers")}
+                    </th>
+                    <th>{t("证据", "Evidence")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {questions.map((q) => (
+                    <tr key={q.queryId + q.question}>
+                      <td className="min-w-[230px]">{q.question}</td>
+                      <td className="number text-right">
+                        {q.valid}/{q.planned}
+                      </td>
+                      <td className="number text-right">{q.mentioned}</td>
+                      <td>
+                        {q.sampleIds[0] && (
+                          <button
+                            className="link min-h-10 whitespace-nowrap"
+                            onClick={() => openEvidence(q.sampleIds[0])}
+                          >
+                            {t("查看回答", "Read answer")}
+                            <ArrowUpRight size={13} />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ))}
+        {!topics.length && (
+          <div className="empty">
+            <p>
+              {questionSearch
+                ? t("没有匹配的问题", "No matching prompts")
+                : t("当前范围没有监测问题", "No prompts in this scope")}
+            </p>
+            {questionSearch && (
+              <button
+                className="link mt-3 min-h-10"
+                onClick={() => setQuestionSearch("")}
+              >
+                {t("清除搜索", "Clear search")}
+              </button>
+            )}
+          </div>
+        )}
       </section>
       <details className="text-xs text-stone-600">
         <summary className="min-h-10">
@@ -630,9 +710,57 @@ export function Sources({
   openEvidence,
 }: Pick<Props, "analysis" | "lang" | "openEvidence">) {
   const [level, setLevel] = useState<"domains" | "urls">("domains"),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [page, setPage] = useState(1),
+    [sort, setSort] = useState<{
+      key: "source" | "citationCount";
+      direction: "asc" | "desc";
+    }>({ key: "citationCount", direction: "desc" });
   const t = (z: string, e: string) => (lang === "en" ? e : z);
   const groups = a.sources.cohorts;
+  useEffect(() => {
+    setPage(1);
+  }, [a.runId, JSON.stringify(a.filter), level, search]);
+  const allRows = groups.flatMap((g) =>
+    g[level].map((d) => ({ group: g, source: d })),
+  );
+  const rows = allRows
+    .filter(({ source: d }) =>
+      d.source.toLowerCase().includes(search.toLowerCase()),
+    )
+    .sort((left, right) => {
+      const comparison =
+        sort.key === "source"
+          ? left.source.source.localeCompare(right.source.source)
+          : left.source.citationCount - right.source.citationCount;
+      return (
+        (sort.direction === "asc" ? 1 : -1) * comparison ||
+        left.source.source.localeCompare(right.source.source)
+      );
+    });
+  const pageCount = Math.max(1, Math.ceil(rows.length / 10));
+  const currentPage = Math.min(page, pageCount);
+  const shown = rows.slice((currentPage - 1) * 10, currentPage * 10);
+  const sortColumn = (key: "source" | "citationCount") => {
+    setSort((value) => ({
+      key,
+      direction:
+        value.key === key && value.direction === "asc" ? "desc" : "asc",
+    }));
+    setPage(1);
+  };
+  const sortIcon = (key: string) =>
+    sort.key === key ? (
+      sort.direction === "asc" ? (
+        <ArrowUp size={13} />
+      ) : (
+        <ArrowDown size={13} />
+      )
+    ) : (
+      <span aria-hidden="true" className="text-stone-400">
+        ↕
+      </span>
+    );
   return (
     <div className="space-y-6">
       <section className="panel">
@@ -640,16 +768,22 @@ export function Sources({
           <h2>{t("信源分布", "Source distribution")}</h2>
           <span className="badge">{t("按测量组分开", "Separate cohorts")}</span>
         </div>
-        <div className="grid gap-6 p-5 md:grid-cols-2">
+        <div
+          className={
+            groups.some((g) => g.domains.length)
+              ? "grid gap-6 p-5 md:grid-cols-2"
+              : "hidden"
+          }
+        >
           {groups
             .filter((g) => g.domains.length)
             .slice(0, 4)
             .map((g) => (
-              <div key={g.key}>
+              <div className="min-w-0" key={g.key}>
                 <h3 className="break-words">
                   {g.model} · {g.origin}
                 </h3>
-                <p className="muted mt-1 text-xs">
+                <p className="muted mt-1 break-all text-xs">
                   {g.protocolId} ·{" "}
                   {g.branded ? t("点名", "Branded") : t("非点名", "Unbranded")}
                 </p>
@@ -692,23 +826,21 @@ export function Sources({
       </section>
       <section className="panel">
         <div className="panel-head">
-          <div className="flex gap-2">
-            {(["domains", "urls"] as const).map((l) => (
-              <button
-                className="button"
-                key={l}
-                aria-pressed={l === level}
-                onClick={() => setLevel(l)}
-              >
-                {l === "domains" ? t("域名", "Domains") : "URLs"}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            label={t("信源层级", "Source level")}
+            value={level}
+            options={[
+              { value: "domains", label: t("域名", "Domains") },
+              { value: "urls", label: "URLs" },
+            ]}
+            onChange={(value) => setLevel(value as "domains" | "urls")}
+          />
           <label className="relative max-w-xs">
             <span className="sr-only">{t("搜索信源", "Search sources")}</span>
             <Search size={15} className="absolute left-3 top-3" />
             <input
               className="input pl-9"
+              aria-label={t("搜索信源", "Search sources")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("搜索来源", "Search sources")}
@@ -719,49 +851,152 @@ export function Sources({
           <table>
             <thead>
               <tr>
-                <th>{t("来源", "Source")}</th>
+                <th
+                  aria-sort={
+                    sort.key === "source"
+                      ? sort.direction === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                >
+                  <button
+                    className="flex min-h-10 items-center gap-2"
+                    onClick={() => sortColumn("source")}
+                  >
+                    {t("来源", "Source")}
+                    {sortIcon("source")}
+                  </button>
+                </th>
                 <th>{t("类型 / 完整性", "Type / integrity")}</th>
-                <th className="text-right">{t("引用项", "Items")}</th>
+                <th
+                  aria-sort={
+                    sort.key === "citationCount"
+                      ? sort.direction === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                  className="text-right"
+                >
+                  <button
+                    className="ml-auto flex min-h-10 items-center gap-2"
+                    onClick={() => sortColumn("citationCount")}
+                  >
+                    {t("引用项", "Items")}
+                    {sortIcon("citationCount")}
+                  </button>
+                </th>
                 <th>{t("实际通道 / 模型", "Channel / model")}</th>
                 <th>{t("证据", "Evidence")}</th>
               </tr>
             </thead>
             <tbody>
-              {groups.flatMap((g) =>
-                g[level]
-                  .filter((d) =>
-                    d.source.toLowerCase().includes(search.toLowerCase()),
-                  )
-                  .map((d, i) => (
-                    <tr className="da-source" key={`${g.key}-${i}`}>
-                      <td className="max-w-md break-all">{d.source}</td>
-                      <td className="text-xs">
-                        {d.kind}
-                        <br />
-                        <span className="muted">{d.integrity}</span>
-                      </td>
-                      <td className="number text-right">{d.citationCount}</td>
-                      <td className="text-xs">
-                        {g.origin}
-                        <br />
-                        {g.model}
-                      </td>
-                      <td>
-                        {d.sampleIds[0] && (
-                          <button
-                            className="link whitespace-nowrap"
-                            onClick={() => openEvidence(d.sampleIds[0], g.key)}
-                          >
-                            {t("查看原文", "Read answer")}
-                            <ExternalLink size={13} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  )),
+              {shown.map(({ group: g, source: d }, i) => (
+                <tr
+                  className="da-source hover:bg-stone-50"
+                  key={`${g.key}-${d.source}-${d.kind}-${d.integrity}-${i}`}
+                >
+                  <td className="min-w-[200px] max-w-md break-all font-medium">
+                    {d.source}
+                  </td>
+                  <td className="text-xs">
+                    {d.kind}
+                    <br />
+                    <span className="muted">{d.integrity}</span>
+                  </td>
+                  <td className="number text-right">{d.citationCount}</td>
+                  <td className="max-w-60 break-words text-xs">
+                    <span className="badge">{g.origin.toUpperCase()}</span>
+                    <p className="muted mt-1">{g.model}</p>
+                    <p className="muted mt-1">
+                      {g.branded
+                        ? t("点名", "Branded")
+                        : t("非点名", "Unbranded")}{" "}
+                      · {g.intent}
+                    </p>
+                  </td>
+                  <td>
+                    {d.sampleIds[0] && (
+                      <button
+                        className="link min-h-10 whitespace-nowrap"
+                        onClick={() => openEvidence(d.sampleIds[0], g.key)}
+                      >
+                        {t("查看原文", "Read answer")}
+                        <ExternalLink size={13} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!shown.length && (
+                <tr>
+                  <td colSpan={5}>
+                    <div className="empty">
+                      <Search
+                        className="mx-auto mb-3 text-stone-400"
+                        size={22}
+                      />
+                      <p className="font-medium text-stone-900">
+                        {search
+                          ? t("没有匹配的信源", "No matching sources")
+                          : t(
+                              "当前范围没有信源记录",
+                              "No source records in this scope",
+                            )}
+                      </p>
+                      <p className="mt-1">
+                        {search
+                          ? t(
+                              "试试其他域名或清除搜索。",
+                              "Try another domain or clear the search.",
+                            )
+                          : t(
+                              "保存带引用的回答后，可在这里查看来源。",
+                              "Sources appear when saved answers include citations.",
+                            )}
+                      </p>
+                      {search && (
+                        <button
+                          className="button mt-4"
+                          onClick={() => setSearch("")}
+                        >
+                          {t("清除搜索", "Clear search")}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 px-5 py-3">
+          <p className="number text-xs text-stone-600" role="status">
+            {rows.length
+              ? `${(currentPage - 1) * 10 + 1}–${Math.min(currentPage * 10, rows.length)} / ${rows.length}`
+              : `0 / ${allRows.length}`}{" "}
+            {t("条分组信源", "cohort source records")}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              className="button text-xs"
+              disabled={currentPage <= 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              {t("上一页", "Previous")}
+            </button>
+            <span className="number px-2 text-xs">
+              {currentPage} / {pageCount}
+            </span>
+            <button
+              className="button text-xs"
+              disabled={currentPage >= pageCount}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              {t("下一页", "Next")}
+            </button>
+          </div>
         </div>
       </section>
     </div>
