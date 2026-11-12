@@ -73,6 +73,8 @@ function fallbackEvidence(html: string): FallbackEvidence | null {
 function attemptReason(error: unknown, deadline: number): string {
   const message = error instanceof Error ? error.message : '';
   if (message === 'Research time budget exhausted.' || Date.now() >= deadline) return 'Research time budget exhausted.';
+  if (/private or reserved addresses/i.test(message)) return 'DNS resolved to private or reserved addresses; public website access was blocked.';
+  if (/Public DNS resolution failed/i.test(message)) return 'Public DNS resolution failed; check the local proxy or DNS configuration.';
   if (/No readable text/i.test(message)) return 'The page returned no readable text; client-rendered pages need browser rendering.';
   if (/No HTML/i.test(message)) return 'The URL did not return HTML.';
   if (/Redirect/i.test(message)) return 'The page redirected off the submitted domain.';

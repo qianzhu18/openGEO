@@ -35,10 +35,10 @@ export function validatePublicWebUrl(value: string): URL {
 
 type Address = { address: string; family: number };
 type Resolver = (hostname: string) => Promise<Address[]>;
-type Transport = (url: URL, addresses: Address[], signal: AbortSignal) => Promise<{ status: number; location?: string | undefined; contentType: string; text: string }>;
-const resolveHost: Resolver = hostname => lookup(hostname, { all: true });
+type Transport = (url: URL, addresses: Address[], signal: AbortSignal, accept?: string) => Promise<{ status: number; location?: string | undefined; contentType: string; text: string }>;
 
-const requestPage: Transport = (url, addresses, signal) => new Promise((resolve, reject) => {
+
+const requestPage: Transport = (url, addresses, signal, accept) => new Promise((resolve, reject) => {
   const first = addresses[0]!;
   const req = (url.protocol === "https:" ? httpsRequest : httpRequest)(url, {
     signal,
@@ -48,7 +48,7 @@ const requestPage: Transport = (url, addresses, signal) => new Promise((resolve,
       if (options.all) callback(null, addresses);
       else callback(null, first.address, first.family);
     },
-    headers: { "Accept": "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8", "Accept-Encoding": "identity" },
+    headers: { "Accept": accept || "text/html,application/xhtml+xml,application/xml,text/xml;q=0.9,*/*;q=0.8", "Accept-Encoding": "identity" },
   }, response => {
     const status = response.statusCode || 502;
     const contentType = response.headers["content-type"] || "";
@@ -73,6 +73,38 @@ const requestPage: Transport = (url, addresses, signal) => new Promise((resolve,
   req.on("error", reject);
   req.end();
 });
+
+/** Recover from a local proxy's Fake-IP DNS without ever connecting to that range. */
+export function createPublicWebResolver(
+  systemResolve: Resolver = hostname => lookup(hostname, { all: true }),
+  dnsTransport: Transport = requestPage,
+): Resolver {
+  return async hostname => {
+    const addresses = await systemResolve(hostname);
+    const fakeIP = (address: string) => isIP(address) === 4 && /^198\.(18|19)\./.test(address);
+    if (!addresses.length || !addresses.every(item => fakeIP(item.address))) return addresses;
+    const signal = AbortSignal.timeout(4_000);
+    const answers = await Promise.all(["A", "AAAA"].map(async type => {
+      // Pin the resolver too: local DNS must not rewrite the DoH endpoint to a Fake-IP.
+      const endpoint = new URL("https://cloudflare-dns.com/dns-query");
+      endpoint.searchParams.set("name", hostname);
+      endpoint.searchParams.set("type", type);
+      const response = await dnsTransport(endpoint, [{ address: "1.1.1.1", family: 4 }], signal, "application/dns-json");
+      if (response.status !== 200 || !/application\/(dns-)?json/i.test(response.contentType)) throw new Error("Public DNS resolution failed.");
+      const payload = JSON.parse(response.text);
+      if (payload.Status !== 0 || (payload.Answer !== undefined && !Array.isArray(payload.Answer))) throw new Error("Public DNS resolution failed.");
+      return (payload.Answer || []).filter((item: { type: number }) => item.type === (type === "A" ? 1 : 28))
+        .map((item: { data: string }) => ({ address: item.data, family: isIP(item.data) }));
+    }));
+    const resolved: Address[] = answers.flat();
+    if (!resolved.length || resolved.some(item => !isPublicWebAddress(item.address))) {
+      throw new Error("Website evidence cannot access private or reserved addresses.");
+    }
+    return resolved;
+  };
+}
+
+const resolveHost = createPublicWebResolver();
 
 /** Every redirect is resolved, validated and pinned independently. No local-provider override. */
 export function createPublicWebFetcher(resolve: Resolver = resolveHost, transport: Transport = requestPage) {
