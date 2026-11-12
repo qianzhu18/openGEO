@@ -204,7 +204,7 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
   await page
     .getByRole("button", { name: "Untrack selected", exact: true })
     .click();
-  await expect(revised).toHaveCount(0);
+  await expect(revised).toContainText("inactive");
   await page.getByRole("button", { name: /^inactive / }).click();
   await expect(revised).toBeVisible();
   await revised.getByRole("checkbox").check();
@@ -876,6 +876,27 @@ test("question recommendations preserve source review, CN market, dismissed item
     page.getByRole("dialog").getByLabel("市场", { exact: true }),
   ).toHaveValue("CN");
   await page.keyboard.press("Escape");
+  const batchUrl = `**/api/projects/${project.id}/prompts/batch`;
+  await page.route(batchUrl, route => route.fulfill({ status: 409, json: { error: "Activation conflict" } }));
+  await row.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "启用所选", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Activation conflict" })).toBeVisible();
+  await expect(row.getByRole("checkbox")).toBeChecked();
+  await expect(row).toContainText("建议");
+  await page.unroute(batchUrl);
+  await row.getByRole("button", { name: "启用", exact: true }).click();
+  await expect(row).toContainText("已启用");
+  await expect(row.getByRole("button", { name: "停用", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(row).toContainText("已启用");
+  const activated = await (await request.get(`/api/projects/${project.id}`)).json();
+  expect(activated.queries.find((q: any) => q.id === query.id).status).toBe("active");
+  expect(activated.samples).toEqual([]);
+  await row.getByRole("button", { name: "停用", exact: true }).click();
+  await expect(row).toContainText("已停用");
+  await row.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "启用所选", exact: true }).click();
+  await expect(row).toContainText("已启用");
   await page.getByRole("button", { name: "智能推荐", exact: true }).click();
   dialog = page.getByRole("dialog");
   await dialog.getByText("其他来源：模板与 OpenSEO", { exact: true }).click();
