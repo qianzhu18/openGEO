@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { Overview, Sources } from "./analytics-panels";
+import { DashboardSkeleton } from "./ui-controls";
 import {
   Workflows,
   Settings,
@@ -62,6 +63,8 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     [mobile, setMobile] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [loadingRun, setLoadingRun] = useState(false),
+    [scopeBusy, setScopeBusy] = useState(false),
     [dialog, setDialog] = useState(""),
     [sample, setSample] = useState<any>(null),
     [space, setSpace] = useState(""),
@@ -100,11 +103,13 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     async (id: string, projectId = selectedProject.current): Promise<void> => {
       const n = ++runRequest.current;
       pendingRunRequest.current = n;
+      setLoadingRun(true);
       setError("");
       if (!id) {
         selectedRun.current = "";
         setRun(null);
         pendingRunRequest.current = 0;
+        setLoadingRun(false);
         updateUrl({ run: "project" });
         return;
       }
@@ -127,7 +132,10 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
       } catch (e) {
         if (n === runRequest.current) setError((e as Error).message);
       } finally {
-        if (pendingRunRequest.current === n) pendingRunRequest.current = 0;
+        if (pendingRunRequest.current === n) {
+          pendingRunRequest.current = 0;
+          setLoadingRun(false);
+        }
       }
     },
     [updateUrl],
@@ -136,6 +144,8 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     async (id: string, runId?: string, spaceId?: string) => {
       const n = ++selection.current;
       ++runRequest.current;
+      pendingRunRequest.current = 0;
+      setLoadingRun(false);
       selectedProject.current = id;
       selectedRun.current = "";
       setBusy(true);
@@ -207,7 +217,35 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     setProject(p);
     setRuns(r);
     if (selectedRun.current) await loadRun(selectedRun.current, id);
-    else setAnalysis(p.analytics);
+    else {
+      setScopeBusy(true);
+      const scope = new URLSearchParams(
+        Object.entries(filterRef.current).filter(
+          ([, value]) => value !== "all",
+        ),
+      );
+      const identity = scope.toString();
+      try {
+        const scoped = await api(
+          `/api/projects/${id}/analytics${identity ? `?${identity}` : ""}`,
+        );
+        const current = new URLSearchParams(
+          Object.entries(filterRef.current).filter(
+            ([, value]) => value !== "all",
+          ),
+        ).toString();
+        if (
+          id === selectedProject.current &&
+          !selectedRun.current &&
+          identity === current
+        ) {
+          setAnalysis(scoped);
+          setError("");
+        }
+      } finally {
+        if (id === selectedProject.current) setScopeBusy(false);
+      }
+    }
   }, [loadRun, loadProject, updateUrl]);
   useEffect(() => {
     let cancelled = false;
@@ -250,7 +288,11 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     const id = run.id,
       projectId = run.projectId;
     const timer = setInterval(() => {
-      if (!pendingRunRequest.current && selectedRun.current === id && selectedProject.current === projectId)
+      if (
+        !pendingRunRequest.current &&
+        selectedRun.current === id &&
+        selectedProject.current === projectId
+      )
         void loadRun(id, projectId);
     }, 1500);
     return () => clearInterval(timer);
@@ -260,6 +302,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     const p = project.id,
       id = selectedRun.current;
     let cancelled = false;
+    setScopeBusy(true);
     (async () => {
       try {
         const a = await api(
@@ -274,9 +317,12 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
         ) {
           setAnalysis(id ? a.analytics : a);
           if (id) setRun(a);
+          setError("");
         }
       } catch (e) {
         if (!cancelled) setError((e as Error).message);
+      } finally {
+        if (!cancelled) setScopeBusy(false);
       }
     })();
     return () => {
@@ -298,6 +344,15 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
     if (found) setSample(found);
   };
   const active = Boolean(run && ["queued", "running"].includes(run.status));
+  const scopeMatches =
+    !analysis ||
+    Object.entries(filters).every(
+      ([key, value]) =>
+        String(
+          analysis.filter[key as keyof typeof analysis.filter] ?? "all",
+        ) === value,
+    );
+  const updating = loadingRun || scopeBusy || !scopeMatches;
   const base = run ? `/api/runs/${run.id}` : "";
   const nav = [
     ["overview", t("工作概览", "Overview"), ChartNoAxesCombined],
@@ -325,6 +380,12 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
   };
   return (
     <div className="min-h-screen md:flex">
+      <a
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3"
+        href="#main"
+      >
+        {t("跳到内容", "Skip to content")}
+      </a>
       {mobile && (
         <button
           className="fixed inset-0 z-30 bg-black/20 md:hidden"
@@ -415,7 +476,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-700" />
               {t("本地工作台", "Local workspace")}
             </span>
-            <span>v{status?.version || "0.9.0"}</span>
+            <span>v{status?.version || "0.8.0"}</span>
           </div>
         </div>
       </aside>
@@ -451,7 +512,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
               <Globe2 size={14} />
               {lang === "zh" ? "English" : "中文"}
             </button>
-            {run && !active && (
+            {run && !active && !updating && (
               <>
                 <a className="button" href={`${base}/report${suffix}`} download>
                   {t("业务简报", "Business brief")}
@@ -496,7 +557,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
         <main
           id="main"
           className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 md:px-8 md:py-7"
-          aria-busy={busy}
+          aria-busy={!ready || busy || (updating && !error)}
         >
           {error && (
             <div
@@ -512,18 +573,8 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
               </button>
             </div>
           )}
-          {!ready ? (
-            <div
-              className="space-y-6 animate-pulse motion-reduce:animate-none"
-              role="status"
-            >
-              <div className="h-8 w-48 rounded bg-stone-100" />
-              <div className="h-24 rounded-xl bg-stone-100" />
-              <div className="h-80 rounded-xl bg-stone-100" />
-              <p className="sr-only">
-                {t("正在加载本地项目", "Loading local projects")}
-              </p>
-            </div>
+          {!ready || busy ? (
+            <DashboardSkeleton language={lang} />
           ) : !project ? (
             <section className="mx-auto max-w-2xl py-16">
               <Activity className="mb-6 text-emerald-800" size={30} />
@@ -593,7 +644,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
                     </button>
                   </div>
                   <section
-                    className="grid grid-cols-2 items-end gap-3 lg:grid-cols-[2fr_1fr_1fr_1fr]"
+                    className="filter-bar grid grid-cols-2 items-end gap-3 lg:grid-cols-[2fr_1fr_1fr_1fr]"
                     aria-label={t("分析筛选", "Analysis filters")}
                   >
                     <label className="field min-w-0 flex-[2] text-xs">
@@ -695,6 +746,32 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
                       </select>
                     </label>
                   </section>
+                  <div className="flex min-h-6 flex-wrap items-center justify-between gap-2 text-xs text-stone-600">
+                    <p role="status" aria-live="polite">
+                      {updating
+                        ? t("正在更新分析…", "Updating analysis…")
+                        : t(
+                            `当前范围 · ${analysis?.quality.valid ?? 0} 条有效回答 · ${analysis?.metrics.cohorts.length ?? 0} 个独立测量组`,
+                            `Current scope · ${analysis?.quality.valid ?? 0} valid answers · ${analysis?.metrics.cohorts.length ?? 0} separate cohorts`,
+                          )}
+                    </p>
+                    {Object.values(filters).some(
+                      (value) => value !== "all",
+                    ) && (
+                      <button
+                        className="link min-h-10 text-xs"
+                        onClick={() =>
+                          setFilters({
+                            model: "all",
+                            channel: "all",
+                            days: "all",
+                          })
+                        }
+                      >
+                        {t("清除筛选", "Clear filters")}
+                      </button>
+                    )}
+                  </div>
                 </>
               )}
               {run &&
@@ -756,6 +833,23 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
                   >
                     {t("查看执行记录", "View workflow")}
                   </button>
+                </section>
+              ) : !scopeMatches &&
+                ["overview", "sources", "actions", "content"].includes(view) ? (
+                <section className="panel min-h-[370px] p-5" aria-busy={!error}>
+                  {error ? (
+                    <p className="muted">
+                      {t(
+                        "当前筛选未能加载，请重试或清除筛选。",
+                        "This scope could not load. Retry or clear the filters.",
+                      )}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="skeleton h-6 w-40" />
+                      <div className="skeleton mt-6 h-64" />
+                    </>
+                  )}
                 </section>
               ) : view === "overview" && analysis ? (
                 <Overview

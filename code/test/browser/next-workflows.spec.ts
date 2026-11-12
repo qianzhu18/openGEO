@@ -33,7 +33,7 @@ test("Next onboarding resumes research and creates a workspace using selected so
       language: "en",
       country: "GB",
     });
-    await new Store("data/browser-tests").save("researches", job);
+    await new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests").save("researches", job);
     await route.fulfill({ status: 202, json: job });
   });
   await page.goto("/create-workspace");
@@ -109,7 +109,7 @@ test("Next manual creation, source review, replay, draft and publication remain 
   await claim.getByLabel("事实名称（建议包含型号与属性）").fill("额定温度范围");
   await claim.getByLabel("复制一段原文（不能改写）").fill("达到 1000 摄氏度");
   await claim.getByRole("button", { name: "录入待确认事实" }).click();
-  await expect(claim.getByRole("status")).toContainText("原文片段");
+  await expect(claim.getByRole("alert")).toContainText("原文片段");
   await claim
     .getByLabel("复制一段原文（不能改写）")
     .fill("额定温度范围为 -20 至 120 摄氏度。");
@@ -172,11 +172,9 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
   await dialog
     .getByRole("button", { name: "Add prompts", exact: true })
     .click();
-  const row = page
-    .locator(".prompt-table tr")
-    .filter({
-      hasText: "Which analytics tools have verifiable documentation?",
-    });
+  const row = page.locator(".prompt-table tr").filter({
+    hasText: "Which analytics tools have verifiable documentation?",
+  });
   await row.getByRole("button", { name: "Edit", exact: true }).click();
   await page
     .getByRole("dialog")
@@ -199,11 +197,9 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
         q.text === "Which analytics tools have public technical documentation?",
     ).previousVersionId,
   ).toBeTruthy();
-  const revised = page
-    .locator(".prompt-table tr")
-    .filter({
-      hasText: "Which analytics tools have public technical documentation?",
-    });
+  const revised = page.locator(".prompt-table tr").filter({
+    hasText: "Which analytics tools have public technical documentation?",
+  });
   await revised.getByRole("checkbox").check();
   await page
     .getByRole("button", { name: "Untrack selected", exact: true })
@@ -231,6 +227,39 @@ test("Next prompts retain revisions, topics, status and recording source inputs"
       .locator(".prompt-table")
       .getByRole("columnheader", { name: "Intent", exact: true }),
   ).toHaveCount(0);
+  await page.getByText("Columns", { exact: true }).click();
+  const tableTop = (await page.locator(".prompt-table").boundingBox())!.y;
+  const toast = page.locator("[data-feedback-toast]");
+  await expect(toast).toHaveText("Columns saved.");
+  await expect(toast).toHaveAttribute("aria-live", "polite");
+  expect(await toast.evaluate((el) => getComputedStyle(el).position)).toBe(
+    "fixed",
+  );
+  await expect(page.getByLabel("Bulk prompt actions")).toHaveCount(0);
+  await page
+    .getByLabel("Search prompts", { exact: true })
+    .fill("unmatched-keyword");
+  await expect(
+    page.getByText("No prompts match these filters", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .click();
+  await expect(revised).toBeVisible();
+  await expect(toast).toHaveCount(0, { timeout: 6500 });
+  expect((await page.locator(".prompt-table").boundingBox())!.y).toBe(tableTop);
+  for (const width of [1440, 375, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.getByText("Columns", { exact: true }).click();
+    const popup = page.locator("form").filter({
+      has: page.getByRole("button", { name: "Save columns", exact: true }),
+    });
+    const box = (await popup.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    await page.getByText("Columns", { exact: true }).click();
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByRole("link", { name: "Recording", exact: true }).click();
   await page
     .getByLabel("Public URL", { exact: true })
@@ -280,7 +309,7 @@ test("Next PDF imports keep page provenance and reject broken files without losi
   await form
     .getByRole("button", { name: "Import source", exact: true })
     .click();
-  await expect(form.getByRole("status")).toContainText("PDF");
+  await expect(form.getByRole("alert")).toContainText("PDF");
   await page.setViewportSize({ width: 320, height: 780 });
   expect(
     await page.evaluate(
@@ -487,7 +516,8 @@ test("Next actions board saves todo, done, skip and restore states in the same r
     {
       id: "action-fixture",
       title: "Review the documented sensor selection guide",
-      rationale: "Review the saved answer against brand sources.",
+      rationale:
+        "Review the saved answer against brand sources. Compare each specification with its original documentation before preparing the guide. The final paragraph must remain available in the expanded brief without making every board card equally tall.",
       kind: "content",
       priority: "P2",
       status: "proposed",
@@ -497,31 +527,109 @@ test("Next actions board saves todo, done, skip and restore states in the same r
       acceptance: "Confirm sources and repeat the same protocol.",
     },
   ];
-  await new Store("data/browser-tests").save("runs", run);
+  for (let i = 1; i < 12; i++)
+    run.actions.push({
+      ...run.actions[0]!,
+      id: `action-fixture-${i}`,
+      title: `Review guide section ${i}`,
+    });
+  await new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests").save("runs", run);
   await page.goto(
     `/workspace?project=${project.id}&run=${run.id}&view=actions`,
   );
-  const card = page
-    .locator("article")
-    .filter({
-      has: page.getByRole("heading", {
-        name: "Review the documented sensor selection guide",
-        exact: true,
-      }),
-    });
+  const card = page.locator("article").filter({
+    has: page.getByRole("heading", {
+      name: "Review the documented sensor selection guide",
+      exact: true,
+    }),
+  });
   await expect(
     page.getByRole("button", { name: "Board", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const boardColumns = await Promise.all(
-    ["Suggestions", "Todo", "Done", "Skipped"].map(name =>
+    ["Suggestions", "Todo", "Done", "Skipped"].map((name) =>
       page.getByRole("region", { name, exact: true }).boundingBox(),
     ),
   );
-  expect(boardColumns.every(box => box && box.width > 150)).toBe(true);
-  expect(new Set(boardColumns.map(box => Math.round(box!.y))).size).toBe(1);
+  expect(boardColumns.every((box) => box && box.width > 150)).toBe(true);
+  expect(new Set(boardColumns.map((box) => Math.round(box!.y))).size).toBe(1);
+  const suggestions = page.getByRole("region", {
+    name: "Suggestions",
+    exact: true,
+  });
+  await expect(suggestions).toHaveAttribute("tabindex", "0");
+  expect(
+    await suggestions.evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollHeight),
+  ).toBeLessThan(1600);
+  await suggestions.focus();
+  await page.keyboard.press("PageDown");
+  await expect
+    .poll(() => suggestions.evaluate((el) => el.scrollTop))
+    .toBeGreaterThan(0);
+  await suggestions.evaluate((el) => {
+    el.scrollTop = 0;
+  });
+  const summary = card.locator("[data-action-summary]");
+  expect(
+    await summary.evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  await expect(
+    card.getByRole("button", { name: "1 answer", exact: true }),
+  ).toBeVisible();
+  await card.getByRole("button", { name: "1 answer", exact: true }).click();
+  await expect(page.locator(".answer-text")).toContainText(
+    "Action fixture provides sensors.",
+  );
+  await page.keyboard.press("Escape");
+  await card.getByText("Brief and evidence", { exact: true }).click();
+  await expect(card.getByText("Full rationale", { exact: true })).toBeVisible();
+  await expect(card.locator("details")).toContainText(
+    "The final paragraph must remain available",
+  );
+  await expect(card.locator("details")).toContainText(
+    "Confirm sources and repeat the same protocol.",
+  );
+  await card.getByText("Brief and evidence", { exact: true }).click();
+  let rejectUpdate = true;
+  await page.route(`**/api/runs/${run.id}/actions`, async (route) => {
+    if (rejectUpdate) {
+      rejectUpdate = false;
+      return route.fulfill({
+        status: 500,
+        json: { error: "Action update unavailable" },
+      });
+    }
+    return route.continue();
+  });
+  await card.getByRole("button", { name: "Add to Todo", exact: true }).click();
+  const actionError = page
+    .getByRole("alert")
+    .filter({ hasText: "Action update unavailable" });
+  await expect(actionError).toBeVisible();
+  expect(
+    await actionError.evaluate((el) => getComputedStyle(el).position),
+  ).not.toBe("fixed");
+  await expect(page.locator("[data-feedback-toast]")).toHaveCount(0);
+  expect(
+    (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates?.[
+      "action-fixture"
+    ],
+  ).toBeUndefined();
   await card.getByRole("button", { name: "Add to Todo", exact: true }).click();
   await expect(
     card.getByRole("button", { name: "Mark done", exact: true }),
+  ).toBeVisible();
+  await expect(actionError).toHaveCount(0);
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
+  await expect(
+    page
+      .getByRole("region", { name: "Todo", exact: true })
+      .locator("[data-action-card=action-fixture]"),
   ).toBeVisible();
   await card.getByRole("button", { name: "Mark done", exact: true }).click();
   await expect(
@@ -534,21 +642,42 @@ test("Next actions board saves todo, done, skip and restore states in the same r
   await card
     .getByRole("button", { name: "Restore suggestion", exact: true })
     .click();
+  const skippedResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runs/${run.id}/actions`) &&
+    response.request().method() === "PATCH" &&
+    response.status() === 200,
+  );
   await card.getByRole("button", { name: "Skip", exact: true }).click();
+  await skippedResponse;
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
   expect(
     (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates[
       "action-fixture"
     ],
   ).toBe("skipped");
+  const restoredResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runs/${run.id}/actions`) &&
+    response.request().method() === "PATCH" &&
+    response.status() === 200,
+  );
   await card
     .getByRole("button", { name: "Restore suggestion", exact: true })
     .click();
+  await restoredResponse;
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
   expect(
     (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates[
       "action-fixture"
     ],
   ).toBe("proposed");
   await page.setViewportSize({ width: 375, height: 812 });
+  expect(
+    await suggestions.evaluate((el) => getComputedStyle(el).overflowY),
+  ).toBe("visible");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -648,4 +777,142 @@ test("Next provider memory settings, answer imports and project recycle preserve
       (value: any) => value.id === project.id,
     ),
   ).toBe(true);
+});
+
+test("question recommendations preserve source review, CN market, dismissed items and separate sampling", async ({
+  page,
+  request,
+}) => {
+  const project = await (
+    await request.post("/api/projects", {
+      data: {
+        brand: "Recommendation fixture",
+        industry: "AI community",
+        brief: "定位：AI 产品共学与黑客松社区",
+      },
+    })
+  ).json();
+  const store = new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests");
+  await store.updateProject(project.id, (current) => {
+    current.language = "zh";
+    current.country = "CN";
+    current.topics = [
+      { id: "community", name: "AI 产品共学", sourceIds: ["user-brief"] },
+    ];
+  });
+  let paidCalls = 0;
+  await page.route(
+    `**/api/projects/${project.id}/prompt-recommendations/generate`,
+    async (route) => {
+      if (route.request().postDataJSON().source === "model-assisted") {
+        paidCalls++;
+        const rec = {
+          id: "model-community",
+          text: "初学者如何选择有真实项目实践的 AI 共学社区？",
+          intent: "commercial",
+          branded: false,
+          source: "model-assisted" as const,
+          topicName: "AI 共学实践",
+          sourceLabel: "OpenRouter · fixture-model",
+          sourceIds: ["user-brief"],
+          reason: "由已有品牌原文提出的待审核问题。",
+          status: "candidate" as const,
+          generatedAt: new Date().toISOString(),
+        };
+        await store.updateProject(project.id, (current) => {
+          current.promptRecommendations = [rec];
+        });
+        await route.fulfill({
+          json: {
+            items: [rec],
+            job: {
+              id: "fixture-generation",
+              status: "completed",
+              call: {
+                provider: "openrouter",
+                model: "fixture-model",
+                costStatus: "unknown",
+              },
+            },
+          },
+        });
+      } else await route.continue();
+    },
+  );
+  await page.goto(`/?project=${project.id}&view=queries`);
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "生成问题集", exact: true }).click();
+  await expect(
+    dialog.getByText("初学者如何选择有真实项目实践的 AI 共学社区？", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await dialog.getByText("查看依据", { exact: true }).click();
+  await expect(dialog.getByText("用户输入资料", { exact: true })).toBeVisible();
+  await dialog.getByLabel("全选候选", { exact: true }).check();
+  await dialog
+    .getByRole("button", { name: "加入建议库（1）", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const row = page
+    .locator(".prompt-table tr")
+    .filter({ hasText: "初学者如何选择有真实项目实践的 AI 共学社区？" });
+  await expect(row).toContainText("CN");
+  await expect(row).toContainText("建议");
+  const value = await (await request.get(`/api/projects/${project.id}`)).json();
+  const query = value.queries.find((query: any) =>
+    query.text.includes("初学者如何选择"),
+  );
+  expect(query).toMatchObject({
+    status: "suggested",
+    country: "CN",
+    sourceIds: ["user-brief"],
+  });
+  expect(value.samples).toEqual([]);
+  expect(paidCalls).toBe(1);
+  await row.getByRole("button", { name: "编辑", exact: true }).click();
+  await expect(
+    page.getByRole("dialog").getByLabel("市场", { exact: true }),
+  ).toHaveValue("CN");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByText("其他来源：模板与 OpenSEO", { exact: true }).click();
+  await dialog
+    .getByLabel("候选 JSON（text、intent）", { exact: true })
+    .fill(
+      '[{"text":"Which AI communities offer hands-on projects?","intent":"commercial"}]',
+    );
+  await dialog
+    .getByRole("button", { name: "预览导入候选", exact: true })
+    .click();
+  await dialog.getByLabel("全选候选", { exact: true }).check();
+  await dialog.getByRole("button", { name: "忽略所选", exact: true }).click();
+  await expect(
+    dialog.getByText("还没有新候选。", { exact: false }),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole("button", { name: "智能推荐", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByText("其他来源：模板与 OpenSEO", { exact: true }).click();
+  await dialog
+    .getByRole("button", { name: "生成基础模板", exact: true })
+    .click();
+  for (const width of [1440, 375, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const box = (await dialog.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+  }
+  await expect(
+    dialog.getByText("Which AI communities offer hands-on projects?", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
 });

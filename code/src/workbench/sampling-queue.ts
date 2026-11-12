@@ -9,12 +9,15 @@ export interface SamplingJob {
   state: JobState; attempts: number; maxAttempts: number; redrives: number; roundStart?: number; reconciliations?: number;
   nextAttemptAt?: string; leaseToken?: string; leasedAt?: string; finishedAt?: string;
   sampleId?: string; callId?: string; reason?: string; failureCode?: string;
+  route?: 'fallback'; primaryCallId?: string; primarySampleId?: string;
   phase?: 'waiting_slot' | 'sending' | 'remote_queued' | 'remote_running' | 'poll_wait' | 'validating';
   remote?: { idempotencyKey: string; taskId?: string; status?: string; createdAt: string;
     deadlineAt: string; nextPollAt?: string; pollCount: number; submissionAttempts: number;
     creditsCharged?: number; creditsToCharge?: number };
 }
 export interface SamplingQueue { version: 'sampling-queue/v1' | 'sampling-queue/v2'; policy?: BatchPolicy; jobs: SamplingJob[]; stopRequested: boolean; blockedProviders?: Record<string,string> }
+export const remoteSettled = (remote: SamplingJob['remote']) => Boolean(remote && ['COMPLETED','FAILED','REJECTED'].includes(remote.status || ''));
+export const jobProvider = (target: MeasurementTarget, job: SamplingJob) => job.route === 'fallback' ? target.failureFallback?.provider || target.provider! : target.provider!;
 export function initializeSamplingQueue(run: AgentRun, batch = false) {
   if (run.samplingQueue) return;
   const policy = batch ? batchPolicy() : undefined;
@@ -42,10 +45,30 @@ export function retryDecision(call: ModelCall | undefined, attempts: number, now
 }
 export function recoverSamplingQueue(run: AgentRun) {
   for (const job of run.samplingQueue?.jobs || []) if (job.state === 'leased') {
-    const call = [...run.calls].reverse().find(c=>c.receipt?.unitId===job.unitId && c.receipt?.jobLease===job.leaseToken)
-      || (job.remote ? run.calls.find(c=>c.id===job.callId) : undefined);
+    let call = [...run.calls].reverse().find(c=>c.receipt?.unitId===job.unitId && c.receipt?.jobLease===job.leaseToken
+      && (job.route !== 'fallback' || c.id !== job.primaryCallId))
+      || (job.remote && job.route !== 'fallback' ? run.calls.find(c=>c.id===job.callId) : undefined);
     const sample=run.samples.find(s=>s.id===call?.receipt?.sampleId);
-    job.state = sample?.collectionStatus==='completed' && sample.analysisStatus==='completed' ? 'succeeded' : job.remote && job.remote.status!=='FAILED' ? 'queued' : call?.receipt?.dispatch === 'not_started' || !call ? 'queued' : 'review_required';
+    const target = run.measurementTargets?.find(item => item.id === job.targetId);
+    const canFallback = job.route !== 'fallback' && Boolean(target?.failureFallback)
+      && !['refusal_or_filter','tool_unfinished'].includes(call?.receipt?.failure?.code || '')
+      && Boolean(job.remote && remoteSettled(job.remote) && job.remote.status !== 'COMPLETED');
+    const canAdoptCompleted = Boolean(job.route !== 'fallback' && job.remote?.status === 'COMPLETED' && call?.provider === 'cloro' && call.response && (call.response as any)?.task?.status === 'COMPLETED');
+    if (canFallback) {
+      // The primary Cloro task is terminal. Freeze the route before the next
+      // process can drain the job, so recovery never submits the same remote
+      // identity again after a confirmed rejection or failure.
+      job.route = 'fallback';
+      job.primaryCallId = job.primaryCallId || job.callId;
+      job.primarySampleId = job.primarySampleId || call?.receipt?.sampleId;
+      call = undefined;
+      job.sampleId = undefined;
+    }
+    const fallbackCanStart = job.route === 'fallback' && (!call || call.receipt?.dispatch === 'not_started');
+    job.state = sample?.collectionStatus==='completed' && sample.analysisStatus==='completed' ? 'succeeded'
+      : canFallback || canAdoptCompleted || fallbackCanStart ? 'queued'
+      : job.route !== 'fallback' && job.remote && !remoteSettled(job.remote) ? 'queued'
+      : call?.receipt?.dispatch === 'not_started' || !call ? 'queued' : 'review_required';
     job.reason = job.state==='succeeded' ? '恢复已落盘的成功结果，未重新发送。' : job.state === 'queued' ? job.remote ? '进程中断，保留远端身份与原回执；显式继续后查询或采用原结果。' : '进程中断，尚无发送记录；等待显式继续。' : '进程在请求期间中断，可能已经发送或收费；禁止自动重发。';
     job.callId = call?.id; job.leaseToken = undefined;
   }
@@ -56,7 +79,7 @@ export function redriveJobs(run: AgentRun, ids: string[], acknowledgeCost: boole
   const selected = ids.map(id=>jobs.find(j=>j.id===id));
   if (selected.some(j=>!j || !['dead_letter','review_required','paused'].includes(j.state) || j.redrives>=1 || j.attempts>=6)) throw new Error('任务不可重投或已达到一次人工重投上限');
   if (!acknowledgeCost) throw new Error('请确认重投可能产生额外费用，且无法保证外部请求只执行一次');
-  if (selected.some(j=>j?.remote && !['COMPLETED','FAILED'].includes(j.remote.status || ''))) throw new Error('远端任务尚未核对，请先继续查询原任务，不能创建重复任务');
+  if (selected.some(j=>j?.remote && !remoteSettled(j.remote))) throw new Error('远端任务尚未核对，请先继续查询原任务，不能创建重复任务');
   for (const job of selected as SamplingJob[]) { job.state='queued';job.redrives++;job.roundStart=job.attempts;job.maxAttempts=Math.min(6,job.attempts+3);job.remote=undefined;job.nextAttemptAt=undefined;job.finishedAt=undefined;job.reason='用户确认费用风险后人工重投，保留旧尝试。'; }
 }
 export interface QueueClock { now:()=>number; sleep:(ms:number)=>Promise<void>; random:()=>number }
@@ -69,35 +92,38 @@ export async function drainTarget(run: AgentRun, store: Store, target: Measureme
   for(const job of queue.jobs.filter(j=>j.targetId===target.id && (!jobIds || jobIds.includes(j.id)))) {
     if (['succeeded','dead_letter','review_required','paused'].includes(job.state)) continue;
     while (['queued','retry_wait'].includes(job.state)) {
+      const provider = jobProvider(target, job);
       if (queue.stopRequested) { job.state='paused';job.reason='用户停止了后续发送。';await store.save('runs',run);break; }
       if(job.nextAttemptAt && Date.parse(job.nextAttemptAt)>time.now()) {await time.sleep(Math.min(1000,Date.parse(job.nextAttemptAt)-time.now()));continue;}
-      if(batch && queue.blockedProviders?.[target.provider!]) {job.state='paused';job.reason=`入口暂停：${queue.blockedProviders[target.provider!]}，先复核失败任务。`;await store.save('runs',run);break;}
-      if(!job.remote && job.attempts>=job.maxAttempts) {job.state='review_required';job.reason='领取次数已达上限（可能包含中断），请复核后再人工重投。';await store.save('runs',run);break;}
-      if(!job.remote && run.calls.filter(c=>c.purpose==='measurement' && c.receipt?.dispatch!=='not_started').length>=(queue.policy?.maxRequests || 64)) {job.state='dead_letter';job.reason='达到本轮采样请求保护上限。';await store.save('runs',run);break;}
+      if(batch && queue.blockedProviders?.[provider]) {job.state='paused';job.reason=`入口暂停：${queue.blockedProviders[provider]}，先复核失败任务。`;await store.save('runs',run);break;}
+      const remoteRecovery = job.route !== 'fallback' && job.remote;
+      if(!remoteRecovery && job.attempts>=job.maxAttempts) {job.state='review_required';job.reason='领取次数已达上限（可能包含中断），请复核后再人工重投。';await store.save('runs',run);break;}
+      if(!remoteRecovery && run.calls.filter(c=>c.purpose==='measurement' && c.receipt?.dispatch!=='not_started').length>=(queue.policy?.maxRequests || 64)) {job.state='dead_letter';job.reason='达到本轮采样请求保护上限。';await store.save('runs',run);break;}
       if(!batch && target.provider==='cloro' && run.calls.filter(c=>c.provider==='cloro' && c.model===target.model && c.receipt?.dispatch!=='not_started').length>=10) {
         job.state='dead_letter';job.reason='达到本目标每轮10次Cloro监测上限（含重试和恢复）。';await store.save('runs',run);break;
       }
       job.state='leased';job.phase='waiting_slot';job.leaseToken=randomUUID();job.leasedAt=new Date(time.now()).toISOString();
-      if(job.remote) job.reconciliations=(job.reconciliations||0)+1;else job.attempts++;
+      if(remoteRecovery) job.reconciliations=(job.reconciliations||0)+1;else job.attempts++;
       job.nextAttemptAt=undefined;
       // Claim is committed before any provider side effect. Persistence errors abort the worker.
       await store.save('runs',run);
       const before=new Set(run.calls.map(c=>c.id));
       const result=await collect(job.queryId,job.attempts>1);
+      const actualProvider = jobProvider(target, job);
       const call=[...run.calls].reverse().find(c=>(!before.has(c.id) || batch && c.id===job.callId) && c.receipt?.unitId===job.unitId);
       job.sampleId=result.sample.id;job.callId=call?.id;job.leaseToken=undefined;
       if(result.completed) {
         consecutiveFailures=0;
         job.state='succeeded';job.finishedAt=new Date(time.now()).toISOString();job.reason=undefined;job.failureCode=undefined;
-        if(target.provider!=='cloro' && call?.receipt?.costStatus==='unknown') {
+        if(actualProvider!=='cloro' && call?.receipt?.costStatus==='unknown') {
           for(const later of queue.jobs.filter(j=>j.targetId===target.id && j.state==='queued')) {later.state='paused';later.reason='前次回答有效但费用未知，先复核再重投后续任务。';}
         }
       }
-      else if (call?.receipt?.dispatch==='not_started' && (queue.stopRequested || queue.blockedProviders?.[target.provider!])) {job.state='paused';job.reason=queue.stopRequested?'用户停止了后续发送。':`入口暂停：${queue.blockedProviders![target.provider!]}，先复核失败任务。`;}
+      else if (call?.receipt?.dispatch==='not_started' && (queue.stopRequested || queue.blockedProviders?.[actualProvider])) {job.state='paused';job.reason=queue.stopRequested?'用户停止了后续发送。':`入口暂停：${queue.blockedProviders![actualProvider]}，先复核失败任务。`;}
       else {
         // Remote HTTP retries are already bounded by the async adapter. Do not
         // wrap them in generation retries or keep looping on an expired task.
-        const decision=job.remote && !['COMPLETED','FAILED'].includes(job.remote.status||'')
+        const decision=job.route !== 'fallback' && job.remote && !remoteSettled(job.remote)
           ? {state:'review_required' as const,code:call?.receipt?.failure?.code||'unknown',reason:'远端任务执行未核对；保留原身份，需显式查询，不重新生成。',nextAttemptAt:undefined}
           : retryDecision(call,job.attempts-(job.roundStart || 0),time.now(),time.random,batch);
         job.state=decision.state;job.failureCode=decision.code;job.reason=decision.reason;job.nextAttemptAt=decision.nextAttemptAt;
@@ -106,10 +132,10 @@ export async function drainTarget(run: AgentRun, store: Store, target: Measureme
           consecutiveFailures++;
           job.finishedAt=new Date(time.now()).toISOString();
           // Open the per-target circuit. Other targets can continue; later work is paused, not fabricated failures.
-          const providerStop=['authentication','billing'].includes(decision.code) || Boolean(job.remote && !['COMPLETED','FAILED'].includes(job.remote.status || ''));
-          if(batch && providerStop) (queue.blockedProviders ||= {})[target.provider!]=decision.code;
+          const providerStop=['authentication','billing'].includes(decision.code) || Boolean(job.route !== 'fallback' && job.remote && !remoteSettled(job.remote));
+          if(batch && providerStop) (queue.blockedProviders ||= {})[actualProvider]=decision.code;
           if(!batch || providerStop || consecutiveFailures>=3 || ['unsupported_model','invalid_request'].includes(decision.code)) {
-            for(const later of queue.jobs.filter(j=>(providerStop ? run.measurementTargets?.find(t=>t.id===j.targetId)?.provider===target.provider : j.targetId===target.id) && j.state==='queued')) {later.state='paused';later.reason=`入口暂停：${decision.code}，先复核失败任务。`;}
+            for(const later of queue.jobs.filter(j=>(providerStop ? jobProvider(run.measurementTargets!.find(t=>t.id===j.targetId)!,j)===actualProvider : j.targetId===target.id) && j.state==='queued')) {later.state='paused';later.reason=`入口暂停：${decision.code}，先复核失败任务。`;}
           }
         }
       }

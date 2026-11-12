@@ -23,6 +23,7 @@ import { parseQuestionSet } from './question-set.js';
 import { networkRoute } from './network.js';
 import { BATCH_LIMITS } from './batch-policy.js';
 import { diagnosisRoutes } from './diagnosis-routes.js';
+import { PromptRecommendationService } from './prompt-recommendations.js';
 
 const { version: APP_VERSION } = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as { version: string };
 const PROVIDERS = ['openrouter', 'openai', 'deepseek', 'perplexity', 'gemini', 'anthropic'];
@@ -45,7 +46,9 @@ function send(res: ServerResponse, status: number, value: unknown) {
 }
 function projectSummary(p: Project) { return { id: p.id, name: p.name, brand: p.brand, origin: p.origin, domain: p.domain, description: p.description, sampleCount: p.samples.length, queryCount: p.queries.length }; }
 function diagnosisTemplates() {
-  return diagnosisRoutes().map(target => ({ ...target, configured: hasProviderKey(target.provider!) }));
+  return diagnosisRoutes().map(target => ({ ...target,
+    configured: hasProviderKey(target.provider!) && (!target.failureFallback || hasProviderKey(target.failureFallback.provider)),
+  }));
 }
 function hostWebCollector(worker: HostBrowserMailbox, engine: BrowserEngine) {
   return { engine, ask: async (prompt: string) => {
@@ -54,7 +57,7 @@ function hostWebCollector(worker: HostBrowserMailbox, engine: BrowserEngine) {
     return row.data;
   }, async close() {} };
 }
-import { initializeSamplingQueue, redriveJobs } from './sampling-queue.js';
+import { initializeSamplingQueue, redriveJobs, remoteSettled } from './sampling-queue.js';
 
 export async function createApp(store = new Store(), options: {
   research?: typeof researchWebsite;
@@ -69,6 +72,7 @@ export async function createApp(store = new Store(), options: {
   try { await store.initialize(examples); } catch(error) { store.releaseWorker(workerToken); store.close(); throw error; }
   const research = new ResearchService(store, options.research, options.enrich); await research.initialize();
   const prompts = new PromptService(store);
+  const recommendations = new PromptRecommendationService(store, options.enrich); await recommendations.initialize();
   const recordings = new RecordingService(store);
   const brandSources = new BrandSourceService(store, options.research);
   let activeRunId: string | null = null;
@@ -187,6 +191,16 @@ export async function createApp(store = new Store(), options: {
         if (resource === 'table-settings' && method === 'PUT') return send(res,200,await prompts.settings(id,input));
         return send(res,405,{error:'Unsupported prompt operation.'});
       }
+      const recommendationMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/prompt-recommendations(?:\/(generate|accept|dismiss))?$/);
+      if (recommendationMatch) {
+        const [, id, action] = recommendationMatch;
+        if (method === 'GET' && !action) return send(res, 200, await recommendations.list(id));
+        if (method !== 'POST' || !action) return send(res, 405, { error: 'Unsupported recommendation operation.' });
+        const input = await body(req);
+        if (action === 'generate') return send(res, 200, await recommendations.generate(id, input));
+        if (action === 'accept') return send(res, 200, await recommendations.accept(id, input.ids, input.expectedVersion));
+        return send(res, 200, await recommendations.dismiss(id, input.ids));
+      }
       const spacesMatch = path.match(/^\/api\/projects\/([a-zA-Z0-9_-]+)\/diagnosis-spaces(?:\/([a-zA-Z0-9_-]+))?$/);
       if (spacesMatch) {
         const projectId = spacesMatch[1], spaceId = spacesMatch[2];
@@ -242,41 +256,45 @@ export async function createApp(store = new Store(), options: {
             excluded: rows.filter(s => s.collectionStatus !== 'completed' || s.analysisStatus !== 'completed' || !s.answer.trim()).length });
         }
         const input = await body(req);
-        if (method === 'POST' && action === 'claims') {
-          const claim = project.claims.find(c => c.id === input.claimId);
-          if (!claim) throw new Error('事实不存在');
-          if (!project.sources.some(s => s.id === input.sourceId)) throw new Error('需要选择存在的资料来源');
-          if (!claim.sourceIds.includes(input.sourceId) && !claim.alternatives?.some(option => option.sourceId === input.sourceId)) throw new Error('来源必须属于当前事实');
-          if (claim.status === 'conflict') {
-            const option = claim.alternatives?.find(a => a.sourceId === input.sourceId);
-            if (!option) throw new Error('需要选择一个事实口径'); claim.value = option.value;
-          }
-          claim.status = 'confirmed'; claim.confirmation = { sourceId: input.sourceId, at: new Date().toISOString() };
-        } else if (method === 'PUT' && action === 'queries') {
-          const questions: string[] = parseQuestionSet(input.questions, { min: 1, max: BATCH_LIMITS.questions, maxLength: 800 }).questions;
-          const changed = JSON.stringify(questions) !== JSON.stringify(project.queries.map(q=>q.text));
-          project.queries = [...new Set<string>(questions)].map((text, i): Query => ({
-            ...project.queries.find(q => q.text === text),
-            id: project.queries.find(q => q.text === text)?.id || `q-v${project.queryVersion + 1}-${i + 1}`, text,
-            intent: project.queries.find(q => q.text === text)?.intent || '用户问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '用户确认的问题集',
-          })); if (changed) project.queryVersion += 1;
-        } else if (method === 'POST' && action === 'samples') {
-          const imported = validateImport(input.samples);
-          let added = false;
-          for (const sample of imported) {
-            sample.branded = [project.brand, ...project.aliases].some(a => a && sample.question.toLowerCase().includes(a.toLowerCase()));
-            let query = project.queries.find(q => q.text === sample.question);
-            if (!query) {
-              query = { id: `q-${randomUUID()}`, text: sample.question, intent: sample.intent, branded: sample.branded, origin: 'Imported answer', status: 'active' };
-              project.queries.push(query); added = true;
+        if (method !== 'POST' && !(method === 'PUT' && action === 'queries')) return send(res, 405, { error: '不支持的项目操作' });
+        const updated = await store.updateProject(project.id, project => {
+          if (method === 'POST' && action === 'claims') {
+            const claim = project.claims.find(c => c.id === input.claimId);
+            if (!claim) throw new Error('事实不存在');
+            if (!project.sources.some(s => s.id === input.sourceId)) throw new Error('需要选择存在的资料来源');
+            if (!claim.sourceIds.includes(input.sourceId) && !claim.alternatives?.some(option => option.sourceId === input.sourceId)) throw new Error('来源必须属于当前事实');
+            if (claim.status === 'conflict') {
+              const option = claim.alternatives?.find(a => a.sourceId === input.sourceId);
+              if (!option) throw new Error('需要选择一个事实口径'); claim.value = option.value;
             }
-            sample.queryId = query.id;
-          }
-          project.samples.push(...imported);
-          if (added) project.queryVersion += 1;
-          project.origin = 'manual';
-        } else return send(res, 405, { error: '不支持的项目操作' });
-        project.updatedAt = new Date().toISOString(); await store.save('projects', project); return send(res, 200, project);
+            claim.status = 'confirmed'; claim.confirmation = { sourceId: input.sourceId, at: new Date().toISOString() };
+          } else if (method === 'PUT' && action === 'queries') {
+            const questions: string[] = parseQuestionSet(input.questions, { min: 1, max: BATCH_LIMITS.questions, maxLength: 800 }).questions;
+            const changed = JSON.stringify(questions) !== JSON.stringify(project.queries.map(q=>q.text));
+            project.queries = [...new Set<string>(questions)].map((text, i): Query => ({
+              ...project.queries.find(q => q.text === text),
+              id: project.queries.find(q => q.text === text)?.id || `q-v${project.queryVersion + 1}-${i + 1}`, text,
+              intent: project.queries.find(q => q.text === text)?.intent || '用户问题', branded: [project.brand, ...project.aliases].some(a => a && text.toLowerCase().includes(a.toLowerCase())), origin: '用户确认的问题集',
+            })); if (changed) project.queryVersion += 1;
+          } else if (method === 'POST' && action === 'samples') {
+            const imported = validateImport(input.samples);
+            let added = false;
+            for (const sample of imported) {
+              sample.branded = [project.brand, ...project.aliases].some(a => a && sample.question.toLowerCase().includes(a.toLowerCase()));
+              let query = project.queries.find(q => q.text === sample.question);
+              if (!query) {
+                query = { id: `q-${randomUUID()}`, text: sample.question, intent: sample.intent, branded: sample.branded, origin: 'Imported answer', status: 'active' };
+                project.queries.push(query); added = true;
+              }
+              sample.queryId = query.id;
+            }
+            project.samples.push(...imported);
+            if (added) project.queryVersion += 1;
+            project.origin = 'manual';
+          } else throw new Error('不支持的项目操作');
+          return project;
+        });
+        return send(res, 200, updated.project);
       }
       if (path === '/api/runs' && method === 'GET') {
         const runs = (await store.list<AgentRun>('runs')).filter(r => !url.searchParams.get('projectId') || r.projectId === url.searchParams.get('projectId'));
@@ -367,15 +385,22 @@ export async function createApp(store = new Store(), options: {
               ? value.searchMode : (value?.webSearch === true ? 'provider_native' : 'disabled');
             const browserPreference = value?.browserPreference === 'browser_first' || value?.browserPreference === 'api_only'
               ? value.browserPreference : (searchMode === 'browser_ui' || preferredChannel === 'web' ? 'browser_first' : 'api_only');
-            const apiFallback = managedTargets?.find(t => t.id === id)?.apiFallback;
-            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: searchMode === 'provider_native', searchMode, browserPreference, ...(apiFallback ? { apiFallback: structuredClone(apiFallback) } : {}) };
+            const managed = managedTargets?.find(t => t.id === id);
+            const apiFallback = managed?.apiFallback;
+            const observationCountry = provider === 'cloro' ? managed?.observationCountry : undefined;
+            const failureFallback = provider === 'cloro' ? managed?.failureFallback : undefined;
+            return { id, platform, preferredChannel, ...(preferredChannel === 'web' && value?.webEngine === 'chatgpt' ? { webEngine: 'chatgpt' as const } : {}), ...(provider ? { provider } : {}), ...(model ? { model } : {}), webSearch: searchMode === 'provider_native', searchMode, browserPreference,
+              ...(apiFallback ? { apiFallback: structuredClone(apiFallback) } : {}),
+              ...(observationCountry ? { observationCountry } : {}),
+              ...(failureFallback ? { failureFallback: structuredClone(failureFallback) } : {}) };
           });
           if (new Set(parsedTargets.map(target => target.id)).size !== parsedTargets.length) throw new WorkspaceError('Diagnosis platforms must be unique.');
           if (!parsedTargets.some(target => target.preferredChannel === 'web' || target.provider)) throw new WorkspaceError('Select at least one collectable platform.');
 
           const submittedKeys: Record<string, unknown> = input.apiKeys && typeof input.apiKeys === 'object' && !Array.isArray(input.apiKeys) ? input.apiKeys : {};
           const apiKeys: Record<string, string> = {};
-          for (const provider of [...new Set(parsedTargets.map(target => target.provider).filter((provider): provider is string => Boolean(provider)))]) {
+          const requiredProviders = [...new Set(parsedTargets.flatMap(target => [target.provider, target.failureFallback?.provider]).filter((provider): provider is string => Boolean(provider)))];
+          for (const provider of requiredProviders) {
             const submitted = submittedKeys[provider];
             if (submitted !== undefined && (typeof submitted !== 'string' || submitted.length > 2000)) throw new WorkspaceError('Invalid API key.');
             const key = (typeof submitted === 'string' && submitted.trim()) || resolveProviderKey(provider!);
@@ -432,7 +457,7 @@ export async function createApp(store = new Store(), options: {
           const recoveryJobs=action==='reconcile' && typeof input.jobId==='string' ? [input.jobId] : undefined;
           if(action==='reconcile') {
             const job=run.samplingQueue.jobs.find(j=>j.id===input.jobId);
-            if(run.samplingQueue.version!=='sampling-queue/v2' || !job?.remote || job.remote.status==='FAILED' || !['review_required','paused','queued'].includes(job.state)) throw new Error('请选择有远端任务身份的待核对任务');
+            if(run.samplingQueue.version!=='sampling-queue/v2' || !job?.remote || remoteSettled(job.remote) || !['review_required','paused','queued'].includes(job.state)) throw new Error('请选择有远端任务身份的待核对任务');
             // A submitted identity expires at the provider after ~24h. Never create a new identity here.
             job.state='queued';job.reason=undefined;
             job.remote.deadlineAt=new Date(Date.now()+(run.samplingQueue.policy?.remoteDeadlineMs || 20*60_000)).toISOString();
@@ -447,10 +472,11 @@ export async function createApp(store = new Store(), options: {
           }
           if(!run.samplingQueue.jobs.some(j=>['queued','retry_wait'].includes(j.state))) throw new Error('没有可继续的任务；失败或费用不确定的任务需明确确认后重投');
           const apiKeys:Record<string,string>={};
-          for(const target of run.measurementTargets.filter(t=>!recoveryJobs || run.samplingQueue!.jobs.some(j=>recoveryJobs.includes(j.id) && j.targetId===t.id))) {
-            const key=resolveProviderKey(target.provider!);
-            if(!key) throw new Error(`请先在服务商设置配置 ${target.provider}`);
-            apiKeys[target.provider!]=key;
+          const resumeTargets = run.measurementTargets.filter(t=>!recoveryJobs || run.samplingQueue!.jobs.some(j=>recoveryJobs.includes(j.id) && j.targetId===t.id));
+          for(const provider of [...new Set(resumeTargets.flatMap(target => [target.provider, target.failureFallback?.provider]).filter((value): value is string => Boolean(value)))]) {
+            const key=resolveProviderKey(provider);
+            if(!key) throw new Error(`请先在服务商设置配置 ${provider}`);
+            apiKeys[provider]=key;
           }
           if(activeRunId) return send(res,409,{error:'当前有一轮执行中'});
           run.samplingQueue.stopRequested=false;run.status='queued';run.error=undefined;run.finishedAt=undefined;
