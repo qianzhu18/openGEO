@@ -11,7 +11,7 @@ import { CloroMonitor } from './cloro-monitor.js';
 import type { SearchMode } from './search-strategy.js';
 import { newReceipt, retainApiResponse, attachApiEvidence, apiAnswerProblem, diagnoseApiFailure, redactApiEvidence } from './api-receipts.js';
 
-import { initializeSamplingQueue, drainTarget, type QueueClock } from './sampling-queue.js';
+import { initializeSamplingQueue, drainTarget, remoteSettled, type QueueClock } from './sampling-queue.js';
 import { ProviderSlots } from './batch-policy.js';
 import { collectCloroAsync } from './cloro-async.js';
 import { networkRoute } from './network.js';
@@ -86,12 +86,12 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
             origin: channel === 'web' ? 'browser' : 'api', model: channel === 'web' ? `${target.platform} Web` : `${target.provider}/${target.model}`,
             observedAt: new Date().toISOString(), runGroup: run.id,
             protocolId: target.provider === 'cloro' && channel === 'api'
-              ? `remote-monitor/${run.samplingQueue?.version==='sampling-queue/v2'?'v2;transport=async':'v1'};provider=cloro;engine=${target.model};model=UNKNOWN;country=${query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question`
+              ? `remote-monitor/${run.samplingQueue?.version==='sampling-queue/v2'?'v2;transport=async':'v1'};provider=cloro;engine=${target.model};model=UNKNOWN;country=${target.observationCountry || query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question`
               : channel === 'web'
               ? `browser-ui/v2;platform=${target.id};engine=${target.webEngine || 'unimplemented'};transport=kimi-webbridge;profile=Xue;session=fresh;model=UNKNOWN;region=UNKNOWN;${searchPolicyId(searchPolicy(project, query, 'browser_ui'))}`
               : `api-question/v2;platform=${target.id};provider=${target.provider};model=${target.model};${searchPolicyId(searchPolicy(project, query, apiSearchMode(target)))};browserPreference=${target.browserPreference || (target.preferredChannel === 'web' ? 'browser_first' : 'api_only')}${run.samplingQueue?.version==='sampling-queue/v2'
                   ? `;maxTokens=${run.samplingQueue.policy?.outputTokens || 6000}${disablesOptionalReasoning(target.provider || '', target.model || '') ? ';reasoning=none' : ''}`
-                  : disablesOptionalReasoning(target.provider || '', target.model || '') ? ';reasoning=none;maxTokens=2500' : ''}${target.apiFallback ? `;route=${target.apiFallback.version};fallback=configured;from=${target.apiFallback.fromProvider}/${target.apiFallback.fromModel}` : ''}`,
+                  : disablesOptionalReasoning(target.provider || '', target.model || '') ? ';reasoning=none;maxTokens=2500' : ''}${target.apiFallback ? `;route=${target.apiFallback.version};fallback=configured;from=${target.apiFallback.fromProvider}/${target.apiFallback.fromModel}` : ''}${run.samplingQueue?.jobs.some(job=>job.queryId===query.id && job.targetId===target.id && job.route==='fallback') ? ';route=api-route/v2;fallback=after_failure;from=cloro;region=UNKNOWN' : ''}`,
             collectionStatus: 'failed', analysisStatus: 'unknown', answer: '', citations: [],
             measurementUnitId: `${query.id}--${target.id}`, attemptId: randomUUID(), selected: false, fallback,
           };
@@ -125,7 +125,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
           if (retry) { targetSessions.delete(target.id); monitors.get(target.id)?.allowQueueRetry(); }
           const job = run.samplingQueue?.jobs.find(j=>j.queryId===query.id && j.targetId===target.id);
           const jobLease = job?.leaseToken;
-          const priorCall = job?.remote && job.callId ? run.calls.find(c=>c.id===job.callId) : undefined;
+          const priorCall = target.provider === 'cloro' && job?.remote && job.callId ? run.calls.find(c=>c.id===job.callId) : undefined;
           const priorSample = priorCall?.receipt?.sampleId ? run.samples.find(s=>s.id===priorCall.receipt!.sampleId) : undefined;
           const sample = priorSample || makeSample(query, target, 'api', fallback);
           await persist();
@@ -140,7 +140,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
                 startedAt: new Date().toISOString(), status: 'running' as 'running' | 'completed' | 'failed',
                 promptHash: createHash('sha256').update(query.text).digest('hex'),
                 receipt: { ...newReceipt({ sampleId: sample.id, queryId: query.id, unitId: sample.measurementUnitId, jobLease }), searchState: 'unknown' },
-                requestParameters: { engine: target.model, country: query.country || project.country || 'US', include: { markdown: true }, httpAttempts: 1, maxMonitorRequests: 10 } };
+                requestParameters: { engine: target.model, country: target.observationCountry || query.country || project.country || 'US', include: { markdown: true }, httpAttempts: 1, maxMonitorRequests: 10 } };
               if(!priorCall) run.calls.push(call);
               call.status='running';call.error=undefined;call.receipt!.jobLease=jobLease;
               if(job) {job.callId=call.id;job.sampleId=sample.id;}
@@ -152,8 +152,8 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
                   ? await slots.run('cloro', async()=> {
                     if(run.samplingQueue!.stopRequested) throw new Error('用户停止了后续发送。');
                     if(run.samplingQueue!.blockedProviders?.cloro) throw new Error('Cloro入口已暂停，请核对原任务。');
-                    call.requestParameters={engine:target.model,country:query.country||project.country||'US',transport:'cloro-async',httpAttempts:1};
-                    try { return await collectCloroAsync({job,key:apiConfig.apiKey,engine:target.model!,prompt:query.text,country:query.country||project.country||'US',
+                    call.requestParameters={engine:target.model,country:target.observationCountry||query.country||project.country||'US',transport:'cloro-async',httpAttempts:1};
+                    try { return await collectCloroAsync({job,key:apiConfig.apiKey,engine:target.model!,prompt:query.text,country:target.observationCountry||query.country||project.country||'US',
                       stopped:()=>run.samplingQueue!.stopRequested,clock:measurement.queueClock,deadlineMs:run.samplingQueue!.policy?.remoteDeadlineMs,
                       retainedResponse:call.response,
                       save:async event=>{
@@ -164,11 +164,11 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
                         }
                         call.receipt!.remote=job.remote?structuredClone(job.remote):undefined; await persist();}}); }
                     catch(error) {
-                      if(job.remote && !['COMPLETED','FAILED'].includes(job.remote.status||'')) (run.samplingQueue!.blockedProviders ||= {}).cloro=call.receipt!.failure?.code || 'remote_unresolved';
+                      if(job.remote && (!remoteSettled(job.remote) || ['authentication','billing'].includes(call.receipt!.failure?.code || ''))) (run.samplingQueue!.blockedProviders ||= {}).cloro=call.receipt!.failure?.code || 'remote_unresolved';
                       throw error;
                     }
                   })
-                  : await monitor.ask(target.model!, query.text, query.country || project.country || 'US', async event => {
+                  : await monitor.ask(target.model!, query.text, target.observationCountry || query.country || project.country || 'US', async event => {
                   if (event.phase === 'attempted') {
                     if(run.samplingQueue?.stopRequested) throw new Error('用户停止了后续发送。');
                     call.receipt!.dispatch = 'attempted';
@@ -187,7 +187,7 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
                 throw new Error(safe);
               }
               Object.assign(sample, observation, { collectionStatus: 'completed', analysisStatus: 'completed',
-                protocolId: `remote-monitor/${job?.remote?'v2;transport=async':'v1'};provider=cloro;engine=${target.model};model=UNKNOWN;country=${query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question` });
+                protocolId: `remote-monitor/${job?.remote?'v2;transport=async':'v1'};provider=cloro;engine=${target.model};model=UNKNOWN;country=${target.observationCountry || query.country || project.country || 'US'};searchExecution=UNKNOWN;query=original_question` });
               attachApiEvidence(sample, run);
               attempt.status = 'completed'; select(sample); finishUnit(sample, true);
               attempt.finishedAt = new Date().toISOString(); await persist();
@@ -223,7 +223,24 @@ export async function executeRun(run: AgentRun, store: Store, config?: LiveConfi
 
         const settledTargets = await Promise.allSettled(measurement.targets.map(async target => {
           if (run.samplingQueue) {
-            await drainTarget(run,store,target,(queryId,retry)=>collectApi(run.queries.find(q=>q.id===queryId)!,target,Boolean(target.apiFallback),retry),measurement.queueClock,measurement.jobIds);
+            await drainTarget(run,store,target,async(queryId,retry)=> {
+              const query = run.queries.find(q=>q.id===queryId)!;
+              const job = run.samplingQueue!.jobs.find(j=>j.queryId===queryId && j.targetId===target.id)!;
+              const fallbackTarget = target.failureFallback ? { ...target, provider: target.failureFallback.provider, model: target.failureFallback.model,
+                webSearch: false, searchMode: 'disabled' as const, observationCountry: undefined } : undefined;
+              if (job.route === 'fallback' && fallbackTarget) return collectApi(query, fallbackTarget, true, retry);
+              const result = await collectApi(query,target,Boolean(target.apiFallback),retry);
+              const call = run.calls.find(c=>c.id===job.callId);
+              const code = call?.receipt?.failure?.code;
+              if (result.completed || !fallbackTarget || !remoteSettled(job.remote) || run.samplingQueue!.stopRequested
+                || ['refusal_or_filter','tool_unfinished'].includes(code || '')) return result;
+              // Persist the route choice before the fallback side effect. A restart
+              // resumes OpenRouter, never creates another Cloro generation.
+              job.route = 'fallback'; job.primaryCallId = job.callId; job.primarySampleId = result.sample.id;
+              job.callId = undefined; job.sampleId = undefined;
+              await persist();
+              return collectApi(query,fallbackTarget,true,retry);
+            },measurement.queueClock,measurement.jobIds);
             return;
           }
           for (const query of run.queries) {

@@ -2598,7 +2598,7 @@ export function QueuePanel({
           {jobs.map((job) => {
             const remotePending =
                 job.remote &&
-                job.remote.status !== "FAILED" &&
+                !["FAILED", "REJECTED", "COMPLETED"].includes(job.remote.status) &&
                 ["review_required", "paused", "queued"].includes(job.state),
               call = run?.calls?.find((value: Row) => value.id === job.callId),
               remoteError = call?.response?.response?.error,
@@ -2833,8 +2833,8 @@ function Agent({
           </h2>
           <p className="muted mb-5 leading-7">
             {t(
-              "ChatGPT 与国内平台用 OpenRouter，Gemini 用 Cloro。模型由系统维护，费用由你的服务商账号承担。",
-              "ChatGPT and domestic targets use OpenRouter; Gemini uses Cloro. Managed models use your own provider account.",
+              "ChatGPT 与 Gemini 先走 Cloro 新加坡（SG）监测，明确失败后才降级 OpenRouter；其他目标使用 OpenRouter。费用由你的服务商账号承担。",
+              "ChatGPT and Gemini use Cloro Singapore (SG) first and fall back to OpenRouter only after a confirmed failure; other targets use OpenRouter. Your provider account is charged.",
             )}
           </p>
           <form className="space-y-5" onSubmit={submit}>
@@ -2923,8 +2923,8 @@ function Agent({
                       <small className="mt-1 block leading-6 text-neutral-500">
                         {target.id === "chatgpt"
                           ? t(
-                              "模型 API 补测，不代表 ChatGPT 网页表现。",
-                              "Model API fallback; not a ChatGPT web observation.",
+                              "Cloro SG 优先；确认失败后才使用 OpenRouter 模型 API，不代表 ChatGPT 网页表现。",
+                              "Cloro SG first; confirmed failures use the OpenRouter model API, which is not a ChatGPT web observation.",
                             )
                           : target.collectionNote}
                       </small>

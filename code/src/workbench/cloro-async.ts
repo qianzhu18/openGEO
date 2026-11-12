@@ -98,6 +98,11 @@ export async function collectCloroAsync(options: CloroAsyncOptions) {
       if (typeof expected === 'number' && Number.isFinite(expected) && expected >= 0) remote.creditsToCharge = expected;
       job.phase = 'remote_queued'; await save(event); break;
     }
+    // A validation/auth/billing rejection did not create a remote generation.
+    // Keep it distinct from an ambiguous network failure, whose idempotency key
+    // must remain available for reconciliation.
+    if ([400,401,402,403,404,422].includes(event.status) && !event.data?.task?.id
+      && !event.data?.error?.details?.taskId) remote.status = 'REJECTED';
     await save(event);
     if (![429,500,502,503,504].includes(event.status) || attempt === 5) throw new Error(`Cloro async submit HTTP ${event.status}`);
     const delay = Math.max(backoffMs(attempt, time.random), event.retryAfterMs || 0);

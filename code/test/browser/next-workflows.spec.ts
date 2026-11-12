@@ -33,7 +33,7 @@ test("Next onboarding resumes research and creates a workspace using selected so
       language: "en",
       country: "GB",
     });
-    await new Store("data/browser-tests").save("researches", job);
+    await new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests").save("researches", job);
     await route.fulfill({ status: 202, json: job });
   });
   await page.goto("/create-workspace");
@@ -533,7 +533,7 @@ test("Next actions board saves todo, done, skip and restore states in the same r
       id: `action-fixture-${i}`,
       title: `Review guide section ${i}`,
     });
-  await new Store("data/browser-tests").save("runs", run);
+  await new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests").save("runs", run);
   await page.goto(
     `/workspace?project=${project.id}&run=${run.id}&view=actions`,
   );
@@ -642,15 +642,33 @@ test("Next actions board saves todo, done, skip and restore states in the same r
   await card
     .getByRole("button", { name: "Restore suggestion", exact: true })
     .click();
+  const skippedResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runs/${run.id}/actions`) &&
+    response.request().method() === "PATCH" &&
+    response.status() === 200,
+  );
   await card.getByRole("button", { name: "Skip", exact: true }).click();
+  await skippedResponse;
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
   expect(
     (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates[
       "action-fixture"
     ],
   ).toBe("skipped");
+  const restoredResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runs/${run.id}/actions`) &&
+    response.request().method() === "PATCH" &&
+    response.status() === 200,
+  );
   await card
     .getByRole("button", { name: "Restore suggestion", exact: true })
     .click();
+  await restoredResponse;
+  await expect(page.locator("[data-feedback-toast]")).toContainText(
+    "Action status saved.",
+  );
   expect(
     (await (await request.get(`/api/runs/${run.id}`)).json()).actionStates[
       "action-fixture"
@@ -774,7 +792,7 @@ test("question recommendations preserve source review, CN market, dismissed item
       },
     })
   ).json();
-  const store = new Store("data/browser-tests");
+  const store = new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests");
   await store.updateProject(project.id, (current) => {
     current.language = "zh";
     current.country = "CN";

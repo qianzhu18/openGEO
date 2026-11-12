@@ -66,6 +66,47 @@ test('crash recovery uses current lease, recovers committed success and rolls ba
  f.store.acquireWorker('one');const other=new Store(f.root);assert.throws(()=>other.acquireWorker('two'),/已有本地服务/);other.close();f.store.releaseWorker('one');
  }finally{await f.cleanup();}
 });
+test('recovery freezes fallback after a terminal Cloro rejection and never resubmits Cloro',async()=>{
+ const f=await fixture(1);(f.targets[0] as any).failureFallback={version:'api-route/v2',provider:'openrouter',model:'openai/gpt-6-luna'};f.run.measurementTargets=f.targets;
+ try{
+  f.run.queries=structuredClone(f.project.queries);f.run.measurementUnits=[{id:`${f.run.queries[0].id}--fixture`,queryId:f.run.queries[0].id,question:'q',targetId:'fixture',platform:'Fixture',preferredChannel:'api',status:'planned',attempts:[]}];initializeSamplingQueue(f.run);
+  const job=f.run.samplingQueue!.jobs[0];job.state='leased';job.leaseToken='lease';job.callId='primary';job.remote={idempotencyKey:'same-key',taskId:'rejected-task',status:'REJECTED',createdAt:f.run.createdAt,deadlineAt:new Date(Date.now()+60_000).toISOString(),pollCount:1,submissionAttempts:1};
+  const primary=call(400);primary.id='primary';primary.receipt!.unitId=job.unitId;primary.receipt!.jobLease='lease';primary.receipt!.sampleId='primary-sample';f.run.calls=[primary];
+  recoverSamplingQueue(f.run);
+  assert.equal(job.route,'fallback');assert.equal(job.primaryCallId,'primary');assert.equal(job.state,'queued');
+ }finally{await f.cleanup();}
+});
+test('fallback crash recovery distinguishes an unsent route from a dispatched or completed OpenRouter call',async()=>{
+ const original=globalThis.fetch;
+ try {
+  for(const phase of ['route-saved','attempted','completed'] as const) {
+   const f=await fixture(1);let sent=0;
+   (f.targets[0] as any).failureFallback={version:'api-route/v2',provider:'openrouter',model:'openai/gpt-6-luna'};f.run.measurementTargets=structuredClone(f.targets);
+   try {
+    f.run.queries=structuredClone(f.project.queries);
+    f.run.measurementUnits=[{id:`${f.run.queries[0].id}--fixture`,queryId:f.run.queries[0].id,question:'q',targetId:'fixture',platform:'Fixture',preferredChannel:'api',status:'planned',attempts:[]}];
+    initializeSamplingQueue(f.run,true);
+    const job=f.run.samplingQueue!.jobs[0];Object.assign(job,{state:'leased',leaseToken:'lease',route:'fallback',primaryCallId:'primary',primarySampleId:'primary-sample',attempts:1});
+    job.remote={idempotencyKey:'same-key',status:'REJECTED',createdAt:f.run.createdAt,deadlineAt:new Date(Date.now()+60_000).toISOString(),pollCount:0,submissionAttempts:1};
+    const primary=call(400);primary.id='primary';Object.assign(primary.receipt!,{unitId:job.unitId,jobLease:'lease',sampleId:'primary-sample'});f.run.calls=[primary];
+    if(phase!=='route-saved') {
+     const fallback=call();Object.assign(fallback,{id:'fallback-call',provider:'openrouter',model:'openai/gpt-6-luna'});
+     Object.assign(fallback.receipt!,{unitId:job.unitId,jobLease:'lease',sampleId:'fallback-sample',dispatch:'attempted'});
+     f.run.calls.push(fallback);job.callId=fallback.id;
+     if(phase==='completed') f.run.samples=[{id:'fallback-sample',queryId:job.queryId,question:'q',intent:'commercial',branded:false,origin:'api',model:'openrouter/openai/gpt-6-luna',observedAt:f.run.createdAt,runGroup:f.run.id,protocolId:'api-question/v2',collectionStatus:'completed',analysisStatus:'completed',answer:'A committed fallback answer.',citations:[],measurementUnitId:job.unitId}];
+    }
+    f.run.status='running';await f.store.save('runs',f.run);await f.store.initialize([]);
+    const recovered=(await f.store.get<typeof f.run>('runs',f.run.id))!;
+    assert.equal(recovered.samplingQueue!.jobs[0].state,phase==='route-saved'?'queued':phase==='attempted'?'review_required':'succeeded',phase);
+    globalThis.fetch=async(url)=>{sent++;assert.equal(String(url),'https://openrouter.ai/api/v1/chat/completions');return new Response(JSON.stringify({choices:[{message:{content:'A complete fallback answer.'},finish_reason:'stop'}],usage:{cost:0.001}}));};
+    await executeRun(recovered,f.store,undefined,undefined,{...f.runtime,apiKeys:{openrouter:'fixture'},batch:true});
+    assert.equal(sent,phase==='route-saved'?1:0,phase);
+    assert.equal(recovered.samplingQueue!.jobs[0].route,'fallback');
+    assert.equal(recovered.samplingQueue!.jobs[0].remote!.idempotencyKey,'same-key');
+   } finally {await f.cleanup();}
+  }
+ } finally {globalThis.fetch=original;}
+});
 test('stop persists in-flight completion and pauses later jobs',async()=>{
  const f=await fixture(),original=globalThis.fetch;let sent=0;globalThis.fetch=async()=>{sent++;f.run.samplingQueue!.stopRequested=true;return success();};
  try{await executeRun(f.run,f.store,undefined,undefined,f.runtime);assert.equal(sent,1);assert.deepEqual(f.run.samplingQueue!.jobs.map(j=>j.state),['succeeded','paused']);}finally{globalThis.fetch=original;await f.cleanup();}

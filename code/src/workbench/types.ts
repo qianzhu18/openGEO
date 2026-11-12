@@ -48,6 +48,9 @@ export interface MeasurementTarget {
   searchMode?: 'provider_native' | 'browser_ui' | 'disabled';
   /** A preselected route, not evidence that the primary was tried in this unit. */
   apiFallback?: { version: 'api-route/v1'; mode: 'configured'; fromProvider: 'cloro'; fromModel: 'chatgpt'; reason: 'upstream_unavailable' };
+  /** Frozen observation geography, independent of the brand's target market. */
+  observationCountry?: string;
+  failureFallback?: { version: 'api-route/v2'; provider: 'openrouter'; model: string };
   /** Desired transport order; does not claim a browser adapter exists. */
   browserPreference?: 'browser_first' | 'api_only';
 }

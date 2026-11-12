@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { Store } from "../../src/workbench/storage.js";
 import { createRun } from "../../src/workbench/engine.js";
 import type { AgentRun, Project, Sample } from "../../src/workbench/types.js";
-const store = new Store("data/browser-tests"),
+const store = new Store(process.env.OPENGEO_DATA_DIR || "data/browser-tests"),
   id = "next-dashboard-fixture",
   r1 = "next-dashboard-run-1",
   r2 = "next-dashboard-run-2";

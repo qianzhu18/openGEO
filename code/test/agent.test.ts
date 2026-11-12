@@ -228,6 +228,7 @@ test('browser-first policy falls back to API without relabeling the sample as we
     assert.equal(selected?.origin, 'api');
     assert.match(selected?.protocolId || '', /mode=disabled/);
     assert.doesNotMatch(selected?.protocolId || '', /browser-ui\/v2/);
+    assert.doesNotMatch(selected?.protocolId || '', /fallback=after_failure/);
   } finally { globalThis.fetch = originalFetch; await cleanup(); }
 });
 
@@ -302,9 +303,11 @@ test('local HTTP flow creates a project, imports answers, runs and exports a rep
     const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
     assert.equal(status.version, manifest.version);
     assert.deepEqual(status.diagnosisTargets.map((target: any) => target.id), ['chatgpt', 'gemini', 'deepseek', 'qwen', 'seed']);
-    assert.equal(status.diagnosisTargets[0].provider, 'openrouter');
-    assert.equal(status.diagnosisTargets[0].apiFallback.mode, 'configured');
+    assert.equal(status.diagnosisTargets[0].provider, 'cloro');
+    assert.equal(status.diagnosisTargets[0].observationCountry, 'SG');
+    assert.equal(status.diagnosisTargets[0].failureFallback.provider, 'openrouter');
     assert.equal(status.diagnosisTargets[1].provider, 'cloro');
+    assert.equal(status.diagnosisTargets[1].observationCountry, 'SG');
     assert.ok(status.diagnosisTargets.slice(2).every((target: any) => target.provider === 'openrouter' && target.browserPreference === 'api_only' && target.searchMode === 'disabled'));
     const project = await request('/api/projects', 'POST', { brand: '临界仪器', industry: '温度仪表', brief: '产品：温度探头' }) as Project;
     await request(`/api/projects/${project.id}/claims`, 'POST', { claimId: 'claim-1', sourceId: 'user-brief' });

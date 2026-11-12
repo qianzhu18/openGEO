@@ -6,7 +6,7 @@ import { createRun } from '../../src/workbench/engine.js';
 import { Store } from '../../src/workbench/storage.js';
 import { newReceipt } from '../../src/workbench/api-receipts.js';
 
-const store = new Store('data/browser-tests'), runId = 'api-receipts-browser-fixture';
+const store = new Store(process.env.OPENGEO_DATA_DIR || 'data/browser-tests'), runId = 'api-receipts-browser-fixture';
 test.afterAll(async () => { await rm(join(store.root, 'runs', runId + '.json'), { force: true }); });
 test('API receipts render in brief and full evidence without making model requests', async ({ page, request }) => {
   const project = syntheticProject(), run = createRun(project, 'live');

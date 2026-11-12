@@ -72,8 +72,14 @@ export class BrandSourceService {
       sources = [{ id: `brand-file-${sha256.slice(0,24)}`, title: fileName, fileName, text, kind: 'text', sha256, importedAt, localPath }];
     } else if (input.kind === 'text') {
       const title = field(input.title, '资料标题', 200), text = field(input.text, '资料正文', 100_000);
+      let url: string | undefined;
+      if (input.url !== undefined) {
+        const parsed = new URL(field(input.url, '来源网址', 2048));
+        if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error('来源网址须为无认证信息的 HTTP(S) 链接');
+        url = parsed.toString();
+      }
       const sha256 = hash(text);
-      sources = [{ id: `brand-text-${sha256.slice(0, 24)}`, title, text, kind: 'text', sha256, importedAt }];
+      sources = [{ id: `brand-text-${hash(url ? url + text : text).slice(0, 24)}`, title, text, ...(url ? { url } : {}), kind: 'text', sha256, importedAt }];
     } else throw new Error('资料类型应为 website、text、file 或 pdf');
     return this.store.updateProject(projectId, project => {
       const added = sources.filter(source => !project.sources.some(existing => existing.id === source.id));
