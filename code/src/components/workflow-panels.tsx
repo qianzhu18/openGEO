@@ -419,18 +419,24 @@ function Prompts({
   };
   const visibleColumn = (column: string) =>
     !settings.hiddenColumns.includes(column);
-  async function batch(operation: string, topicId?: string) {
-    await mutation.mutate(
+  async function batch(operation: string, topicId?: string, ids = selected) {
+    const result = await mutation.mutate(
       () =>
         workbenchApi(`/api/projects/${project.id}/prompts/batch`, "POST", {
-          ids: selected,
+          ids,
           operation,
           topicId,
           expectedVersion: project.queryVersion,
         }),
       t("问题库已保存", "Question library saved."),
     );
-    setSelected([]);
+    if (result) {
+      setSelected([]);
+      if (operation === "track" || operation === "untrack") {
+        setFilter(operation === "track" ? "active" : "inactive");
+        setPage(1);
+      }
+    }
   }
   function exportCsv() {
     const escape = (value: unknown) =>
@@ -761,6 +767,19 @@ function Prompts({
                       </td>
                     )}
                     <td className="min-w-20 whitespace-nowrap py-3.5 align-middle">
+                      <button
+                        className="button button-quiet whitespace-nowrap"
+                        disabled={mutation.busy}
+                        onClick={() => void batch(
+                          (q.status || "active") === "active" ? "untrack" : "track",
+                          undefined,
+                          [q.id],
+                        )}
+                      >
+                        {(q.status || "active") === "active"
+                          ? t("停用", "Untrack")
+                          : t("启用", "Track")}
+                      </button>
                       <button
                         className="button button-quiet whitespace-nowrap"
                         onClick={() => {
