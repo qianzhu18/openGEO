@@ -26,7 +26,7 @@ export function createOpenGeoMcp(store = new Store(), apiUrl = process.env.OPENG
     if (!response.ok) throw new Error(result.error || 'OpenGEO local import failed.');
     return result.result;
   };
-  const server = new McpServer({ name: 'opengeo-local-sources', version: '0.9.0' });
+  const server = new McpServer({ name: 'opengeo-local-sources', version: '0.8.0' });
   const project = async (id: string) => {
     const value = await store.get<Project>('projects', id);
     if (!value) throw new Error('Project not found.');

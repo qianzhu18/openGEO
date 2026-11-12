@@ -476,7 +476,7 @@ export function Dashboard({ language = "zh" }: { language?: "zh" | "en" }) {
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-700" />
               {t("本地工作台", "Local workspace")}
             </span>
-            <span>v{status?.version || "0.9.0"}</span>
+            <span>v{status?.version || "0.8.0"}</span>
           </div>
         </div>
       </aside>
